@@ -1,0 +1,137 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+import unittest
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+from token_economy.delegate import classify, delegation_plan
+from token_economy.wiki import WikiStore
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class ChiefOfStaffSystemTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.wiki = WikiStore(ROOT)
+        cls.wiki.index()
+
+    def loaded_paths(self, task: str) -> set[str]:
+        packet = self.wiki.context(task)
+        return set(packet["citations"]["loaded"])
+
+    def test_daily_briefing_retrieves_core_pages(self) -> None:
+        loaded = self.loaded_paths("give me my daily briefing")
+        self.assertIn("patterns/daily-weekly-briefing.md", loaded)
+        self.assertIn("L2_facts/user-operating-profile.md", loaded)
+        self.assertIn("L2_facts/approved-information-sources.md", loaded)
+
+    def test_preference_memory_retrieves_profile_and_check_ins(self) -> None:
+        loaded = self.loaded_paths("remember this work preference")
+        self.assertIn("L2_facts/user-operating-profile.md", loaded)
+        self.assertIn("patterns/structured-check-ins.md", loaded)
+
+    def test_approved_source_intake_retrieves_registry(self) -> None:
+        packet = self.wiki.context("add this folder as an approved source")
+        loaded = set(packet["citations"]["loaded"])
+        self.assertIn("L3_sops/approved-source-intake.md", loaded)
+        self.assertIn("L2_facts/approved-information-sources.md", loaded)
+        self.assertFalse(any(path.startswith("raw/") for path in loaded))
+
+    def test_delegate_routes_chief_of_staff_work(self) -> None:
+        route = classify("prepare my weekly briefing from approved sources")
+        self.assertEqual(route.worker, "chief-of-staff-worker")
+        self.assertTrue(route.parallelizable)
+
+        plan = delegation_plan("extract follow-ups from these notes for my chief of staff")
+        self.assertEqual(plan["route"]["worker"], "chief-of-staff-worker")
+        self.assertIn("follow_ups", plan["result_contract"])
+        self.assertIn("sources", plan["result_contract"])
+
+    def test_chief_cli_readiness_and_briefing(self) -> None:
+        readiness = subprocess.run(
+            [str(ROOT / "te"), "chief", "readiness"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(readiness.returncode, 0, readiness.stderr)
+        readiness_packet = json.loads(readiness.stdout)
+        self.assertEqual(readiness_packet["mode"], "chief_of_staff_readiness")
+        self.assertTrue(readiness_packet["core_pages"]["L2_facts/user-operating-profile.md"])
+
+        briefing = subprocess.run(
+            [str(ROOT / "te"), "chief", "briefing", "--horizon", "daily"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(briefing.returncode, 0, briefing.stderr)
+        briefing_packet = json.loads(briefing.stdout)
+        self.assertEqual(briefing_packet["mode"], "chief_of_staff_briefing")
+        self.assertIn("patterns/daily-weekly-briefing.md", briefing_packet["sources_checked"])
+
+    def test_gog_readonly_wrapper_blocks_mutations(self) -> None:
+        wrapper = ROOT / "tools" / "gog-agent-readonly"
+        self.assertTrue(wrapper.exists())
+
+        version = subprocess.run(
+            [str(wrapper), "--version"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(version.returncode, 0, version.stderr)
+
+        blocked = subprocess.run(
+            [str(wrapper), "gmail", "send", "--to", "nobody@example.com", "--subject", "x", "--body", "x"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(blocked.returncode, 2)
+        self.assertIn("blocked command", blocked.stderr)
+
+    def test_parallel_context_lookup_after_missing_index(self) -> None:
+        db_path = ROOT / ".token-economy" / "wiki.sqlite3"
+        if db_path.exists():
+            db_path.unlink()
+
+        queries = [
+            "give me my daily briefing",
+            "plan my week as my chief of staff",
+            "remember this work preference",
+            "add this folder as an approved source",
+        ]
+
+        def run_context(query: str) -> list[str]:
+            result = subprocess.run(
+                [str(ROOT / "te"), "wiki", "context", query],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            return json.loads(result.stdout)["citations"]["loaded"]
+
+        try:
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                loaded_sets = list(pool.map(run_context, queries))
+        finally:
+            WikiStore(ROOT).index()
+
+        self.assertEqual(len(loaded_sets), len(queries))
+        self.assertTrue(any("patterns/daily-weekly-briefing.md" in paths for paths in loaded_sets))
+
+
+if __name__ == "__main__":
+    unittest.main()

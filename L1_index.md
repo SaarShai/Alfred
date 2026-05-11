@@ -1,0 +1,34 @@
+# L1 Index
+
+Compact pointers. Fetch details on demand.
+
+- start -> `start.md`
+- config -> `token-economy.yaml`
+- model registry -> `models.yaml`
+- L0 rules -> `L0_rules.md`
+- schema -> `schema.md`
+- wiki catalog -> `index.md`
+- log -> `log.md`
+- raw sources -> `raw/` (search only; fetch after relevance)
+- L2_facts/approved-information-sources (fact tags=approved-sources,access-control,executive-assistant,daily-briefing,weekly-planning) -> `L2_facts/approved-information-sources.md`
+- L2_facts/source-intake-queue (fact tags=source-intake,approved-sources,executive-assistant,google-workspace) -> `L2_facts/source-intake-queue.md`
+- L2_facts/user-operating-profile (fact tags=user-profile,executive-assistant,preferences,daily-briefing,weekly-planning) -> `L2_facts/user-operating-profile.md`
+- L3_sops/approved-source-intake (sop tags=approved-sources,source-intake,access-control,executive-assistant) -> `L3_sops/approved-source-intake.md`
+- L3_sops/chief-of-staff-evaluation (sop tags=evaluation,tests,chief-of-staff,executive-assistant) -> `L3_sops/chief-of-staff-evaluation.md`
+- L3_sops/chief-of-staff-onboarding (sop tags=chief-of-staff,onboarding,executive-assistant,preferences) -> `L3_sops/chief-of-staff-onboarding.md`
+- L3_sops/chief-of-staff-workflow (sop tags=chief-of-staff,executive-assistant,workflow) -> `L3_sops/chief-of-staff-workflow.md`
+- L3_sops/gogcli-workspace-access (sop tags=gogcli,google-workspace,source-intake,executive-assistant) -> `L3_sops/gogcli-workspace-access.md`
+- L3_sops/subagent-dispatch-for-chief-of-staff (sop tags=subagents,chief-of-staff,delegation,executive-assistant) -> `L3_sops/subagent-dispatch-for-chief-of-staff.md`
+- concepts/memory-scoping-and-context-hierarchy (concept tags=memory,context,chief-of-staff,executive-assistant) -> `concepts/memory-scoping-and-context-hierarchy.md`
+- patterns/agent-tool-guardrails (pattern tags=guardrails,tools,source-access,executive-assistant) -> `patterns/agent-tool-guardrails.md`
+- patterns/daily-weekly-briefing (pattern tags=briefing,weekly-planning,daily-planning,executive-assistant) -> `patterns/daily-weekly-briefing.md`
+- patterns/first-briefing-dry-run (pattern tags=briefing,dry-run,chief-of-staff,executive-assistant) -> `patterns/first-briefing-dry-run.md`
+- patterns/reasoning-and-planning-prompt-snippets (pattern tags=prompter,reasoning,planning,chain-of-thought,agents) -> `patterns/reasoning-and-planning-prompt-snippets.md`
+- patterns/reusable-prompt-library (pattern tags=prompter,prompt-library,templates,snippets) -> `patterns/reusable-prompt-library.md`
+- patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
+- projects/executive-assistant/README (project tags=executive-assistant,chief-of-staff,prompter,token-economy) -> `projects/executive-assistant/README.md`
+- projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven) -> `projects/prompter/README.md`
+- L3_sops/external-source-adoption (sop tags=source-adoption,research,wiki-write) -> `L3_sops/external-source-adoption.md`
+- L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
+- queries/2026-05-11-chief-of-staff-readiness-dry-run (query tags=briefing,dry-run,chief-of-staff,readiness) -> `queries/2026-05-11-chief-of-staff-readiness-dry-run.md`
+- queries/2026-05-11-onboarding-pass-1 (query tags=onboarding,prompt-system,wanderland,screenery,chief-of-staff) -> `queries/2026-05-11-onboarding-pass-1.md`

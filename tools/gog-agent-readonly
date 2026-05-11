@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+gog_bin="${GOG_BIN:-$HOME/.local/bin/gog}"
+
+die() {
+  printf 'gog-agent-readonly blocked command: %s\n' "$*" >&2
+  exit 2
+}
+
+if [[ ! -x "$gog_bin" ]]; then
+  printf 'gog-agent-readonly could not find executable gog at %s\n' "$gog_bin" >&2
+  exit 127
+fi
+
+if [[ $# -eq 0 ]]; then
+  exec "$gog_bin" --gmail-no-send --no-input --help
+fi
+
+case " $* " in
+  *" send "*|*" delete "*|*" rm "*|*" del "*|*" trash "*|*" upload "*|*" mkdir "*|*" move "*|*" rename "*|*" share "*|*" unshare "*|*" copy "*|*" create "*|*" update "*|*" forward "*|*" autoreply "*|*" archive "*|*" mark-read "*|*" unread "*|*" logout "*)
+    die "$*"
+    ;;
+esac
+
+allowed=false
+case "${1:-}" in
+  --version|-h|--help|version|status|me|whoami)
+    allowed=true
+    ;;
+  auth)
+    case "${2:-}" in
+      status|list|doctor|services)
+        allowed=true
+        ;;
+      keyring)
+        [[ $# -eq 2 ]] && allowed=true
+        ;;
+      credentials)
+        [[ "${3:-}" == "list" && $# -eq 3 ]] && allowed=true
+        ;;
+    esac
+    ;;
+  gmail|mail|email)
+    case "${2:-}" in
+      search|find|query|ls|list|get|info|show|raw|url|history)
+        allowed=true
+        ;;
+    esac
+    ;;
+  calendar)
+    case "${2:-}" in
+      events|get|list|today|url)
+        allowed=true
+        ;;
+    esac
+    ;;
+  drive|drv)
+    case "${2:-}" in
+      ls|search|tree|du|inventory|get|permissions|url|drives|activity|raw)
+        allowed=true
+        ;;
+    esac
+    ;;
+  docs)
+    case "${2:-}" in
+      cat|info|get)
+        allowed=true
+        ;;
+    esac
+    ;;
+  sheets)
+    case "${2:-}" in
+      get|info)
+        allowed=true
+        ;;
+    esac
+    ;;
+  tasks)
+    case "${2:-}" in
+      list|get)
+        allowed=true
+        ;;
+    esac
+    ;;
+  people)
+    case "${2:-}" in
+      me|get)
+        allowed=true
+        ;;
+    esac
+    ;;
+esac
+
+if [[ "$allowed" != true ]]; then
+  die "$*"
+fi
+
+exec "$gog_bin" --gmail-no-send --no-input "$@"
