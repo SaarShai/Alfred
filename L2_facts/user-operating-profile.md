@@ -32,6 +32,7 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 - Current top work priority: Wanderland, the user's company, and Screenery, its product.
 - First productized workflow to build inside the chief-of-staff system: reusable prompt generation with known snippets, sections, and adaptable templates.
 - Daily briefing preferences should be built iteratively as the system learns what is useful.
+- The assistant's name for this project is Alfred, as in Alfred to the user's Bruce Wayne.
 
 ## Communication Style
 
