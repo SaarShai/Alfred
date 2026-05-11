@@ -49,6 +49,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[patterns/proactive-idea-generation]] - when Alfred should proactively surface useful ideas
 - [[patterns/assistant-task-routing]] - route requests to `/pa`, PROMPTER, office hours, plan review, wiki-write, or external coordination
 - [[patterns/agent-tool-guardrails]] - source, command, dry-run, approval, verification, and audit guardrails for tools
+- [[patterns/agentic-system-best-practices]] - how to evaluate popular agent repos and adopt only reversible, provenance-backed practices
 - [[patterns/structured-check-ins]] - explicit priority, preference, decision, and follow-up check-ins
 - [[patterns/daily-weekly-briefing]] - manual daily/weekly briefing flow and source order
 - [[patterns/first-briefing-dry-run]] - dry-run daily briefing, weekly planning, and attention scan before broad source access
@@ -92,6 +93,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[adapters/README]] — project-local agent adapters
 - `token_economy/code_map.py` — compact structural code-map provider
 - [[raw/2026-05-11-gstack-source-summary]] - gstack methodology source note and local adoption rationale
+- [[raw/2026-05-11-gstack-depth-and-agent-repo-refresh]] - deeper gstack inspection plus refreshed popular agent repo best-practices watchlist
 - [[raw/2026-05-11-executive-assistant-landscape]] - related repo landscape and adoption matrix
 - [[raw/2026-05-11-gogcli-install-source]] - gog CLI install source, checksum, installed path, and auth status
 - [[raw/2026-05-11-additional-chief-of-staff-research]] - additional memory, guardrail, MCP, and evaluation research
