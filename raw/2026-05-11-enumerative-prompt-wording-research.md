@@ -41,7 +41,7 @@ Primary and official sources checked on 2026-05-11.
 
 Saar's phrases are directionally useful for a weekly research/adoption agent, but the raw form is too flat. The better form is grouped enumerations:
 
-- `source spectrum`: publications, posts, papers, guides, release notes, repos, tools, plugins, frameworks, platforms, skills, examples.
+- `source spectrum`: publications, posts, papers, best practices, guides, release notes, repos, tools, plugins, frameworks, platforms, skills, examples.
 - `improvement axes`: speed, productivity, quality, reliability, safety, cost, leverage, output quality, workflow fit.
 - `adoption actions`: adopt, implement, install, test, learn from, sign up for, defer, reject.
 

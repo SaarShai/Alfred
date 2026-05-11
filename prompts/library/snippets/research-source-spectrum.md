@@ -19,7 +19,7 @@ default: false
 
 <!-- promptkit:start -->
 Research source spectrum:
-- Publications, papers, essays, technical posts, guides, tutorials, examples, release notes, announcements, benchmarks, skills, tools, GitHub repositories, open source software, plugins, frameworks, platforms, integrations, and credible discussion threads.
+- Publications, papers, essays, technical posts, best practices, guides, tutorials, examples, release notes, announcements, benchmarks, skills, tools, GitHub repositories, open source software, plugins, frameworks, platforms, integrations, and credible discussion threads.
 - Prefer primary sources, official docs, papers, release notes, source code, and maintainer-written material.
 <!-- promptkit:end -->
 
