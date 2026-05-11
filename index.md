@@ -70,6 +70,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[patterns/prompt-from-instruction]] - default composition pattern (fallback when no specialized pattern fits)
 - [[patterns/reusable-prompt-library]] - executable local prompt templates/snippets and `./te prompt` composition workflow
 - [[patterns/reasoning-and-planning-prompt-snippets]] - researched snippets for step-by-step reasoning, planning, alternatives, self-checking, and tool reflection
+- [[patterns/enumerative-research-prompting]] - grouped source-spectrum, improvement-axis, and adoption-decision wording for broad research prompts
 - `prompts/library/templates/` - prompt skeletons rendered by `./te prompt`
 - `prompts/library/snippets/` - reusable prompt sections for stable context, style, and constraints
 - [[templates/prompt-snippet.template]] - fillable template for new reusable prompt snippets
@@ -92,6 +93,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[raw/2026-05-11-gogcli-install-source]] - gog CLI install source, checksum, installed path, and auth status
 - [[raw/2026-05-11-additional-chief-of-staff-research]] - additional memory, guardrail, MCP, and evaluation research
 - [[raw/2026-05-11-reasoning-prompting-research]] - primary-source summary for step-by-step, plan-then-solve, self-consistency, ReAct, and reasoning-model prompting
+- [[raw/2026-05-11-enumerative-prompt-wording-research]] - source summary on when broad synonym/category lists help or hurt prompts
 - [[L3_sops/external-source-adoption]] - safe workflow for reviewing and adapting external sources
 - `prompts/subagents/chief-of-staff-*.prompt.md` - prompt packets for briefing extraction, source inventory, research, review, and wiki documentation
 - [[templates/page.template]] — wiki page template

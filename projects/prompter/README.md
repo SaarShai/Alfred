@@ -76,6 +76,7 @@ See [[L3_sops/generate-prompt-from-instruction]] for the canonical playbook. Sum
 - 2026-05-08: project scaffolded. Seed pages: this README, [[L3_sops/generate-prompt-from-instruction]], [[concepts/prompt-anatomy]], [[patterns/prompt-from-instruction]], [[templates/prompt-snippet.template]]. Content grows as the user adds references, snippets, and preferences.
 - 2026-05-11: added `./te prompt` and a starter reusable prompt library for chief-of-staff style, reversible action boundaries, Wanderland/Screenery context, prompt generation, product review, and executive briefing.
 - 2026-05-11: added research-backed reasoning/planning snippets, including Saar's "think carefully, step by step, and..." phrase, plan-then-solve, self-check, alternatives, tool reflection, and reasoning-model success criteria.
+- 2026-05-11: added enumerative research/adoption prompting rules and snippets for source spectrum, improvement axes, and adoption decisions.
 
 ## Open questions
 

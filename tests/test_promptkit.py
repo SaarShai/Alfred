@@ -88,6 +88,28 @@ class PromptKitTest(unittest.TestCase):
         self.assertIn("plan-then-solve", slugs)
         self.assertIn("Think carefully, step by step", packet["rendered_prompt"])
 
+    def test_prompt_draft_selects_research_adoption_template(self) -> None:
+        result = subprocess.run(
+            [
+                str(ROOT / "te"),
+                "prompt",
+                "draft",
+                "research publications tools github repos and decide what to adopt or test",
+                "--format",
+                "json",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        packet = json.loads(result.stdout)
+        self.assertEqual(packet["template"]["slug"], "research-adoption-review")
+        slugs = {entry["slug"] for entry in packet["snippets"]}
+        self.assertIn("research-source-spectrum", slugs)
+        self.assertIn("improvement-axes", slugs)
+        self.assertIn("adoption-decision-actions", slugs)
+
 
 if __name__ == "__main__":
     unittest.main()

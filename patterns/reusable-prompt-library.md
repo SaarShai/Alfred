@@ -48,6 +48,9 @@ Use when the user needs prompts assembled from repeated sections, known company/
 - `self-check-before-final`: verify against criteria before final answer.
 - `compare-alternatives-before-recommendation`: compare plausible approaches before choosing.
 - `tool-use-reflect-act`: ReAct-style planning and tool result reflection.
+- `research-source-spectrum`: grouped source types for broad discovery.
+- `improvement-axes`: grouped quality/productivity criteria.
+- `adoption-decision-actions`: adoption/test/learn/defer/reject decision output.
 
 ## Related
 
@@ -55,3 +58,4 @@ Use when the user needs prompts assembled from repeated sections, known company/
 - [[L3_sops/generate-prompt-from-instruction]]
 - [[concepts/prompt-anatomy]]
 - [[patterns/reasoning-and-planning-prompt-snippets]]
+- [[patterns/enumerative-research-prompting]]
