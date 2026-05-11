@@ -50,10 +50,12 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[patterns/assistant-task-routing]] - route requests to `/pa`, PROMPTER, office hours, plan review, wiki-write, or external coordination
 - [[patterns/agent-tool-guardrails]] - source, command, dry-run, approval, verification, and audit guardrails for tools
 - [[patterns/agentic-system-best-practices]] - how to evaluate popular agent repos and adopt only reversible, provenance-backed practices
+- [[patterns/chief-of-staff-state-loop]] - explicit intake, retrieve, plan, decide, execute, verify, log, and learn loop
 - [[patterns/structured-check-ins]] - explicit priority, preference, decision, and follow-up check-ins
 - [[patterns/daily-weekly-briefing]] - manual daily/weekly briefing flow and source order
 - [[patterns/first-briefing-dry-run]] - dry-run daily briefing, weekly planning, and attention scan before broad source access
 - [[L3_sops/chief-of-staff-workflow]] - canonical chief-of-staff workflow and output contracts
+- [[L3_sops/instruction-fidelity-and-drift-control]] - trust, drift, reversibility, source-permission, verification, and action-ledger protocol
 - [[L3_sops/chief-of-staff-onboarding]] - first-run onboarding, preference capture, and source queue setup
 - [[L3_sops/chief-of-staff-evaluation]] - retrieval, delegation, source, tool, regression, and wiki gates before promotion
 - [[L3_sops/approved-source-intake]] - safe workflow for adding named external folders/docs to the source registry
@@ -63,6 +65,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[templates/daily-weekly-briefing.template]] - briefing output template
 - [[templates/structured-check-in.template]] - check-in output template
 - [[templates/chief-of-staff-onboarding.template]] - first-run onboarding capture template
+- [[templates/action-ledger.template]] - audit trail for meaningful or higher-risk actions
 - [[templates/what-needs-attention.template]] - attention-scan output template
 - `skills/executive-assistant/SKILL.md` - local skill entrypoint for chief-of-staff work
 

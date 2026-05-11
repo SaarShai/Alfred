@@ -11,7 +11,7 @@ from typing import Any
 
 from .config import detect_agent, load_config
 from .bench import run_framework_smoke
-from .chief import briefing as chief_briefing, onboarding_packet, readiness as chief_readiness
+from .chief import briefing as chief_briefing, onboarding_packet, preflight as chief_preflight, readiness as chief_readiness
 from .code_map import code_map
 from .codex_app_server import codex_fresh_thread_plan, run_codex_ask_old_thread, run_codex_fresh_thread
 from .context import ask_old_session_plan, checkpoint, current_codex_transcript, fresh_launch_commands, host_context_controls, lint_handoff, meter, should_auto_relay, status_for_files, write_pending_relay
@@ -388,6 +388,8 @@ def cmd_chief(args: argparse.Namespace) -> int:
         print_json(onboarding_packet(cfg.repo_root))
     elif args.chief_cmd == "briefing":
         print_json(chief_briefing(cfg.repo_root, args.horizon))
+    elif args.chief_cmd == "preflight":
+        print_json(chief_preflight(cfg.repo_root, args.task))
     return 0
 
 
@@ -628,6 +630,9 @@ def build_parser() -> argparse.ArgumentParser:
     chiefsub = chief.add_subparsers(dest="chief_cmd", required=True)
     chiefsub.add_parser("readiness").set_defaults(func=cmd_chief)
     chiefsub.add_parser("onboarding").set_defaults(func=cmd_chief)
+    cp = chiefsub.add_parser("preflight", help="Build an instruction-fidelity and reversibility check packet")
+    cp.add_argument("task")
+    cp.set_defaults(func=cmd_chief)
     cb = chiefsub.add_parser("briefing")
     cb.add_argument("--horizon", choices=["daily", "weekly", "attention"], default="daily")
     cb.set_defaults(func=cmd_chief)

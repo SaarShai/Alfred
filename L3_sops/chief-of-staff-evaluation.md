@@ -32,12 +32,17 @@ Use before promoting a new chief-of-staff capability, source, connector, memory 
    - Confirm source exists in [[L2_facts/approved-information-sources]] or remains in [[L2_facts/source-intake-queue]].
 4. Tool guardrail gate:
    - Confirm read-only/dry-run/no-send flags or an equivalent local guard.
-5. Regression gate:
+5. Instruction-fidelity gate:
+   - `./te chief preflight "<task>"`
+   - Confirm reversibility, source permissions, decision gates, verification plan, and ledger path.
+6. State-loop gate:
+   - Confirm the workflow reached verify/log/learn states or explains why a state was skipped.
+7. Regression gate:
    - `python3 -m unittest tests/test_chief_of_staff_system.py`
-6. Wiki gate:
+8. Wiki gate:
    - `./te wiki index`
    - `./te wiki lint --strict --fail-on-error`
-7. Chief CLI gate:
+9. Chief CLI gate:
    - `./te chief readiness`
    - `./te chief briefing --horizon daily`
 
@@ -47,12 +52,16 @@ Use before promoting a new chief-of-staff capability, source, connector, memory 
 - No unapproved source access.
 - No hidden broad scans.
 - No account mutations without explicit user approval.
+- Reversibility and undo path are known before action.
+- Meaningful actions leave an action ledger, git, log, or final-summary trail.
 - New capability has at least one retrieval or classifier test when practical.
 - Durable memory changes cite source, date, and verification command.
 
 ## Related
 
 - [[patterns/agent-tool-guardrails]]
+- [[L3_sops/instruction-fidelity-and-drift-control]]
+- [[patterns/chief-of-staff-state-loop]]
 - [[concepts/memory-scoping-and-context-hierarchy]]
 - `tests/test_chief_of_staff_system.py`
 - [[raw/2026-05-11-additional-chief-of-staff-research]]

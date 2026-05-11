@@ -18,9 +18,12 @@ Compact pointers. Fetch details on demand.
 - L3_sops/chief-of-staff-onboarding (sop tags=chief-of-staff,onboarding,executive-assistant,preferences) -> `L3_sops/chief-of-staff-onboarding.md`
 - L3_sops/chief-of-staff-workflow (sop tags=chief-of-staff,executive-assistant,workflow) -> `L3_sops/chief-of-staff-workflow.md`
 - L3_sops/gogcli-workspace-access (sop tags=gogcli,google-workspace,source-intake,executive-assistant) -> `L3_sops/gogcli-workspace-access.md`
+- L3_sops/instruction-fidelity-and-drift-control (sop tags=instruction-fidelity,drift-control,trust,chief-of-staff,executive-assistant) -> `L3_sops/instruction-fidelity-and-drift-control.md`
 - L3_sops/subagent-dispatch-for-chief-of-staff (sop tags=subagents,chief-of-staff,delegation,executive-assistant) -> `L3_sops/subagent-dispatch-for-chief-of-staff.md`
 - concepts/memory-scoping-and-context-hierarchy (concept tags=memory,context,chief-of-staff,executive-assistant) -> `concepts/memory-scoping-and-context-hierarchy.md`
 - patterns/agent-tool-guardrails (pattern tags=guardrails,tools,source-access,executive-assistant) -> `patterns/agent-tool-guardrails.md`
+- patterns/agentic-system-best-practices (pattern tags=agents,best-practices,executive-assistant,research,adoption) -> `patterns/agentic-system-best-practices.md`
+- patterns/chief-of-staff-state-loop (pattern tags=state-loop,chief-of-staff,executive-assistant,workflow,verification,instruction-fidelity,drift-control,trust) -> `patterns/chief-of-staff-state-loop.md`
 - patterns/daily-weekly-briefing (pattern tags=briefing,weekly-planning,daily-planning,executive-assistant) -> `patterns/daily-weekly-briefing.md`
 - patterns/first-briefing-dry-run (pattern tags=briefing,dry-run,chief-of-staff,executive-assistant) -> `patterns/first-briefing-dry-run.md`
 - patterns/reasoning-and-planning-prompt-snippets (pattern tags=prompter,reasoning,planning,chain-of-thought,agents) -> `patterns/reasoning-and-planning-prompt-snippets.md`

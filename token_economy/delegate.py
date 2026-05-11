@@ -32,7 +32,7 @@ WEB_CONTEXT_RE = re.compile(r"\b(web|online|latest|current|url|http|research|sur
 PATH_RE = re.compile(r"(?<![\w.-])(?:\.{0,2}/|/|[A-Za-z0-9_.-]+/)[^\s,;:]+")
 DOCUMENTATION_RE = re.compile(r"\b(durable|verified|wiki-documenter|documenter|document important|document (?:the )?result|document results|record memory|write memory|l3 sop|sop)\b", re.IGNORECASE)
 CHIEF_OF_STAFF_RE = re.compile(
-    r"\b(chief[- ]of[- ]staff|executive assistant|onboarding|set it all up|daily briefing|weekly briefing|weekly planning|plan my week|what needs my attention|attention scan|dry[- ]run|follow[- ]ups?|approved sources?|source intake|source queue|add (?:this )?(?:folder|source)|remember this (?:preference|work preference)|work preference|briefing|gog|google workspace)\b",
+    r"\b(chief[- ]of[- ]staff|executive assistant|instruction fidelity|drift control|drift|trust|follow my instructions|action ledger|reversibility|undo path|onboarding|set it all up|daily briefing|weekly briefing|weekly planning|plan my week|what needs my attention|attention scan|dry[- ]run|follow[- ]ups?|approved sources?|source intake|source queue|add (?:this )?(?:folder|source)|remember this (?:preference|work preference)|work preference|briefing|gog|google workspace)\b",
     re.IGNORECASE,
 )
 

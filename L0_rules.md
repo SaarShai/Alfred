@@ -9,5 +9,6 @@
 - At 20% estimated context used, run `./te context checkpoint`.
 - Document durable facts only after verified execution.
 - Keep work repo-local unless the user explicitly asks otherwise.
+- For chief-of-staff work, check instruction fidelity, reversibility, source permission, and verification before substantial action.
 - Use `/pa` or `/btw` for context-light routing; keep normal prompt hooks quiet.
 - Use cheapest capable model/subagent; keep delegation briefs compact.

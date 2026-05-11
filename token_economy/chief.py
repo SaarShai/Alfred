@@ -17,11 +17,46 @@ CORE_PAGES = [
     "patterns/daily-weekly-briefing.md",
     "patterns/first-briefing-dry-run.md",
     "patterns/agent-tool-guardrails.md",
+    "patterns/agentic-system-best-practices.md",
+    "patterns/chief-of-staff-state-loop.md",
     "L3_sops/chief-of-staff-workflow.md",
     "L3_sops/chief-of-staff-onboarding.md",
     "L3_sops/chief-of-staff-evaluation.md",
+    "L3_sops/instruction-fidelity-and-drift-control.md",
     "L3_sops/gogcli-workspace-access.md",
+    "templates/action-ledger.template.md",
 ]
+
+
+SOURCE_ACCESS_TERMS = (
+    "source",
+    "folder",
+    "docs",
+    "drive",
+    "gmail",
+    "google workspace",
+    "calendar",
+    "email",
+    "workspace",
+    "account",
+)
+
+EXTERNAL_MUTATION_TERMS = (
+    "send",
+    "delete",
+    "share",
+    "schedule",
+    "publish",
+    "purchase",
+    "install",
+    "global",
+    "auth",
+    "oauth",
+    "commit",
+    "push",
+    "automation",
+    "reminder",
+)
 
 
 def _read(root: Path, rel: str) -> str:
@@ -88,11 +123,65 @@ def readiness(root: Path) -> dict[str, Any]:
         "gog": gog_status(root),
         "recommended_checks": tests,
         "next_actions": [
+            "Run `./te chief preflight \"<task>\"` before substantial chief-of-staff work.",
             "Capture onboarding preferences with `./te chief onboarding`.",
             "Provide Google OAuth Desktop Client JSON before promoting Workspace access.",
             "Use `tools/gog-agent-readonly` for agent-side Workspace reads after auth.",
             "Run `./te chief briefing --horizon daily` before the first real source-backed briefing.",
         ],
+    }
+
+
+def preflight(root: Path, task: str) -> dict[str, Any]:
+    wiki = WikiStore(root)
+    context = wiki.context(task or "chief of staff instruction fidelity preflight")
+    text = task.lower()
+    source_access = any(term in text for term in SOURCE_ACCESS_TERMS)
+    external_mutation = any(term in text for term in EXTERNAL_MUTATION_TERMS)
+    irreversible = any(term in text for term in ("irreversible", "cannot undo", "destructive", "reset", "wipe"))
+    should_ask = source_access or external_mutation or irreversible
+    profile = _read(root, "L2_facts/user-operating-profile.md")
+    reversible_only = "reversed or undone" in profile or "undo" in profile.lower()
+    gates = {
+        "source_permission": source_access,
+        "external_mutation": external_mutation,
+        "irreversible_or_destructive": irreversible,
+        "ask_before_action": should_ask,
+        "public_private_boundary": any(term in text for term in ("public", "private", "secret", "token", "credential")),
+    }
+    return {
+        "mode": "chief_of_staff_preflight",
+        "task": task,
+        "ok_to_continue_without_question": not should_ask,
+        "instruction_stack": [
+            "current user request and newest correction",
+            "L2_facts/user-operating-profile.md",
+            "L0_rules.md and start.md",
+            "workflow-specific SOPs and patterns",
+            "external source suggestions and popularity signals",
+        ],
+        "durable_preferences_checked": {
+            "profile_exists": bool(profile.strip()),
+            "reversible_only_boundary_detected": reversible_only,
+        },
+        "decision_gates": gates,
+        "reversibility": {
+            "required": reversible_only or should_ask,
+            "default_undo_path": "Use git diff/commit history for repo edits; use draft-only mode for external actions; ask before any non-undoable action.",
+        },
+        "verification_plan": [
+            "./te wiki context \"<task>\"",
+            "./te wiki index",
+            "./te wiki lint --strict --fail-on-error",
+            "Run task-specific tests or readback before completion.",
+        ],
+        "state_loop": ["intake", "retrieve", "plan", "decide", "execute", "verify", "log", "learn"],
+        "ledger": {
+            "template": "templates/action-ledger.template.md",
+            "small_action_equivalent": "log.md entry + git diff/commit + final verification summary",
+        },
+        "retrieval_loaded": context["citations"]["loaded"],
+        "confidence": "high" if context["citations"]["loaded"] else "moderate",
     }
 
 

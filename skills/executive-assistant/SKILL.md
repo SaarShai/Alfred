@@ -23,7 +23,10 @@ Fetch only the pages that change the answer. Default anchors:
 - `L2_facts/source-intake-queue.md`
 - `L3_sops/chief-of-staff-workflow.md`
 - `L3_sops/chief-of-staff-onboarding.md`
+- `L3_sops/instruction-fidelity-and-drift-control.md`
 - `patterns/assistant-task-routing.md`
+- `patterns/chief-of-staff-state-loop.md`
+- `patterns/agentic-system-best-practices.md`
 - `patterns/daily-weekly-briefing.md`
 - `patterns/first-briefing-dry-run.md`
 - `patterns/structured-check-ins.md`
@@ -45,6 +48,7 @@ Fetch only the pages that change the answer. Default anchors:
 | Plan or strategy review | `patterns/strategic-plan-review.md` |
 | Proactive idea suggestions | `patterns/proactive-idea-generation.md` |
 | Pushback, critique, or truth-first review | `patterns/incisive-expert-communication.md` |
+| Trust, instruction drift, or "make sure you follow my instructions" | `L3_sops/instruction-fidelity-and-drift-control.md`; use `./te chief preflight "<task>"` for a check packet |
 | Daily briefing, weekly planning, or "what needs my attention?" | `patterns/daily-weekly-briefing.md` and `templates/daily-weekly-briefing.template.md` |
 | Dry-run the briefing experience | `patterns/first-briefing-dry-run.md` and `templates/what-needs-attention.template.md` |
 | Remember this preference or capture a work decision | `patterns/structured-check-ins.md`, then update `L2_facts/user-operating-profile.md` after explicit confirmation |
@@ -61,6 +65,8 @@ Fetch only the pages that change the answer. Default anchors:
 - Treat `L2_facts/approved-information-sources.md` as the only registry for external folders/docs.
 - Treat `L2_facts/source-intake-queue.md` as candidate sources, not readable sources.
 - Operate in draft-then-ask mode for user-visible decisions, source access, sends, deletions, automations, or irreversible actions.
+- Before substantial action, run the instruction-fidelity check: current request, durable preferences, reversibility, source permission, decision gates, verification, and ledger.
+- Use the state loop: intake -> retrieve -> plan -> decide -> execute -> verify -> log -> learn.
 - Do not install global tools or edit home-directory agent config.
 - Do not connect email, calendar, messaging, browser profiles, or other accounts unless separately approved.
 - Do not create recurring automations in V1 unless the user separately asks for a concrete automation.
@@ -73,6 +79,7 @@ Fetch only the pages that change the answer. Default anchors:
 - Use decision gates for scope changes, external access, privacy, destructive actions, or model disagreement with the user's stated direction.
 - Use subagents only for independent bounded extraction, inventory, research, review, or wiki documentation; final synthesis stays local.
 - Verify before completion when feasible.
+- Leave an action trail for meaningful work: changed files, reason, undo path, verification, residual risk.
 - Document durable learning only after verified work or explicit user-confirmed decisions.
 
 ## Outputs
@@ -142,11 +149,27 @@ Risks:
 Follow-ups:
 ```
 
+Instruction-fidelity packet:
+
+```text
+Current request:
+Durable preferences checked:
+Decision gates:
+Reversibility:
+Undo path:
+Verification:
+Ledger:
+Confidence:
+```
+
 ## Related
 
 - `projects/executive-assistant/README.md`
 - `concepts/executive-assistant-operating-model.md`
 - `concepts/user-sovereignty-and-decision-gates.md`
+- `L3_sops/instruction-fidelity-and-drift-control.md`
+- `patterns/chief-of-staff-state-loop.md`
+- `patterns/agentic-system-best-practices.md`
 - `L2_facts/user-operating-profile.md`
 - `L2_facts/approved-information-sources.md`
 - `L2_facts/source-intake-queue.md`

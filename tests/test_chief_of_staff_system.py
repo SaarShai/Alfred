@@ -42,10 +42,18 @@ class ChiefOfStaffSystemTests(unittest.TestCase):
         self.assertIn("L2_facts/approved-information-sources.md", loaded)
         self.assertFalse(any(path.startswith("raw/") for path in loaded))
 
+    def test_instruction_fidelity_retrieves_drift_controls(self) -> None:
+        loaded = self.loaded_paths("make sure you follow my instructions and do not drift")
+        self.assertIn("L3_sops/instruction-fidelity-and-drift-control.md", loaded)
+        self.assertIn("patterns/chief-of-staff-state-loop.md", loaded)
+
     def test_delegate_routes_chief_of_staff_work(self) -> None:
         route = classify("prepare my weekly briefing from approved sources")
         self.assertEqual(route.worker, "chief-of-staff-worker")
         self.assertTrue(route.parallelizable)
+
+        drift_route = classify("check instruction fidelity and drift control before action")
+        self.assertEqual(drift_route.worker, "chief-of-staff-worker")
 
         plan = delegation_plan("extract follow-ups from these notes for my chief of staff")
         self.assertEqual(plan["route"]["worker"], "chief-of-staff-worker")
@@ -76,6 +84,21 @@ class ChiefOfStaffSystemTests(unittest.TestCase):
         briefing_packet = json.loads(briefing.stdout)
         self.assertEqual(briefing_packet["mode"], "chief_of_staff_briefing")
         self.assertIn("patterns/daily-weekly-briefing.md", briefing_packet["sources_checked"])
+
+        preflight = subprocess.run(
+            [str(ROOT / "te"), "chief", "preflight", "install a global tool and connect Google Workspace"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=30,
+        )
+        self.assertEqual(preflight.returncode, 0, preflight.stderr)
+        preflight_packet = json.loads(preflight.stdout)
+        self.assertEqual(preflight_packet["mode"], "chief_of_staff_preflight")
+        self.assertFalse(preflight_packet["ok_to_continue_without_question"])
+        self.assertTrue(preflight_packet["decision_gates"]["source_permission"])
+        self.assertTrue(preflight_packet["decision_gates"]["external_mutation"])
+        self.assertEqual(preflight_packet["ledger"]["template"], "templates/action-ledger.template.md")
 
     def test_gog_readonly_wrapper_blocks_mutations(self) -> None:
         wrapper = ROOT / "tools" / "gog-agent-readonly"

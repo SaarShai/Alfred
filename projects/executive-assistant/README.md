@@ -37,6 +37,7 @@ The workspace owns:
 - Bounded subagent dispatch for extraction, source inventory, research, review, and wiki documentation.
 - Prompt generation through PROMPTER.
 - Durable memory through repo-local wiki pages and SOPs.
+- Instruction fidelity, drift control, action ledgers, and explicit state-loop execution.
 - Capability evaluation through local retrieval, delegation, source, guardrail, and regression gates.
 - A small `./te chief` CLI surface for readiness, onboarding, and manual briefing packets.
 - A small `./te prompt` CLI surface for rendering reusable prompt templates and snippets.
@@ -73,6 +74,9 @@ Use [[concepts/executive-assistant-operating-model]] as the default frame:
 - Incisive expert communication: [[patterns/incisive-expert-communication]]
 - Proactive idea generation: [[patterns/proactive-idea-generation]]
 - Structured check-ins: [[patterns/structured-check-ins]]
+- Instruction fidelity and drift control: [[L3_sops/instruction-fidelity-and-drift-control]]
+- Chief-of-staff state loop: [[patterns/chief-of-staff-state-loop]]
+- Agentic system best practices: [[patterns/agentic-system-best-practices]]
 - Daily/weekly briefing: [[patterns/daily-weekly-briefing]]
 - First briefing dry run: [[patterns/first-briefing-dry-run]]
 - Reusable prompt library: [[patterns/reusable-prompt-library]]
@@ -100,6 +104,7 @@ Use [[concepts/executive-assistant-operating-model]] as the default frame:
 - A baked `gog-readonly` or `gog-agent-safe` binary after OAuth works and Go installation/build is explicitly approved.
 - MCP-style source adapters only after a connector security review and source-specific approval.
 - Optional search/graph/daemon systems only after a local corpus need is proven.
+- Persistent action-ledger storage if lightweight log/git trails become insufficient.
 
 ## Related
 

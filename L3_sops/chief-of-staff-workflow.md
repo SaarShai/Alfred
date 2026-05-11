@@ -30,14 +30,18 @@ Use when the user asks for a chief of staff, executive assistant, onboarding, of
    - Read [[L2_facts/approved-information-sources]] before touching any external folder/doc source.
    - Read [[L2_facts/source-intake-queue]] when a source is requested but not yet verified.
    - If a source is not registered, use [[L3_sops/approved-source-intake]] before inspection.
-3. Clarify intent:
+3. Run instruction-fidelity preflight:
+   - Use [[L3_sops/instruction-fidelity-and-drift-control]] for trust, drift, reversibility, source permission, decision gates, and verification checks.
+   - Use [[patterns/chief-of-staff-state-loop]] as the default loop: intake -> retrieve -> plan -> decide -> execute -> verify -> log -> learn.
+   - For machine-readable checks, run `./te chief preflight "<task>"`.
+4. Clarify intent:
    - Goal.
    - Success criteria.
    - Audience.
    - Deadline or cadence.
    - Constraints and explicit non-goals.
    - Priority, preference, decision, or follow-up check-in when the task asks the assistant to "listen" or remember.
-4. Route:
+5. Route:
    - Quick work -> [[patterns/assistant-task-routing]]
    - First-run setup -> [[L3_sops/chief-of-staff-onboarding]]
    - Idea shaping -> [[patterns/executive-office-hours]]
@@ -50,17 +54,18 @@ Use when the user asks for a chief of staff, executive assistant, onboarding, of
    - Prompt generation -> [[L3_sops/generate-prompt-from-instruction]]
    - Proactive idea generation -> [[patterns/proactive-idea-generation]]
    - Incisive critique and pushback -> [[patterns/incisive-expert-communication]]
-5. Apply decision gates:
+6. Apply decision gates:
    - Use [[concepts/user-sovereignty-and-decision-gates]] for scope, access, privacy, destructive, or user-challenge decisions.
-6. Execute or plan:
+7. Execute or plan:
    - In normal execution mode, implement and verify.
    - For plan requests, produce a decision-complete plan.
    - For daily/weekly briefings, use manual-command flow and approved sources only.
    - For subagents, keep final synthesis in the main agent and accept only compact result packets.
    - Surface useful ideas proactively when they are relevant, reversible, and tied to current priorities.
-7. Preserve memory:
+8. Preserve memory:
    - Write durable wiki memory only after verified work or user-confirmed decisions.
    - Store only work preferences, approved sources, explicit decisions, and reusable workflows.
+   - Record meaningful actions with [[templates/action-ledger.template]] or an equivalent `log.md`/git/final-summary trail.
    - Update `log.md` and pointers when pages change.
 
 ## Output Contracts
@@ -108,11 +113,23 @@ Subagent packet:
 - Risks.
 - Follow-ups.
 
+Instruction-fidelity packet:
+
+- Current request.
+- Durable preferences checked.
+- Decision gates triggered.
+- Reversibility and undo path.
+- Verification plan.
+- Ledger path.
+- Confidence.
+
 ## Related
 
 - [[projects/executive-assistant/README]]
 - [[patterns/assistant-task-routing]]
 - [[L3_sops/chief-of-staff-onboarding]]
+- [[L3_sops/instruction-fidelity-and-drift-control]]
+- [[patterns/chief-of-staff-state-loop]]
 - [[patterns/daily-weekly-briefing]]
 - [[patterns/first-briefing-dry-run]]
 - [[patterns/structured-check-ins]]
@@ -123,4 +140,5 @@ Subagent packet:
 - [[L2_facts/user-operating-profile]]
 - [[L2_facts/approved-information-sources]]
 - [[L2_facts/source-intake-queue]]
+- [[templates/action-ledger.template]]
 - [[skills/executive-assistant/SKILL]]
