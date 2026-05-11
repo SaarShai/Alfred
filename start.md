@@ -44,7 +44,7 @@ Load only when triggered:
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Prompt generation / reusable prompt template / prompt snippets | `L3_sops/generate-prompt-from-instruction.md`; `patterns/reusable-prompt-library.md`; `patterns/reasoning-and-planning-prompt-snippets.md`; `patterns/enumerative-research-prompting.md` |
-| Executive assistant / chief of staff / onboarding / office hours / strategic review / daily briefing / weekly planning / what needs my attention / remember this preference / add this folder or source / launch subagents | `skills/executive-assistant/SKILL.md` |
+| Executive assistant / chief of staff / onboarding / office hours / strategic review / daily briefing / weekly planning / what needs my attention / remember this preference / add this folder or source / launch subagents / proactive ideas / pushback | `skills/executive-assistant/SKILL.md`; `patterns/proactive-idea-generation.md`; `patterns/incisive-expert-communication.md` |
 | Before completion claim | `skills/verification-before-completion/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |

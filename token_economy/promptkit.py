@@ -12,6 +12,7 @@ from .wiki import parse_frontmatter, parse_tags, query_tokens
 PLACEHOLDER_RE = re.compile(r"\{\{([A-Za-z0-9_-]+)\}\}")
 PROMPT_START = "<!-- promptkit:start -->"
 PROMPT_END = "<!-- promptkit:end -->"
+PROMPT_STRUCTURE_RE = re.compile(r"\b(prompt engineering|prompt construction|writing prompts|prompt about prompts|reusable prompt)\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -186,7 +187,7 @@ def select_template(root: Path, requirement: str, template_slug: str | None = No
     raise KeyError("no prompt templates found under prompts/library/templates")
 
 
-def select_snippets(root: Path, requirement: str, snippet_slugs: list[str] | None = None, limit: int = 5) -> list[PromptEntry]:
+def select_snippets(root: Path, requirement: str, snippet_slugs: list[str] | None = None, limit: int = 6) -> list[PromptEntry]:
     selected: list[PromptEntry] = []
     if snippet_slugs:
         selected.extend(resolve_entry(root, slug, "snippet") for slug in snippet_slugs)
@@ -213,9 +214,10 @@ def draft_prompt(
     var_pairs: list[str] | None = None,
 ) -> dict[str, Any]:
     template = select_template(root, requirement, template_slug)
-    snippets = select_snippets(root, requirement, snippet_slugs)
-    if not snippet_slugs and template.slug != "prompt-generator":
+    snippets = select_snippets(root, requirement, snippet_slugs, limit=12)
+    if not snippet_slugs and (template.slug != "prompt-generator" or not PROMPT_STRUCTURE_RE.search(requirement)):
         snippets = [snippet for snippet in snippets if "prompt-structure" not in snippet.slots]
+    snippets = snippets[:6]
     section_text = "\n\n".join(snippet.content for snippet in snippets if snippet.content)
     values = _default_values(requirement, _parse_vars(var_pairs))
     values.setdefault("sections", section_text)

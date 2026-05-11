@@ -70,6 +70,8 @@ Use [[concepts/executive-assistant-operating-model]] as the default frame:
 
 - Office hours: [[patterns/executive-office-hours]]
 - Strategic plan review: [[patterns/strategic-plan-review]]
+- Incisive expert communication: [[patterns/incisive-expert-communication]]
+- Proactive idea generation: [[patterns/proactive-idea-generation]]
 - Structured check-ins: [[patterns/structured-check-ins]]
 - Daily/weekly briefing: [[patterns/daily-weekly-briefing]]
 - First briefing dry run: [[patterns/first-briefing-dry-run]]

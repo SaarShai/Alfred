@@ -45,6 +45,8 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[L2_facts/source-intake-queue]] - candidate folders/docs/accounts waiting for intake and verification
 - [[patterns/executive-office-hours]] - idea shaping, prioritization, weekly planning, and forcing questions
 - [[patterns/strategic-plan-review]] - premise challenge, alternatives, scope modes, risk review, decision-complete plan
+- [[patterns/incisive-expert-communication]] - truth-first style, strongest counterargument, no flattery, confidence, and verification
+- [[patterns/proactive-idea-generation]] - when Alfred should proactively surface useful ideas
 - [[patterns/assistant-task-routing]] - route requests to `/pa`, PROMPTER, office hours, plan review, wiki-write, or external coordination
 - [[patterns/agent-tool-guardrails]] - source, command, dry-run, approval, verification, and audit guardrails for tools
 - [[patterns/structured-check-ins]] - explicit priority, preference, decision, and follow-up check-ins
@@ -84,6 +86,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 ## Recent Answers
 - [[queries/2026-05-11-chief-of-staff-readiness-dry-run]] - first readiness briefing for the chief-of-staff system and pending Google Workspace auth
 - [[queries/2026-05-11-onboarding-pass-1]] - first onboarding answers: Wanderland/Screenery priority, clear pushback, reversible-only boundary, and prompt system priority
+- [[queries/2026-05-11-incisive-expert-style-prompt]] - directness, counterargument-first, verification, confidence, no flattery, and proactive idea preference
 
 ## Extension Points
 - [[adapters/README]] — project-local agent adapters

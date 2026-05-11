@@ -51,6 +51,11 @@ Use when the user needs prompts assembled from repeated sections, known company/
 - `research-source-spectrum`: grouped source types for broad discovery.
 - `improvement-axes`: grouped quality/productivity criteria.
 - `adoption-decision-actions`: adoption/test/learn/defer/reject decision output.
+- `truth-first-pushback`: accuracy over approval and direct negative conclusions.
+- `strongest-counterargument-first`: challenge first, then state what survives.
+- `verify-facts-and-confidence`: fact checking and confidence levels.
+- `no-flattery-or-premise-validation`: no praise or premise validation before answering.
+- `proactive-idea-suggestions`: surface useful ideas with upside, risk, next action, and confidence.
 
 ## Related
 
@@ -59,3 +64,5 @@ Use when the user needs prompts assembled from repeated sections, known company/
 - [[concepts/prompt-anatomy]]
 - [[patterns/reasoning-and-planning-prompt-snippets]]
 - [[patterns/enumerative-research-prompting]]
+- [[patterns/incisive-expert-communication]]
+- [[patterns/proactive-idea-generation]]

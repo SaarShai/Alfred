@@ -48,6 +48,8 @@ Use when the user asks for a chief of staff, executive assistant, onboarding, of
    - Source intake -> [[L3_sops/approved-source-intake]]
    - Bounded delegated extraction/research/review -> [[L3_sops/subagent-dispatch-for-chief-of-staff]]
    - Prompt generation -> [[L3_sops/generate-prompt-from-instruction]]
+   - Proactive idea generation -> [[patterns/proactive-idea-generation]]
+   - Incisive critique and pushback -> [[patterns/incisive-expert-communication]]
 5. Apply decision gates:
    - Use [[concepts/user-sovereignty-and-decision-gates]] for scope, access, privacy, destructive, or user-challenge decisions.
 6. Execute or plan:
@@ -55,6 +57,7 @@ Use when the user asks for a chief of staff, executive assistant, onboarding, of
    - For plan requests, produce a decision-complete plan.
    - For daily/weekly briefings, use manual-command flow and approved sources only.
    - For subagents, keep final synthesis in the main agent and accept only compact result packets.
+   - Surface useful ideas proactively when they are relevant, reversible, and tied to current priorities.
 7. Preserve memory:
    - Write durable wiki memory only after verified work or user-confirmed decisions.
    - Store only work preferences, approved sources, explicit decisions, and reusable workflows.
@@ -113,6 +116,8 @@ Subagent packet:
 - [[patterns/daily-weekly-briefing]]
 - [[patterns/first-briefing-dry-run]]
 - [[patterns/structured-check-ins]]
+- [[patterns/proactive-idea-generation]]
+- [[patterns/incisive-expert-communication]]
 - [[L3_sops/approved-source-intake]]
 - [[L3_sops/subagent-dispatch-for-chief-of-staff]]
 - [[L2_facts/user-operating-profile]]

@@ -31,6 +31,8 @@ Fetch only the pages that change the answer. Default anchors:
 - `patterns/strategic-plan-review.md`
 - `patterns/reusable-prompt-library.md`
 - `patterns/reasoning-and-planning-prompt-snippets.md`
+- `patterns/incisive-expert-communication.md`
+- `patterns/proactive-idea-generation.md`
 
 ## Route
 
@@ -41,6 +43,8 @@ Fetch only the pages that change the answer. Default anchors:
 | Prompt generation | `L3_sops/generate-prompt-from-instruction.md`; use `./te prompt draft` when reusable templates/snippets fit; use `patterns/reasoning-and-planning-prompt-snippets.md` for step-by-step/planning phrases |
 | Idea shaping or prioritization | `patterns/executive-office-hours.md` |
 | Plan or strategy review | `patterns/strategic-plan-review.md` |
+| Proactive idea suggestions | `patterns/proactive-idea-generation.md` |
+| Pushback, critique, or truth-first review | `patterns/incisive-expert-communication.md` |
 | Daily briefing, weekly planning, or "what needs my attention?" | `patterns/daily-weekly-briefing.md` and `templates/daily-weekly-briefing.template.md` |
 | Dry-run the briefing experience | `patterns/first-briefing-dry-run.md` and `templates/what-needs-attention.template.md` |
 | Remember this preference or capture a work decision | `patterns/structured-check-ins.md`, then update `L2_facts/user-operating-profile.md` after explicit confirmation |
@@ -62,6 +66,10 @@ Fetch only the pages that change the answer. Default anchors:
 - Do not create recurring automations in V1 unless the user separately asks for a concrete automation.
 - Keep PROMPTER as a capability, not a separate active project, when the user asks for prompts.
 - Prefer the reusable prompt library for repeated sections, known product/company context, and prompt templates.
+- Be proactive about useful ideas; surface them with upside, risk, reversibility, next action, and confidence.
+- Do not praise questions or validate premises before answering.
+- Lead with the strongest counterargument when the user's apparent position is weak.
+- Say "unknown" rather than inventing, and use confidence levels when judgment matters.
 - Use decision gates for scope changes, external access, privacy, destructive actions, or model disagreement with the user's stated direction.
 - Use subagents only for independent bounded extraction, inventory, research, review, or wiki documentation; final synthesis stays local.
 - Verify before completion when feasible.
@@ -152,3 +160,5 @@ Follow-ups:
 - `patterns/structured-check-ins.md`
 - `patterns/reusable-prompt-library.md`
 - `patterns/reasoning-and-planning-prompt-snippets.md`
+- `patterns/incisive-expert-communication.md`
+- `patterns/proactive-idea-generation.md`

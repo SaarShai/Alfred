@@ -30,6 +30,8 @@ Do not attach "think step by step" to every prompt. For simple tasks it adds lat
 - `compare-alternatives-before-recommendation`: generate and compare plausible approaches before choosing.
 - `tool-use-reflect-act`: after tool output, assess quality and decide next action.
 - `reasoning-model-direct-success-criteria`: for reasoning models, avoid manual chain-of-thought and specify target quality.
+- `verify-facts-and-confidence`: check facts and state confidence.
+- `strongest-counterargument-first`: challenge weak premises before supporting them.
 
 ## Recommended Forms
 
@@ -39,6 +41,7 @@ Do not attach "think step by step" to every prompt. For simple tasks it adds lat
 - Review prompt: "Before finalizing, verify the answer against these criteria: {{criteria}}."
 - Strategy prompt: "Generate 2-3 viable approaches, compare tradeoffs, then recommend one."
 - Tool-use prompt: "After each tool result, check whether it changes the plan before taking the next action."
+- Incisive review prompt: "Lead with the strongest counterargument, then state what still survives."
 
 ## Avoid
 
@@ -52,3 +55,4 @@ Do not attach "think step by step" to every prompt. For simple tasks it adds lat
 - [[raw/2026-05-11-reasoning-prompting-research]]
 - [[patterns/reusable-prompt-library]]
 - [[concepts/prompt-anatomy]]
+- [[patterns/incisive-expert-communication]]

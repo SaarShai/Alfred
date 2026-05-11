@@ -110,6 +110,27 @@ class PromptKitTest(unittest.TestCase):
         self.assertIn("improvement-axes", slugs)
         self.assertIn("adoption-decision-actions", slugs)
 
+    def test_prompt_draft_selects_incisive_critique_snippets(self) -> None:
+        result = subprocess.run(
+            [
+                str(ROOT / "te"),
+                "prompt",
+                "draft",
+                "create a prompt to critique my plan, lead with the strongest counterargument, verify facts, and give confidence levels",
+                "--format",
+                "json",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        packet = json.loads(result.stdout)
+        slugs = {entry["slug"] for entry in packet["snippets"]}
+        self.assertIn("strongest-counterargument-first", slugs)
+        self.assertIn("verify-facts-and-confidence", slugs)
+        self.assertIn("truth-first-pushback", slugs)
+
 
 if __name__ == "__main__":
     unittest.main()
