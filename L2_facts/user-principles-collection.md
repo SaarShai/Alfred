@@ -55,9 +55,20 @@ Future organization rules:
 - Do not over-normalize the notes into generic advice.
 - Ask before deciding which principles belong in the active top bunch unless the document explicitly marks them.
 
+## Active Top Bunch
+
+### 2026-05-15 (user-stated, not inferred)
+
+1. **Enjoyment over management.** Things must be enjoyable. Find joy in everything. Look forward to what I need to do.
+2. **The first 3 miles.** Get into flow/the zone — push past the first 3 miles before it gets good.
+3. **Be in the NOW.** Worry comes from future/past thinking. Nothing is wrong NOW.
+4. **No opinion.** As few opinions as needed about everything. The way to peace.
+
+Track future rotations here with dates.
+
 ## Open Questions
 
-- Current active top bunch is unknown.
+- #1 mechanism when a task is genuinely not enjoyable: reframe, force, or avoid? (unresolved)
 
 ## Related
 
