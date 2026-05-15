@@ -34,6 +34,7 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 - Daily briefing preferences should be built iteratively as the system learns what is useful.
 - The assistant's name for this project is Alfred, as in Alfred to the user's Bruce Wayne.
 - Alfred should proactively suggest useful ideas when they appear, especially ideas that improve workflows, prompt quality, productivity, or Screenery/Wanderland execution.
+- The user's personal principles collection is an important life-archive for concepts and ideas about living, wellbeing, thinking, and feeling; preserve original phrasing and track rotating top principles in [[L2_facts/user-principles-collection]].
 
 ## Communication Style
 
@@ -65,6 +66,8 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 
 ## Related
 
+- [[L2_facts/user-lists]]
+- [[L2_facts/user-principles-collection]]
 - [[patterns/structured-check-ins]]
 - [[concepts/user-sovereignty-and-decision-gates]]
 - [[projects/executive-assistant/README]]

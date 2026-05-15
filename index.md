@@ -41,6 +41,9 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - [[concepts/user-sovereignty-and-decision-gates]] - when the assistant must ask before changing direction or risk
 - [[concepts/memory-scoping-and-context-hierarchy]] - scoped, auditable memory layers mapped onto repo-local wiki pages
 - [[L2_facts/user-operating-profile]] - confirmed work preferences, communication style, decision preferences, and recurring constraints
+- [[L2_facts/user-lists]] - user-provided comedians, reading, watching, and subscription tracking lists
+- [[L2_facts/user-principles-collection]] - important personal principles archive and ingestion rules for life/wellbeing/thinking notes
+- [[L2_facts/user-principles-index]] - retrieval map for the Gemini Spark principles archive, major sections, clusters, and theme anchors
 - [[L2_facts/approved-information-sources]] - registry for external folders/docs the assistant may inspect
 - [[L2_facts/source-intake-queue]] - candidate folders/docs/accounts waiting for intake and verification
 - [[patterns/executive-office-hours]] - idea shaping, prioritization, weekly planning, and forcing questions
@@ -104,6 +107,7 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - [[raw/2026-05-11-additional-chief-of-staff-research]] - additional memory, guardrail, MCP, and evaluation research
 - [[raw/2026-05-11-reasoning-prompting-research]] - primary-source summary for step-by-step, plan-then-solve, self-consistency, ReAct, and reasoning-model prompting
 - [[raw/2026-05-11-enumerative-prompt-wording-research]] - source summary on when broad synonym/category lists help or hurt prompts
+- [[raw/2026-05-12-gemini-spark-google-doc]] - source summary and local exports for the Gemini Spark Google Doc principles archive
 - [[L3_sops/external-source-adoption]] - safe workflow for reviewing and adapting external sources
 - `prompts/subagents/chief-of-staff-*.prompt.md` - prompt packets for briefing extraction, source inventory, research, review, and wiki documentation
 - [[templates/page.template]] — wiki page template

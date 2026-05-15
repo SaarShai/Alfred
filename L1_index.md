@@ -31,6 +31,9 @@ Compact pointers. Fetch details on demand.
 - patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
 - projects/executive-assistant/README (project tags=alfred,personal-ceo,chief-of-staff,gstack,prompter) -> `projects/executive-assistant/README.md`
 - projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
+- L2_facts/user-lists (fact tags=user-lists,preferences,entertainment,reading,subscriptions,executive-assistant) -> `L2_facts/user-lists.md`
+- L2_facts/user-principles-collection (fact tags=user-principles,personal-knowledge,wellbeing,thinking,feeling,executive-assistant) -> `L2_facts/user-principles-collection.md`
+- L2_facts/user-principles-index (fact tags=user-principles,gemini-spark,personal-knowledge,wellbeing,thinking,retrieval-index) -> `L2_facts/user-principles-index.md`
 - L3_sops/external-source-adoption (sop tags=source-adoption,research,wiki-write) -> `L3_sops/external-source-adoption.md`
 - L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
 - L3_sops/gstack-alfred-precedence (sop tags=gstack,precedence,governance,reconciliation,alfred,decision-gates,memory-authority) -> `L3_sops/gstack-alfred-precedence.md`
