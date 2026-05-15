@@ -36,10 +36,4 @@ Compact pointers. Fetch details on demand.
 - queries/2026-05-11-chief-of-staff-readiness-dry-run (query tags=briefing,dry-run,chief-of-staff,readiness) -> `queries/2026-05-11-chief-of-staff-readiness-dry-run.md`
 - queries/2026-05-11-incisive-expert-style-prompt (query tags=communication-style,pushback,verification,prompt-snippets,alfred) -> `queries/2026-05-11-incisive-expert-style-prompt.md`
 - queries/2026-05-11-onboarding-pass-1 (query tags=onboarding,prompt-system,wanderland,screenery,chief-of-staff) -> `queries/2026-05-11-onboarding-pass-1.md`
-- vendor/gstack/AGENTS (page) -> `vendor/gstack/AGENTS.md`
-- vendor/gstack/ARCHITECTURE (page) -> `vendor/gstack/ARCHITECTURE.md`
-- vendor/gstack/BROWSER (page) -> `vendor/gstack/BROWSER.md`
-- vendor/gstack/CHANGELOG (page) -> `vendor/gstack/CHANGELOG.md`
-- vendor/gstack/CLAUDE (page) -> `vendor/gstack/CLAUDE.md`
-- vendor/gstack/CONTRIBUTING (page) -> `vendor/gstack/CONTRIBUTING.md`
-- vendor/gstack/DESIGN (page) -> `vendor/gstack/DESIGN.md`
+- queries/2026-05-15-obsidian-as-human-view-layer (query tags=obsidian,wiki,human-layer,view-layer,governance,alfred) -> `queries/2026-05-15-obsidian-as-human-view-layer.md`

@@ -11,7 +11,7 @@ from typing import Any
 
 
 WIKI_DIRS = ("raw", "concepts", "patterns", "projects", "people", "queries", "L2_facts", "L3_sops", "L4_archive")
-SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache"}
+SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache", "vendor", ".claude"}
 WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 RAW_CONTEXT_RE = re.compile(r"\b(raw|archive|transcript|full)\b|\bsource(?:s)?\s+(?:note|notes|summary|summaries)\b", re.IGNORECASE)
 PROMPT_CONTEXT_RE = re.compile(r"\b(prompt|prompts|prompter|template|templates|snippet|snippets|llm)\b", re.IGNORECASE)
@@ -220,8 +220,19 @@ class WikiStore:
 
     def iter_markdown(self) -> list[Path]:
         files = []
+        root_resolved = self.root.resolve()
         for path in self.root.rglob("*.md"):
-            if any(part in SKIP_PARTS for part in path.parts):
+            try:
+                rel_parts = path.relative_to(self.root).parts
+            except ValueError:
+                rel_parts = path.parts
+            # Resolve symlinks (e.g. .claude/skills/* -> vendor/gstack/*) so
+            # links into skipped trees are excluded by their real location.
+            try:
+                real_parts = path.resolve().relative_to(root_resolved).parts
+            except ValueError:
+                real_parts = ()
+            if any(p in SKIP_PARTS for p in rel_parts) or any(p in SKIP_PARTS for p in real_parts):
                 continue
             files.append(path)
         return sorted(files)

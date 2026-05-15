@@ -23,6 +23,9 @@ projects/compound-compression-pipeline/eval_v*_run.out
 # gstack engine — vendored, reproducible via tools/bootstrap-gstack.sh
 vendor/
 
+# Obsidian human view layer — per-user vault UI state, not shared
+.obsidian/
+
 # OS
 .DS_Store
 Thumbs.db

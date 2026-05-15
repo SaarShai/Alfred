@@ -91,6 +91,7 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - [[queries/2026-05-11-chief-of-staff-readiness-dry-run]] - first readiness briefing for the chief-of-staff system and pending Google Workspace auth
 - [[queries/2026-05-11-onboarding-pass-1]] - first onboarding answers: Wanderland/Screenery priority, clear pushback, reversible-only boundary, and prompt system priority
 - [[queries/2026-05-11-incisive-expert-style-prompt]] - directness, counterargument-first, verification, confidence, no flattery, and proactive idea preference
+- [[queries/2026-05-15-obsidian-as-human-view-layer]] - Obsidian adopted as additive human cockpit; CLI+schema+lint stays the agent/governance authority
 
 ## Extension Points
 - [[adapters/README]] — project-local agent adapters
