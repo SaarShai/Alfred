@@ -5,7 +5,7 @@ tags: [stable, release, curated]
 confidence: high
 ---
 
-# stable/ — production-ready subset of Token Economy
+# stable/ — production-ready subset of Alfred
 
 Curated bundle of the measured, tested tools. Safe to install. Unstable/speculative bits (v2 specs, skill-crystallizer, wiki-search) intentionally excluded.
 

@@ -5,7 +5,7 @@ description: Use when the user asks to relay, hand off, summarize, continue in a
 
 # Relay Sessions
 
-Use the framework's `./te context` relay surface to create compact handoffs and launch fresh Codex successor sessions. (The standalone `relay_session` Python package under `projects/relay-session/` exists for users who want the same behavior outside Token Economy; ignore it inside a TE-installed repo.)
+Use the framework's `./te context` relay surface to create compact handoffs and launch fresh Codex successor sessions. (The standalone `relay_session` Python package under `projects/relay-session/` exists for users who want the same behavior outside Alfred; ignore it inside a TE-installed repo.)
 
 ## Rules
 

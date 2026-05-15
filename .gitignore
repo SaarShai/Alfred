@@ -14,11 +14,14 @@ projects/compound-compression-pipeline/eval_v*_run.out
 # semdiff session cache
 .cache/semdiff/
 
-# Token Economy runtime state
+# Alfred runtime state
 .token-economy/
 .token-economy-profile
 .claude/
 .mcp.json
+
+# gstack engine — vendored, reproducible via tools/bootstrap-gstack.sh
+vendor/
 
 # OS
 .DS_Store

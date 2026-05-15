@@ -1,9 +1,9 @@
 # Manual import corrective prompt
 
-Use this when an agent already consumed the older import prompt and mistakenly anchored itself to the Token Economy source checkout instead of the active project workspace.
+Use this when an agent already consumed the older import prompt and mistakenly anchored itself to the Alfred source checkout instead of the active project workspace.
 
 ```text
-You are in the active project workspace, not the Token Economy source repository.
+You are in the active project workspace, not the Alfred source repository.
 
 Reset your assumptions:
 - Treat the current working folder as the only workspace.

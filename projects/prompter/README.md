@@ -11,12 +11,12 @@ verified: 2026-05-11
 sources: [start.md, schema.md, patterns/reusable-prompt-library.md, queries/2026-05-11-onboarding-pass-1.md]
 supersedes: []
 superseded-by:
-tags: [prompter, prompt-engineering, knowledge-base, wiki-driven]
+tags: [prompter, prompt-engineering, knowledge-base, wiki-driven, alfred]
 ---
 
-# PROMPTER — wiki-driven prompt generation
+# PROMPTER — prompt generation (an Alfred sub-capability)
 
-A repo-local wiki and prompt library that teach agents how to translate user instructions into optimal prompts the user will run elsewhere. The deliverable is the wiki, reusable snippets/templates, and the agent workflow that consumes them.
+PROMPTER is **not the mission** — it is one capability of Alfred, the personal CEO (see [[projects/executive-assistant/README]]). It is the repo-local wiki and prompt library that teach agents to translate user instructions into optimal prompts the user will run elsewhere. The deliverable is the wiki, reusable snippets/templates, and the agent workflow that consumes them.
 
 ## Goal
 
@@ -36,7 +36,7 @@ The wiki is the single source of truth. Agents do not invent prompt-craft from t
 |---|---|
 | `concepts/` | atomic prompt-engineering ideas (one technique per page): role-priming, output-format control, few-shot, decomposition, etc. |
 | `patterns/` | reusable composite recipes: extraction pattern, code-review pattern, summarization pattern. |
-| `templates/` | fillable prompt skeletons (distinct from Token Economy's wiki-page templates). |
+| `templates/` | fillable prompt skeletons (distinct from the wiki-page templates in `templates/`). |
 | `prompts/library/templates/` | executable prompt skeletons rendered by `./te prompt`. |
 | `prompts/library/snippets/` | reusable prompt sections for stable context, style, constraints, and known facts. |
 | `L2_facts/` | durable model-specific facts: token limits, pricing, behavior quirks, refusal triggers. |

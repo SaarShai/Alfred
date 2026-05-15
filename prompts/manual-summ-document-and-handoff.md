@@ -1,6 +1,6 @@
 # Manual summ: document + handoff
 
-Copy-paste this into the current/old session when you need a manual Token Economy refresh and will start a fresh session yourself.
+Copy-paste this into the current/old session when you need a manual Alfred refresh and will start a fresh session yourself.
 
 ```text
 summ

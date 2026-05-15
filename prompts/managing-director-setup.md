@@ -1,8 +1,8 @@
 # Managing director setup
 
-/plan think carefully, step by step, to create a plan to set up this empty folder as a Token Economy-enabled managing-director workspace. Treat this folder as the active managing-director workspace, not the Token Economy source repository and not any other project folder.
+/plan think carefully, step by step, to create a plan to set up this empty folder as an Alfred-enabled managing-director workspace. Treat this folder as the active managing-director workspace, not the Alfred source repository and not any other project folder.
 
-Set up the Token Economy runtime in this folder only. Then create the local wiki, role documentation, and operating rules needed for a managing director that can coordinate with multiple other project folders by explicit user permission.
+Set up the Alfred runtime in this folder only. Then create the local wiki, role documentation, and operating rules needed for a managing director that can coordinate with multiple other project folders by explicit user permission.
 
 This is a fresh setup prompt, not a migration/import prompt. Do not import another project's codebase, wiki, docs, or memory into this folder. Other project folders remain their own workspaces and sources of truth for their own facts.
 
@@ -59,7 +59,7 @@ Each worker must return a compact result packet with:
 
 Use `prompts/subagents/lifecycle.prompt dot md` when supervising workers. Close a subagent only after its result packet has been read, useful results have been merged into the managing-director workspace, and durable gaps/follow-ups have been captured. Do not delegate final synthesis.
 
-## Bootstrap Token Economy runtime files in the current folder
+## Bootstrap Alfred runtime files in the current folder
 
 1. Clear only the current folder, including hidden files and `.git`.
    `find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +`
@@ -231,7 +231,7 @@ For each user-approved external folder, verify without mutation:
 Check for accidental import/dependency problems:
 - Run `rg` in the managing-director workspace for phrases like `see the old wiki`, `use the original folder`, `imported source`, and unapproved external absolute paths.
 - Confirm any external absolute paths in the managing-director wiki are access records or provenance only, not instructions to use external folders as the managing-director source of truth.
-- Confirm `index.md` and `L1_index.md` point to local managing-director wiki pages and local Token Economy commands.
+- Confirm `index.md` and `L1_index.md` point to local managing-director wiki pages and local Alfred commands.
 
 ## Final handoff
 

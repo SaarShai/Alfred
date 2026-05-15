@@ -29,10 +29,17 @@ Compact pointers. Fetch details on demand.
 - patterns/reasoning-and-planning-prompt-snippets (pattern tags=prompter,reasoning,planning,chain-of-thought,agents) -> `patterns/reasoning-and-planning-prompt-snippets.md`
 - patterns/reusable-prompt-library (pattern tags=prompter,prompt-library,templates,snippets) -> `patterns/reusable-prompt-library.md`
 - patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
-- projects/executive-assistant/README (project tags=executive-assistant,chief-of-staff,prompter,token-economy) -> `projects/executive-assistant/README.md`
-- projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven) -> `projects/prompter/README.md`
+- projects/executive-assistant/README (project tags=alfred,personal-ceo,chief-of-staff,gstack,prompter) -> `projects/executive-assistant/README.md`
+- projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
 - L3_sops/external-source-adoption (sop tags=source-adoption,research,wiki-write) -> `L3_sops/external-source-adoption.md`
 - L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
 - queries/2026-05-11-chief-of-staff-readiness-dry-run (query tags=briefing,dry-run,chief-of-staff,readiness) -> `queries/2026-05-11-chief-of-staff-readiness-dry-run.md`
 - queries/2026-05-11-incisive-expert-style-prompt (query tags=communication-style,pushback,verification,prompt-snippets,alfred) -> `queries/2026-05-11-incisive-expert-style-prompt.md`
 - queries/2026-05-11-onboarding-pass-1 (query tags=onboarding,prompt-system,wanderland,screenery,chief-of-staff) -> `queries/2026-05-11-onboarding-pass-1.md`
+- vendor/gstack/AGENTS (page) -> `vendor/gstack/AGENTS.md`
+- vendor/gstack/ARCHITECTURE (page) -> `vendor/gstack/ARCHITECTURE.md`
+- vendor/gstack/BROWSER (page) -> `vendor/gstack/BROWSER.md`
+- vendor/gstack/CHANGELOG (page) -> `vendor/gstack/CHANGELOG.md`
+- vendor/gstack/CLAUDE (page) -> `vendor/gstack/CLAUDE.md`
+- vendor/gstack/CONTRIBUTING (page) -> `vendor/gstack/CONTRIBUTING.md`
+- vendor/gstack/DESIGN (page) -> `vendor/gstack/DESIGN.md`

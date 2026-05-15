@@ -1,6 +1,6 @@
-# Token Economy Usage Index
+# Alfred Usage Index
 
-Catalog for a target project that uses Token Economy locally. Load only matched pages.
+Catalog for a target project that uses Alfred locally. Load only matched pages.
 
 ## Startup
 - [[start]] — universal agent entrypoint: operating rules, retrieval, context refresh, delegation
@@ -83,7 +83,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 
 ## Prompt Workflows
 - [[prompts/complete-migrate-export]] — export an old project into `complete_migrate_export dot md`
-- [[prompts/complete-migrate-import]] — import `complete_migrate_export dot md` into a new Token Economy-enabled target folder
+- [[prompts/complete-migrate-import]] — import `complete_migrate_export dot md` into a new Alfred-enabled target folder
 - [[prompts/summ]] — context refresh workflow
 - [[prompts/summarize-for-handoff]] — handoff packet template
 

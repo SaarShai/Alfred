@@ -30,7 +30,7 @@ Use when the user asks to review an external repo, tool, paper, article, or prom
 2. Read only relevant source sections.
 3. Write an immutable source note in `raw/YYYY-MM-DD-slug.md`.
 4. Separate decisions:
-   - Adopt: methods that fit Token Economy and the active project.
+   - Adopt: methods that fit Alfred and the active project.
    - Adapt: methods useful after translation into local wiki/SOP form.
    - Reject: runtime dependencies, global installs, risky permissions, or scope creep.
 5. Synthesize into local pages:
