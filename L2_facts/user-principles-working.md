@@ -49,7 +49,7 @@ Principles most others route back to.
 - **NOW** — "nothing is wrong NOW" / "Start now, no exceptions." *(user-confirmed)*
 - **No opinion / less thought** — "all our negative feelings come from our thinking." *(user-confirmed)*
 - Connective tissue: reinterpretation > circumstance ("happy = interpretations − expectations"). *(inferred)*
-- Self-blame as the negative hub (the thing other principles neutralise): *Alfred inference, NOT yet user-confirmed.*
+- Self-blame as a negative hub: *Alfred inference, user is NOT sure it's core — likely overstated by Alfred from loud confessional sections. Treat as a theme, not the center.*
 
 ## Sections (mirrors the source; filled as taught)
 
