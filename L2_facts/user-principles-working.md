@@ -36,11 +36,15 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - `Stepp` / `Stepp by Stepp` = playful spelling of "step"; a venture idea for a step-by-step app (chatbot + calendar). A project reference, not a principle.
 - `Week log off after three` = the afternoon (after ~3pm) is a strongly triggering time of day (fear of getting tired/depressed); this was a one-week experiment to stop worrying about what happens after 3.
 
+## How the layers relate (user-stated)
+
+**Principle** → **Mantra** (the shortest encoding of a principle, said often) → **Imagination** (a mental image/scene brought to mind to change mood or mindset).
+
 ## Sections (mirrors the source; filled as taught)
 
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
 - Rich for free — *user: a sub-framework on abundance — how to be rich without needing money.*
-- Mantras
+- Mantras — *user: a mantra is the shortest "encoding" of a principle; uses most of them often (some more than others).*
 - What's wrong?
 - Meditations — *user: loves this section; not actively meditating lately (valued, aspirational, currently dormant).*
 - Avatars — *user: "roles" / role-model snapshots; mindsets to adopt at the right time (e.g. Rebel, SEAL, Sweet, General). Appears 2x in source — candidate dedupe.*
