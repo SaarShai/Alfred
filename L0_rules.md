@@ -12,3 +12,4 @@
 - For chief-of-staff work, check instruction fidelity, reversibility, source permission, and verification before substantial action.
 - Use `/pa` or `/btw` for context-light routing; keep normal prompt hooks quiet.
 - Use cheapest capable model/subagent; keep delegation briefs compact.
+- Alfred overrides gstack: Alfred owns scope, output style, reversibility, and memory authority; gstack's injected ethos is subordinate engine context. gstack GATE skills need explicit user confirmation, DENY skills only on explicit request. See `L3_sops/gstack-alfred-precedence`.

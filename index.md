@@ -61,6 +61,7 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - [[L3_sops/approved-source-intake]] - safe workflow for adding named external folders/docs to the source registry
 - [[L3_sops/gogcli-workspace-access]] - installed gog CLI status, safe defaults, and Google Workspace auth procedure
 - [[L3_sops/subagent-dispatch-for-chief-of-staff]] - bounded subagent prompt packets and result contract
+- [[L3_sops/gstack-alfred-precedence]] - Alfred-over-gstack precedence, scope-vs-execution, memory authority, and per-skill DRIVE/GATE/DENY table
 - `tools/gog-agent-readonly` - repo-local wrapper for guarded Google Workspace read commands after auth
 - [[templates/daily-weekly-briefing.template]] - briefing output template
 - [[templates/structured-check-in.template]] - check-in output template

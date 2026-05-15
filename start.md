@@ -35,6 +35,8 @@ gstack is the CEO's execution substrate. Project-scoped install only — never `
 | Persist learnings | `/learn` |
 | Security audit | `/cso` |
 
+**Precedence:** Alfred governs scope, output style, reversibility, and memory; gstack's injected ethos is subordinate. Before invoking any gstack skill, apply `L3_sops/gstack-alfred-precedence` — it classifies every skill DRIVE (free) / GATE (confirm first) / DENY (explicit request only). `/ship`, `/land-and-deploy`, `/context-save`, `/gstack-upgrade`, `/setup-*` are not free.
+
 Skills are markdown; they are already discoverable. The engine is gitignored and reproducible — on a fresh clone run `./tools/bootstrap-gstack.sh` (clones `vendor/gstack`, registers skills). To update: `/gstack-upgrade`. The `/browse` headless-browser binary is not built (needs `bun`); build only if a browser-dependent need arises.
 
 ## Boot Sequence
@@ -70,6 +72,7 @@ Load only when triggered:
 | `/pa` or `/btw` prompt | `skills/personal-assistant/SKILL.md` |
 | Prompt generation / reusable prompt template / prompt snippets | `L3_sops/generate-prompt-from-instruction.md`; `patterns/reusable-prompt-library.md`; `patterns/reasoning-and-planning-prompt-snippets.md`; `patterns/enumerative-research-prompting.md` |
 | CEO / chief of staff / onboarding / office hours / strategic review / daily briefing / weekly planning / what needs my attention / remember this preference / add this folder or source / launch subagents / proactive ideas / pushback / trust / drift / follow instructions | `skills/executive-assistant/SKILL.md`; `L3_sops/instruction-fidelity-and-drift-control.md`; `patterns/chief-of-staff-state-loop.md`; `patterns/proactive-idea-generation.md`; `patterns/incisive-expert-communication.md` |
+| Any gstack skill / gstack ethos in a preamble / framework conflict | `L3_sops/gstack-alfred-precedence.md` |
 | Before completion claim | `skills/verification-before-completion/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |

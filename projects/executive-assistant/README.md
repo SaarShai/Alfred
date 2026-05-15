@@ -97,6 +97,7 @@ Use [[concepts/executive-assistant-operating-model]] as the default frame:
 - Approved source intake: [[L3_sops/approved-source-intake]]
 - Google Workspace via gog: [[L3_sops/gogcli-workspace-access]]
 - External source adoption: [[L3_sops/external-source-adoption]]
+- gstack engine precedence and reconciliation: [[L3_sops/gstack-alfred-precedence]]
 - Subagent dispatch: [[L3_sops/subagent-dispatch-for-chief-of-staff]]
 - Read-only gog wrapper: `tools/gog-agent-readonly`
 
