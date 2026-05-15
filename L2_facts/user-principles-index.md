@@ -138,6 +138,14 @@ These are not confirmed as the current rotating top bunch. They are simply dense
 
 Unknown. Ask the user before marking any 3-5 principles as the current active top bunch unless the Google Doc explicitly identifies them.
 
+## Decodings (user-confirmed)
+
+Compressed terms in the source, meaning given by the user. Source exports stay verbatim; this is the key.
+
+- `V` = Elvanse
+- `M` = MDMA
+- `R` = Ritalin
+
 ## Retrieval Rules
 
 - For exact wording, search the local source exports, especially `raw/source_exports/2026-05-12-gemini-spark-google-doc.markdown.txt`.
