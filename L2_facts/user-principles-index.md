@@ -148,6 +148,7 @@ Compressed terms in the source, meaning given by the user. Source exports stay v
 - `the SAAR pass` = likely a transcription slip for "let the **fear** pass" (user best-guess, not certain). Source export stays verbatim.
 - `KFKD` = Anne Lamott's metaphor: the radio station in your head ("K-Fucked") — the self-doubt/self-aggrandizement noise channel. "Shut up KFKD" = turn that voice down.
 - `Trumpets` = user likes trumpets; an imagined triumphant/uplifting sound to evoke in the right context. A mantra-imagination, lightly held.
+- `Stepp` / `Stepp by Stepp` = playful spelling of "step"; a venture idea for a step-by-step app (chatbot + calendar). Not a principle — a project reference embedded in the doc.
 
 ## Retrieval Rules
 
