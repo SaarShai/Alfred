@@ -51,6 +51,10 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Quotes
 - Core
 
+## Ignored (user-dropped, do not resurface)
+
+- `not track time and v` (source line 11) — user: ignore.
+
 ## Open Questions
 
 - #1 mechanism when a task is genuinely not enjoyable (out of doc scope per user; parked).
