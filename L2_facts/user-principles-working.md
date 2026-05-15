@@ -1,0 +1,63 @@
+---
+schema_version: 2
+title: User principles (working version)
+type: fact
+domain: project
+tier: semantic
+confidence: 0.7
+created: 2026-05-15
+updated: 2026-05-15
+verified: 2026-05-15
+sources: [raw/source_exports/2026-05-12-gemini-spark-google-doc.markdown.txt, user mentor sessions 2026-05-15]
+supersedes: []
+superseded-by:
+tags: [user-principles, working-version, personal-knowledge, editable, alfred]
+---
+
+# User principles (working version)
+
+Editable derivative of the `Gemini Spark` archive. **The raw export stays immutable** (`raw/source_exports/...`); this page is the version Alfred may freely edit, decode, reorganize, and keep current as the user teaches it in mentor sessions. When this and the source disagree, the source is the record of what was written; this page is the record of what it *means*.
+
+## Active Top Bunch
+
+### 2026-05-15 (user-stated)
+
+1. **Enjoyment over management** — things must be enjoyable; find joy in everything; look forward to what I need to do.
+2. **The first 3 miles** — push past the first 3 miles before flow/the zone starts.
+3. **Be in the NOW** — worry comes from future/past thinking; nothing is wrong NOW.
+4. **No opinion** — as few opinions as needed about everything; the way to peace.
+
+## Decodings (user-confirmed)
+
+- `V` = Elvanse · `R` = Ritalin · `M` = MDMA
+- `the SAAR pass` = likely "let the **fear** pass" (transcription slip; user best-guess).
+- `KFKD` = Anne Lamott's "radio station in the head" ("K-Fucked") — the self-doubt/self-aggrandizement noise channel. "Shut up KFKD" = turn that voice down.
+- `Trumpets` = user likes trumpets; an imagined triumphant/uplifting sound for the right moment. Lightly held.
+- `Stepp` / `Stepp by Stepp` = playful spelling of "step"; a venture idea for a step-by-step app (chatbot + calendar). A project reference, not a principle.
+- `Week log off after three` = the afternoon (after ~3pm) is a strongly triggering time of day (fear of getting tired/depressed); this was a one-week experiment to stop worrying about what happens after 3.
+
+## Sections (mirrors the source; filled as taught)
+
+- Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
+- Rich for free
+- Mantras
+- What's wrong?
+- Meditations
+- Avatars
+- Role Models / Father Figures
+- Stories
+- Parts — *deferred by user (2026-05-15)*
+- How to deal
+- Quotes
+- Core
+
+## Open Questions
+
+- #1 mechanism when a task is genuinely not enjoyable (out of doc scope per user; parked).
+- Pink magic / "gooy love" (Parts) — deferred.
+
+## Related
+
+- [[L2_facts/user-principles-collection]]
+- [[L2_facts/user-principles-index]]
+- [[raw/2026-05-12-gemini-spark-google-doc]]

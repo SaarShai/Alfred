@@ -138,18 +138,9 @@ These are not confirmed as the current rotating top bunch. They are simply dense
 
 Unknown. Ask the user before marking any 3-5 principles as the current active top bunch unless the Google Doc explicitly identifies them.
 
-## Decodings (user-confirmed)
+## Decodings
 
-Compressed terms in the source, meaning given by the user. Source exports stay verbatim; this is the key.
-
-- `V` = Elvanse
-- `M` = MDMA
-- `R` = Ritalin
-- `the SAAR pass` = likely a transcription slip for "let the **fear** pass" (user best-guess, not certain). Source export stays verbatim.
-- `KFKD` = Anne Lamott's metaphor: the radio station in your head ("K-Fucked") — the self-doubt/self-aggrandizement noise channel. "Shut up KFKD" = turn that voice down.
-- `Trumpets` = user likes trumpets; an imagined triumphant/uplifting sound to evoke in the right context. A mantra-imagination, lightly held.
-- `Stepp` / `Stepp by Stepp` = playful spelling of "step"; a venture idea for a step-by-step app (chatbot + calendar). Not a principle — a project reference embedded in the doc.
-- `Week log off after three` = afternoon (after ~3pm) is a strongly triggering time of day for the user — fear of becoming tired/depressed then. This note = a one-week experiment to stop worrying about what happens after 3.
+Moved to the editable working version: [[L2_facts/user-principles-working]] (§ Decodings). Source exports stay verbatim.
 
 ## Retrieval Rules
 
