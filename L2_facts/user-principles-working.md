@@ -50,7 +50,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Meditations — *user: loves this section; not actively meditating lately (valued, aspirational, currently dormant).*
 - Avatars — *user: "roles" / role-model snapshots; mindsets to adopt at the right time (e.g. Rebel, SEAL, Sweet, General). Appears 2x in source — candidate dedupe.*
 - Role Models / Father Figures
-- Stories
+- Stories — *user: an attempt to (re)frame his experience; not cardinal (peripheral).*
 - Parts — *deferred by user (2026-05-15)*
 - How to deal — *user: an "in case of emergency" — in-the-moment triage protocol when something hits.*
 - Quotes — *user: revisited often; others' words often carry more weight for him than his own. "MY Quotes" = quotes by him.*
