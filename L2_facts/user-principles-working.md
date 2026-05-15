@@ -53,6 +53,70 @@ Principles most others route back to.
 - Connective tissue: reinterpretation > circumstance ("happy = interpretations − expectations"). *(inferred)*
 - Self-blame as a negative hub: *Alfred inference, user is NOT sure it's core — likely overstated by Alfred from loud confessional sections. Treat as a theme, not the center.*
 
+## Life Principles — inventory & decode status
+
+Status key: `?`=not yet decoded · `~`=glossed · `LIVE`=in active use · `skip`=self-evident/dropped.
+
+1. `?` NOW
+2. `?` Play
+3. `?` Nothing means anything
+4. `?` What is this feeling
+5. `?` There's nothing wrong
+6. `?` Looking forward to it
+7. `~LIVE` No opinion (hub; top-bunch #4)
+8. `~` Less thought (hub-adjacent)
+9. `?` Leftover feelings and phantom fears
+10. `?` Desire / No preference
+11. `?` No shame
+12. `?` Let them
+13. `?` Happy anyway
+14. `?` Permission
+15. `?` Is it true?!
+16. `?` Epic
+17. `~LIVE` Enjoy (top-bunch #1)
+18. `?` Endless + Shattering ("It's ALWAYS MORNING")
+19. `?` With yourself
+20. `?` Predictions make reality
+21. `?` Imagine
+22. `?` No obligation
+23. `?` Not my Responsibility
+24. `?` No need to figure it out now
+25. `?` No comparison
+26. `?` No glory
+27. `?` Quit Jobs
+28. `?` Easy, not hard, too simple
+29. `?` Trust / Belief / Doubt
+30. `?` Replace
+31. `?` Choose
+32. `?` Seek discomfort
+33. `?` Embrace the mess
+34. `?` Acceptance
+35. `?` Desire
+36. `?` Focusing illusion
+37. `?` The quality of your thoughts
+38. `?` Enough Bullshit
+39. `?` What feeling are you avoiding? Look forward to it
+40. `?` Who are you
+41. `?` Confident me
+42. `?` Respect yourself
+43. `?` For them
+44. `?` No responsibility
+45. `?` Guest
+46. `?` Deserving in this universe
+47. `?` Doing my best
+48. `?` happy = interpretations − expectations
+49. `?` Context over content
+50. `?` Love out
+51. `?` 25% more
+52. `?` Fear of fear
+53. `?` Over thinking
+54. `?` Not binary
+55. `?` It's just pixels
+56. `?` no big deal
+57. `?` That Others Also
+58. `?` Be reminded
+59. `?` Fun / humour
+
 ## Sections (mirrors the source; filled as taught)
 
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
