@@ -49,7 +49,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Parts — *deferred by user (2026-05-15)*
 - How to deal
 - Quotes
-- Core
+- Core — *user: a past "current focus" snapshot, no longer current; some items still relevant; important ones likely duplicated elsewhere in the doc (treat as stale, dedupe against other sections).*
 
 ## Ignored (user-dropped, do not resurface)
 
