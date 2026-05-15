@@ -43,7 +43,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Mantras
 - What's wrong?
 - Meditations
-- Avatars
+- Avatars — *user: "roles" / role-model snapshots; mindsets to adopt at the right time (e.g. Rebel, SEAL, Sweet, General). Appears 2x in source — candidate dedupe.*
 - Role Models / Father Figures
 - Stories
 - Parts — *deferred by user (2026-05-15)*
