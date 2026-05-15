@@ -40,6 +40,8 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 
 **Principle** → **Mantra** (the shortest encoding of a principle, said often) → **Imagination** (a mental image/scene brought to mind to change mood or mindset).
 
+Principles are **fractal and interlinked**: a principle (e.g. a cluster name like Manifesting/Action/Stoicism) unpacks into sub-principles, and most principles cross-reference each other. This is why the wiki graph fits the archive — the structure is a network, not a list.
+
 ## Sections (mirrors the source; filled as taught)
 
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
