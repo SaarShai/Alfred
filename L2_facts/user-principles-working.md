@@ -42,6 +42,15 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 
 Principles are **fractal and interlinked**: a principle (e.g. a cluster name like Manifesting/Action/Stoicism) unpacks into sub-principles, and most principles cross-reference each other. This is why the wiki graph fits the archive — the structure is a network, not a list.
 
+## Hubs
+
+Principles most others route back to.
+
+- **NOW** — "nothing is wrong NOW" / "Start now, no exceptions." *(user-confirmed)*
+- **No opinion / less thought** — "all our negative feelings come from our thinking." *(user-confirmed)*
+- Connective tissue: reinterpretation > circumstance ("happy = interpretations − expectations"). *(inferred)*
+- Self-blame as the negative hub (the thing other principles neutralise): *Alfred inference, NOT yet user-confirmed.*
+
 ## Sections (mirrors the source; filled as taught)
 
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
