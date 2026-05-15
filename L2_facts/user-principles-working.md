@@ -53,7 +53,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Stories
 - Parts — *deferred by user (2026-05-15)*
 - How to deal — *user: an "in case of emergency" — in-the-moment triage protocol when something hits.*
-- Quotes
+- Quotes — *user: revisited often; others' words often carry more weight for him than his own. "MY Quotes" = quotes by him.*
 - Core — *user: a past "current focus" snapshot, no longer current; some items still relevant; important ones likely duplicated elsewhere in the doc (treat as stale, dedupe against other sections).*
 
 ## Ignored (user-dropped, do not resurface)
