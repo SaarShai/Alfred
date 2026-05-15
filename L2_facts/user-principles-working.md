@@ -39,7 +39,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 ## Sections (mirrors the source; filled as taught)
 
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
-- Rich for free
+- Rich for free — *user: a sub-framework on abundance — how to be rich without needing money.*
 - Mantras
 - What's wrong?
 - Meditations
