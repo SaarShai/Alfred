@@ -145,6 +145,7 @@ Compressed terms in the source, meaning given by the user. Source exports stay v
 - `V` = Elvanse
 - `M` = MDMA
 - `R` = Ritalin
+- `the SAAR pass` = likely a transcription slip for "let the **fear** pass" (user best-guess, not certain). Source export stays verbatim.
 
 ## Retrieval Rules
 
