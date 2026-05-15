@@ -54,6 +54,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 ## Ignored (user-dropped, do not resurface)
 
 - `not track time and v` (source line 11) — user: ignore.
+- `Half Heroes` (Core, project name) — user: ignore.
 
 ## Open Questions
 
