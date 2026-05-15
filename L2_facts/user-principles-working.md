@@ -55,67 +55,69 @@ Principles most others route back to.
 
 ## Life Principles — inventory & decode status
 
-Status key: `?`=not yet decoded · `~`=glossed · `LIVE`=in active use · `skip`=self-evident/dropped.
+Decode rule (user-stated): presence in the doc ⇒ almost certainly LIVE. Alfred supplies the gloss; only ask the user on genuinely cryptic items. No rote "one-line + live?" per principle.
+
+Status key: `?`=not yet decoded · `~`=glossed (LIVE by default) · `??`=cryptic, needs user · `skip`=dropped.
 
 1. `~LIVE` NOW — "Start now, no exceptions." (hub; top-bunch #3)
-2. `?` Play
-3. `?` Nothing means anything
-4. `?` What is this feeling
-5. `?` There's nothing wrong
-6. `?` Looking forward to it
+2. `~LIVE` Play — the world is toys; everything is play (Watts); play with work, sorrows, misfortunes.
+3. `~LIVE` Nothing means anything — give/sacrifice/work are fluid concepts; the universe isn't tit-for-tat.
+4. `~LIVE` What is this feeling — name the unprocessed emotion; fear = signal something matters; the way out is through.
+5. `~LIVE` There's nothing wrong — at heart you're all right; misery is shallow-rooted/unreal; nothing external decides who you are now.
+6. `~LIVE` Looking forward to it — Frankl/paradoxical intention: welcome/invite what you avoid (overwhelm, sleepiness, failure) → it loses power. (Load-bearing mechanism.)
 7. `~LIVE` No opinion (hub; top-bunch #4)
-8. `~` Less thought (hub-adjacent)
-9. `?` Leftover feelings and phantom fears
-10. `?` Desire / No preference
-11. `?` No shame
-12. `?` Let them
-13. `?` Happy anyway
-14. `?` Permission
-15. `?` Is it true?!
-16. `?` Epic
-17. `~LIVE` Enjoy (top-bunch #1)
-18. `?` Endless + Shattering ("It's ALWAYS MORNING")
-19. `?` With yourself
-20. `?` Predictions make reality
-21. `?` Imagine
-22. `?` No obligation
-23. `?` Not my Responsibility
-24. `?` No need to figure it out now
-25. `?` No comparison
-26. `?` No glory
-27. `?` Quit Jobs
-28. `?` Easy, not hard, too simple
-29. `?` Trust / Belief / Doubt
-30. `?` Replace
-31. `?` Choose
-32. `?` Seek discomfort
-33. `?` Embrace the mess
-34. `?` Acceptance
-35. `?` Desire
-36. `?` Focusing illusion
-37. `?` The quality of your thoughts
-38. `?` Enough Bullshit
-39. `?` What feeling are you avoiding? Look forward to it
-40. `?` Who are you
-41. `?` Confident me
-42. `?` Respect yourself
-43. `?` For them
-44. `?` No responsibility
-45. `?` Guest
-46. `?` Deserving in this universe
-47. `?` Doing my best
-48. `?` happy = interpretations − expectations
-49. `?` Context over content
-50. `?` Love out
-51. `?` 25% more
-52. `?` Fear of fear
-53. `?` Over thinking
-54. `?` Not binary
-55. `?` It's just pixels
-56. `?` no big deal
-57. `?` That Others Also
-58. `?` Be reminded
-59. `?` Fun / humour
+8. `~LIVE` Less thought — you won't figure it out by thinking; negative feeling = thinking too much; thoughts aren't you; feelings come first, story after; shorten time-to-remember it's just thinking. (hub-adjacent to No opinion)
+9. `~LIVE` Leftover feelings and phantom fears — an icky feeling with no real cause; orphaned/phantom, like forgetting why you walked into a room.
+10. `~LIVE` Desire / No preference — need nothing, want nothing different; nothing missing, no grail to find.
+11. `~LIVE` No shame — no time for shame/embarrassment; the real scandal is hating ourselves for nothing and not noticing.
+12. `~LIVE` Let them — let others be/think/do as they want; not personal, not your job (Mel Robbins "Let Them").
+13. `~LIVE` Happy anyway — proactive unconditional happiness, chosen and worked at; never a victim; "it's up to me."
+14. `~LIVE` Permission — give yourself permission to enjoy, even just 10 min; exposure therapy for the good stuff.
+15. `~LIVE` Is it true?! — you're a negatively-biased judge; ask "is it true?"; turn "can't" into "why not?!"
+16. `~LIVE` Epic — every moment meaningful, intentional, lived at 11; trained enthusiasm; skip trivialities.
+17. `~LIVE` Enjoy (top-bunch #1) — if now feels like chore/waiting you're living it wrong; enjoy anyway; enjoyment is energy-efficiency.
+18. `~LIVE` Endless + Shattering — fuck the clock/sleep; always morning till bedtime; shatter the felt time-of-day; endless excited-child living.
+19. `~LIVE` With yourself — be good company to yourself; love your difficult parts like your kids; stop the self-attack.
+20. `~LIVE` Predictions make reality — sleepiness/fatigue are false predictions/miscalibrated warning lights; expectation becomes physiology.
+21. `~LIVE` Imagine — reality is mind-made; imagine vividly; self-placebo works even knowingly.
+22. `~LIVE` No obligation — drop the duty/drudgery/behind feeling; you're on holiday, play; must feel effortless.
+23. `~LIVE` Not my Responsibility — I didn't create this world; not mine to fix; trust the universe and smarter people.
+24. `~LIVE` No need to figure it out now — meaning-of-life needn't be solved yet; surrender; endure, master, forget.
+25. `~LIVE` No comparison — everyone's just as scared/lost; imitate, don't envy; the famous have no more fun.
+26. `~LIVE` No glory — nothing to prove, no one to prove it to; no glory, no memory, no justice. (relief)
+27. `~LIVE` Quit Jobs — quit self-assigned jobs (worrying, proving, optimising time); or reassign the part a better job.
+28. `~LIVE` Easy, not hard, too simple — life/work needn't be hard; the truth is deceptively simple; not fun ⇒ doing it wrong.
+29. `~LIVE` Trust / Belief / Doubt — trust yourself and the sages amid doubt; belief is physiological; "believe you can or can't — right either way."
+30. `~LIVE` Replace — don't fight the bad; switch attention to and grow what's right (can't think nothing).
+31. `~LIVE` Choose — unmade decisions are heaviest; anxiety = too many options; commit, burn boats, choose your regrets.
+32. `~LIVE` Seek discomfort — love the pain, swallow frogs; exposure/training; fear is a mile wide, an inch deep.
+33. `~LIVE` Embrace the mess — good-enough, "daily-ish", wabi-sabi; perfection is the enemy; get on with it.
+34. `~LIVE` Acceptance — suffering = wanting what-is to be different; want nothing different; "this is it."
+35. `~LIVE` Desire — stop wanting it and you stop worrying; craving substitutes for the joy of Being.
+36. `~LIVE` Focusing illusion — nothing's as important as it seems while you think about it; "this is water," set your own standards.
+37. `~LIVE` The quality of your thoughts — attention determines experience; pick the better book from your mind's library.
+38. `~LIVE` Enough Bullshit — no patience for worry/shame/blame; "thanks, no thanks"; too busy for this.
+39. `~LIVE` What feeling are you avoiding? Look forward to it — what you avoid you invite; every issue is an unfelt emotion; the fear hurts, not the emotion.
+40. `~LIVE` Who are you — you can always rethink who you think you are and how you "should" feel about yourself.
+41. `~LIVE` Confident me — would a strong, no-bullshit me let this get to him? you're antifragile, prove it.
+42. `~LIVE` Respect yourself — not just love but respect/trust yourself; high standards needn't be earned; self-love is a responsibility.
+43. `~LIVE` For them — it's not about you; be happy/of service for others; self-focus = misery; giving is the reward.
+44. `~LIVE` No responsibility — none of it is your fault; drop shame/guilt; reality runs without your help.
+45. `~LIVE` Guest — didn't create this world or myself ⇒ no guilt; it's all borrowed; at the universe's mercy, so trust it.
+46. `~LIVE` Deserving in this universe — there's no "deserving"; the universe provides regardless; being is sufficient, you belong.
+47. `~LIVE` Doing my best — right intentions/direction, no secrets/shame; clean up mistakes; "self-blame is the most hurtful thing."
+48. `~LIVE` happy = interpretations − expectations — reinterpretation minus expectation/ego; drop the "should," expect hardship, don't expect bliss/justice.
+49. `~LIVE` Context over content — not the content but the context (interpretation/feeling); any moment can hold any meaning.
+50. `~LIVE` Love out — love without needing reciprocation; loving is a gift you give, always returned; love without owning.
+51. `~LIVE` 25% more — you can always dial now 25% more enjoyable/enthusiastic; turn it to 11, then 20.
+52. `~LIVE` Fear of fear — recursive: fear of fear, stress about stress; the fear is 99%, not the pain; dive into the worst case.
+53. `??` Over thinking — source entry is only the single word **"Gotcha"**; meaning not recoverable. NEEDS USER.
+54. `~LIVE` Not binary — a spectrum/mixture, not all-or-nothing; hold two emotions at once; don't bin the baby with the bathwater.
+55. `~LIVE` It's just pixels — spiders, news, success — pixels on a screen; what are you really missing? it isn't a thing that exists.
+56. `~LIVE` no big deal — don't catastrophize, "no-biggy" it; never as bad; be the kind who gets on with it.
+57. `~LIVE` That Others Also — sonder: everyone hurts/agonises/wants a restart, even the people you admire.
+58. `~LIVE` Be reminded — we forget and habituate; need reminding more than teaching; the notes are a playground to love again.
+59. `~LIVE` Fun / humour — not so serious; take it easy, take it silly; less stressed, more chilled.
 
 ## Sections (mirrors the source; filled as taught)
 
