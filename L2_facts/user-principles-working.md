@@ -57,7 +57,7 @@ Principles most others route back to.
 
 Status key: `?`=not yet decoded · `~`=glossed · `LIVE`=in active use · `skip`=self-evident/dropped.
 
-1. `?` NOW
+1. `~LIVE` NOW — "Start now, no exceptions." (hub; top-bunch #3)
 2. `?` Play
 3. `?` Nothing means anything
 4. `?` What is this feeling
