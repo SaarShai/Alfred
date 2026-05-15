@@ -45,7 +45,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
 - Rich for free — *user: a sub-framework on abundance — how to be rich without needing money.*
 - Mantras — *user: a mantra is the shortest "encoding" of a principle; uses most of them often (some more than others).*
-- What's wrong?
+- What's wrong? — *user: a deliberate inventory of the "negatives" (worries, enemies/pests, limiting beliefs, fears) — naming and acknowledging them familiarises and thereby reduces their effect. A practice, not venting.*
 - Meditations — *user: loves this section; not actively meditating lately (valued, aspirational, currently dormant).*
 - Avatars — *user: "roles" / role-model snapshots; mindsets to adopt at the right time (e.g. Rebel, SEAL, Sweet, General). Appears 2x in source — candidate dedupe.*
 - Role Models / Father Figures
