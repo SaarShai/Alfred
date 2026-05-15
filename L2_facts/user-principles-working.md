@@ -59,6 +59,7 @@ Principles most others route back to.
   - Action — *user: self-evident; the word is the principle (bias to action; no line needed).*
   - Meaningless — *user: definitely a relief (nothing matters → freedom), not a weight.*
   - Manifesting — *user: changing a mindset and the subconscious drive — the proven psychological sense, NOT magical.*
+  - Bird by bird — *user: definitely alive; one step at a time, very important; mostly standalone (doesn't pair much with others — not everything is interlinked).*
   - Questions — *user: questions to ponder — as meditations or at the right moment when needed.*
 - Rich for free — *user: a sub-framework on abundance — how to be rich without needing money.*
 - Mantras — *user: a mantra is the shortest "encoding" of a principle; uses most of them often (some more than others).*
