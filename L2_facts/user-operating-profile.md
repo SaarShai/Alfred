@@ -18,13 +18,13 @@ tags: [user-profile, executive-assistant, preferences, daily-briefing, weekly-pl
 
 ## Purpose
 
-Confirmed work preferences for the repo-local chief-of-staff system. Store work style, communication preferences, recurring priorities, decision preferences, daily briefing preferences, weekly planning preferences, and constraints. Do not store rich private personal history here.
+Confirmed work preferences for the repo-local chief-of-staff system. Store work style, communication preferences, recurring priorities, decision preferences, daily briefing preferences, weekly planning preferences, and constraints. This page stays work-scoped. Personal context (tastes, interests, lists, life principles) is legitimate for Alfred as a personal CEO for the user's life and work — it lives in dedicated pages ([[L2_facts/user-lists]], [[L2_facts/user-principles-collection]]), never inline here.
 
 ## Confirmed Preferences
 
 - The assistant should operate as a brilliant chief of staff that listens, plans, retrieves relevant local information, and executes through draft-then-ask workflows.
 - V1 should be local-first: use the current workspace, repo-local wiki, approved local docs, and approved project folders before account connectors.
-- The assistant should remember work preferences only unless the user explicitly approves richer profile memory.
+- This profile page holds work preferences only; personal context goes in dedicated pages ([[L2_facts/user-lists]], [[L2_facts/user-principles-collection]]) per Alfred's personal-CEO mission. Add new durable facts of either kind only after explicit user confirmation or a verified repeated pattern.
 - External sources must be approved one by one through [[L2_facts/approved-information-sources]].
 - Subagents should be launched through planned dispatch packets only when a concrete task justifies them.
 - Daily and weekly briefings should start as manual commands, not scheduled automations.

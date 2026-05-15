@@ -6,19 +6,19 @@ domain: project
 tier: semantic
 confidence: 0.72
 created: 2026-05-11
-updated: 2026-05-11
-verified: 2026-05-11
+updated: 2026-05-15
+verified: 2026-05-15
 sources: [user prompt, 2026-05-11]
 supersedes: []
 superseded-by:
-tags: [user-lists, preferences, entertainment, reading, subscriptions, executive-assistant]
+tags: [user-lists, personal-context, entertainment, reading, executive-assistant]
 ---
 
 # User lists
 
 ## Purpose
 
-Lightweight user-provided lists that Alfred should be able to retrieve later. Update this page when the user adds, removes, or corrects items.
+Lightweight user-provided personal-taste lists Alfred should retrieve later (entertainment, reading, watching). Update when the user adds, removes, or corrects items. Recurring paid services live separately in [[L2_facts/subscriptions-tracker]] (operational/cost concern, not taste).
 
 ## Comedians The User Likes Best
 
@@ -44,28 +44,12 @@ Lightweight user-provided lists that Alfred should be able to retrieve later. Up
 
 - The Defiant Ones
 
-## Subscriptions To Track
-
-- Cloudflare + Anthropic API
-- Adobe
-- Figma
-- OpenAI
-- VPN
-- Claude Max
-- Freepik - web + API
-- Audible
-- Google Workspace (wanderland.london and screenery.design)
-- Google Cloud
-- iCloud (Alicia)
-- Google One
-- Amazon Photos
-- Telegraph
-
 ## Provenance
 
-- Captured from direct user instruction in the 2026-05-11 session.
+- Captured from direct user instruction in the 2026-05-11 session. Subscriptions split out to [[L2_facts/subscriptions-tracker]] on 2026-05-15.
 
 ## Related
 
+- [[L2_facts/subscriptions-tracker]]
 - [[L2_facts/user-operating-profile]]
 - [[projects/executive-assistant/README]]
