@@ -51,7 +51,7 @@ Editable derivative of the `Gemini Spark` archive. **The raw export stays immuta
 - Role Models / Father Figures
 - Stories
 - Parts — *deferred by user (2026-05-15)*
-- How to deal
+- How to deal — *user: an "in case of emergency" — in-the-moment triage protocol when something hits.*
 - Quotes
 - Core — *user: a past "current focus" snapshot, no longer current; some items still relevant; important ones likely duplicated elsewhere in the doc (treat as stale, dedupe against other sections).*
 
