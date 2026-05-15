@@ -149,6 +149,7 @@ Compressed terms in the source, meaning given by the user. Source exports stay v
 - `KFKD` = Anne Lamott's metaphor: the radio station in your head ("K-Fucked") — the self-doubt/self-aggrandizement noise channel. "Shut up KFKD" = turn that voice down.
 - `Trumpets` = user likes trumpets; an imagined triumphant/uplifting sound to evoke in the right context. A mantra-imagination, lightly held.
 - `Stepp` / `Stepp by Stepp` = playful spelling of "step"; a venture idea for a step-by-step app (chatbot + calendar). Not a principle — a project reference embedded in the doc.
+- `Week log off after three` = afternoon (after ~3pm) is a strongly triggering time of day for the user — fear of becoming tired/depressed then. This note = a one-week experiment to stop worrying about what happens after 3.
 
 ## Retrieval Rules
 
