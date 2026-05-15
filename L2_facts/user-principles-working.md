@@ -54,6 +54,7 @@ Principles most others route back to.
 ## Sections (mirrors the source; filled as taught)
 
 - Life Principles (clusters: Manifesting, Action, Bird by bird, Meaningless, Stoicism; Other Principles; Questions)
+  - Action — *user: self-evident; the word is the principle (bias to action; no line needed).*
   - Questions — *user: questions to ponder — as meditations or at the right moment when needed.*
 - Rich for free — *user: a sub-framework on abundance — how to be rich without needing money.*
 - Mantras — *user: a mantra is the shortest "encoding" of a principle; uses most of them often (some more than others).*
