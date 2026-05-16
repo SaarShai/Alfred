@@ -111,7 +111,7 @@ Status key: `?`=not yet decoded · `~`=glossed (LIVE by default) · `??`=cryptic
 50. `~LIVE` Love out — love without needing reciprocation; loving is a gift you give, always returned; love without owning.
 51. `~LIVE` 25% more — you can always dial now 25% more enjoyable/enthusiastic; turn it to 11, then 20.
 52. `~LIVE` Fear of fear — recursive: fear of fear, stress about stress; the fear is 99%, not the pain; dive into the worst case.
-53. `??` Over thinking — source entry is only the single word **"Gotcha"**; meaning not recoverable. NEEDS USER.
+53. `~LIVE` Over thinking / "Gotcha" — user: these are NOT related. "Gotcha" = the catch-moment — noticing/catching a rogue thought process (itself a source of issues). "Over thinking" has no separate body text.
 54. `~LIVE` Not binary — a spectrum/mixture, not all-or-nothing; hold two emotions at once; don't bin the baby with the bathwater.
 55. `~LIVE` It's just pixels — spiders, news, success — pixels on a screen; what are you really missing? it isn't a thing that exists.
 56. `~LIVE` no big deal — don't catastrophize, "no-biggy" it; never as bad; be the kind who gets on with it.
