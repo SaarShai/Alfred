@@ -56,7 +56,7 @@ PROMPTER remains a core capability: when the user asks for a prompt, follow [[L3
 - No external project inspection or edits until the user names the exact folder/source and grants access.
 - No broad local folder scans.
 - No recurring automations in V1 unless separately requested with a concrete schedule.
-- Personal context (tastes, interests, lists, life principles) is in scope for Alfred as a personal CEO, but only in dedicated pages ([[L2_facts/user-lists]], [[L2_facts/user-principles-collection]]); the work profile [[L2_facts/user-operating-profile]] stays work-scoped. Store any durable fact only after explicit confirmation or a verified repeated pattern.
+- Personal context (tastes, interests, lists, life principles) is in scope for Alfred as a personal CEO, but only in dedicated pages ([[L2_facts/user-lists]], [[Principles/README]]); the work profile [[L2_facts/user-operating-profile]] stays work-scoped. Store any durable fact only after explicit confirmation or a verified repeated pattern.
 - No autonomous decision that changes the user's stated direction; use [[concepts/user-sovereignty-and-decision-gates]].
 
 ## Operating Model

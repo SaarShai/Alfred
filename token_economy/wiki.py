@@ -420,6 +420,8 @@ class WikiStore:
                 continue
             if page.id.startswith("extensions/") and page.id != "extensions/README":
                 continue
+            if page.id.startswith("Principles/") and page.id != "Principles/README":
+                continue
             if page.id.startswith("raw/") and page.id not in l1_always_include:
                 continue
             if page.id in {"external-adapters"}:

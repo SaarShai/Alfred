@@ -43,9 +43,7 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - [[L2_facts/user-operating-profile]] - confirmed work preferences, communication style, decision preferences, and recurring constraints
 - [[L2_facts/user-lists]] - personal-taste lists: comedians, reading, watching (subscriptions split out)
 - [[L2_facts/subscriptions-tracker]] - recurring paid services across personal/Wanderland/Screenery; cost/renewal tracking
-- [[L2_facts/user-principles-collection]] - important personal principles archive and ingestion rules for life/wellbeing/thinking notes
-- [[L2_facts/user-principles-working]] - editable working version of the principles (decodings, active top bunch); raw export stays immutable
-- [[L2_facts/user-principles-index]] - retrieval map for the Gemini Spark principles archive, major sections, clusters, and theme anchors
+- [[Principles/README]] - the user's life-principles archive, distributed: one interlinked page per principle + network/top-bunch/decodings/consolidation/sections (supersedes the old user-principles-* pages)
 - [[L2_facts/approved-information-sources]] - registry for external folders/docs the assistant may inspect
 - [[L2_facts/source-intake-queue]] - candidate folders/docs/accounts waiting for intake and verification
 - [[patterns/executive-office-hours]] - idea shaping, prioritization, weekly planning, and forcing questions

@@ -11,6 +11,7 @@ This file is the operating contract. Agents must use the wiki before reasoning a
 - `projects/` active target-project state.
 - `people/` humans (authors, collaborators).
 - `queries/` durable Q&A.
+- `Principles/` the user's distributed life-principles archive — one interlinked page per principle + index/network/top-bunch/decodings/consolidation/sections. Synthesized meaning layer; verbatim source stays immutable in `raw/`. Folder entry point: `Principles/README` (only that page appears in `L1_index.md`).
 - `L0_rules.md` stable behavior rules loaded at startup.
 - `L1_index.md` compact pointer index loaded at startup.
 - `L2_facts/` verified durable facts.

@@ -33,13 +33,13 @@ Compact pointers. Fetch details on demand.
 - projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
 - L2_facts/subscriptions-tracker (fact tags=subscriptions,cost-tracking,operations,executive-assistant) -> `L2_facts/subscriptions-tracker.md`
 - L2_facts/user-lists (fact tags=user-lists,personal-context,entertainment,reading,executive-assistant) -> `L2_facts/user-lists.md`
-- L2_facts/user-principles-collection (fact tags=user-principles,personal-knowledge,wellbeing,thinking,feeling,executive-assistant) -> `L2_facts/user-principles-collection.md`
-- L2_facts/user-principles-index (fact tags=user-principles,gemini-spark,personal-knowledge,wellbeing,thinking,retrieval-index) -> `L2_facts/user-principles-index.md`
-- L2_facts/user-principles-working (fact tags=user-principles,working-version,personal-knowledge,editable,alfred) -> `L2_facts/user-principles-working.md`
+- L2_facts/user-principles-collection (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-collection.md`
+- L2_facts/user-principles-index (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-index.md`
+- L2_facts/user-principles-working (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-working.md`
 - L3_sops/external-source-adoption (sop tags=source-adoption,research,wiki-write) -> `L3_sops/external-source-adoption.md`
 - L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
 - L3_sops/gstack-alfred-precedence (sop tags=gstack,precedence,governance,reconciliation,alfred,decision-gates,memory-authority) -> `L3_sops/gstack-alfred-precedence.md`
+- Principles/README (project tags=user-principles,principles,index,personal-knowledge,alfred) -> `Principles/README.md`
 - queries/2026-05-11-chief-of-staff-readiness-dry-run (query tags=briefing,dry-run,chief-of-staff,readiness) -> `queries/2026-05-11-chief-of-staff-readiness-dry-run.md`
 - queries/2026-05-11-incisive-expert-style-prompt (query tags=communication-style,pushback,verification,prompt-snippets,alfred) -> `queries/2026-05-11-incisive-expert-style-prompt.md`
 - queries/2026-05-11-onboarding-pass-1 (query tags=onboarding,prompt-system,wanderland,screenery,chief-of-staff) -> `queries/2026-05-11-onboarding-pass-1.md`
-- queries/2026-05-15-obsidian-as-human-view-layer (query tags=obsidian,wiki,human-layer,view-layer,governance,alfred) -> `queries/2026-05-15-obsidian-as-human-view-layer.md`

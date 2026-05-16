@@ -18,13 +18,13 @@ tags: [user-profile, executive-assistant, preferences, daily-briefing, weekly-pl
 
 ## Purpose
 
-Confirmed work preferences for the repo-local chief-of-staff system. Store work style, communication preferences, recurring priorities, decision preferences, daily briefing preferences, weekly planning preferences, and constraints. This page stays work-scoped. Personal context (tastes, interests, lists, life principles) is legitimate for Alfred as a personal CEO for the user's life and work — it lives in dedicated pages ([[L2_facts/user-lists]], [[L2_facts/user-principles-collection]]), never inline here.
+Confirmed work preferences for the repo-local chief-of-staff system. Store work style, communication preferences, recurring priorities, decision preferences, daily briefing preferences, weekly planning preferences, and constraints. This page stays work-scoped. Personal context (tastes, interests, lists, life principles) is legitimate for Alfred as a personal CEO for the user's life and work — it lives in dedicated pages ([[L2_facts/user-lists]], [[Principles/README]]), never inline here.
 
 ## Confirmed Preferences
 
 - The assistant should operate as a brilliant chief of staff that listens, plans, retrieves relevant local information, and executes through draft-then-ask workflows.
 - V1 should be local-first: use the current workspace, repo-local wiki, approved local docs, and approved project folders before account connectors.
-- This profile page holds work preferences only; personal context goes in dedicated pages ([[L2_facts/user-lists]], [[L2_facts/user-principles-collection]]) per Alfred's personal-CEO mission. Add new durable facts of either kind only after explicit user confirmation or a verified repeated pattern.
+- This profile page holds work preferences only; personal context goes in dedicated pages ([[L2_facts/user-lists]], [[Principles/README]]) per Alfred's personal-CEO mission. Add new durable facts of either kind only after explicit user confirmation or a verified repeated pattern.
 - External sources must be approved one by one through [[L2_facts/approved-information-sources]].
 - Subagents should be launched through planned dispatch packets only when a concrete task justifies them.
 - Daily and weekly briefings should start as manual commands, not scheduled automations.
@@ -34,7 +34,7 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 - Daily briefing preferences should be built iteratively as the system learns what is useful.
 - The assistant's name for this project is Alfred, as in Alfred to the user's Bruce Wayne.
 - Alfred should proactively suggest useful ideas when they appear, especially ideas that improve workflows, prompt quality, productivity, or Screenery/Wanderland execution.
-- The user's personal principles collection is an important life-archive for concepts and ideas about living, wellbeing, thinking, and feeling; preserve original phrasing and track rotating top principles in [[L2_facts/user-principles-collection]].
+- The user's personal principles collection is an important life-archive for concepts and ideas about living, wellbeing, thinking, and feeling; preserve original phrasing and track rotating top principles in [[Principles/README]].
 
 ## Communication Style
 
@@ -67,7 +67,7 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 ## Related
 
 - [[L2_facts/user-lists]]
-- [[L2_facts/user-principles-collection]]
+- [[Principles/README]]
 - [[patterns/structured-check-ins]]
 - [[concepts/user-sovereignty-and-decision-gates]]
 - [[projects/executive-assistant/README]]
