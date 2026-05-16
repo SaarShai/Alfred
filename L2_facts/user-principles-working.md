@@ -69,7 +69,7 @@ How the 59 route together. Numbers = inventory IDs. Hubs are entry points; attra
 - **D. Accept / surrender (Stoicism)** ← Acceptance(34), Desire/No preference(10), Desire(35), Let them(12), Guest(45), Not my Responsibility(23), No responsibility(44), Deserving(46), No need to figure it out(24), No glory(26), No comparison(25), Nothing means anything(3). Sub-framework: Stoicism (amor fati). Tone: relief (per Meaningless).
 - **E. Self-relation / drop self-blame** ← No shame(11), With yourself(19), Respect yourself(42), Doing my best(47), Permission(14), Who are you(40), Confident me(41), For them(43), No responsibility(44). (The theme, not the center — per user.)
 - **F. Enjoy / play** ← Enjoy(17, top-bunch #1), Play(2), Fun/humour(59), 25% more(51), Epic(16), Permission(14), Looking forward to it(6). Downstream *application*, not a hub.
-- **G. Act / discomfort / flow** ← Action, Seek discomfort(32), Choose(31), Easy-not-hard(28), Embrace the mess(33), Replace(30), Trust/Belief/Doubt(29), Manifesting. Holds top-bunch #2 (first 3 miles).
+- **G. Act / discomfort / flow** ← **First 3 miles(60, top-bunch #2 — basin anchor)**, Action, Seek discomfort(32), Choose(31), Easy-not-hard(28), Embrace the mess(33), Replace(30), Trust/Belief/Doubt(29), Manifesting. Edges: 60↔32 (push through the wall = welcome the hard onset), 60→1 (flow is sustained NOW), 60 tensions 28 (must-not-be-hard vs break-through-the-wall — unresolved, like Seek-discomfort vs Easy).
 - **H. Avoidance → invite (mechanism)** ← Looking forward to it(6), What feeling are you avoiding(39), Fear of fear(52), Seek discomfort(32), Leftover feelings(9), What is this feeling(4). The archive's main *operation*.
 
 **Load-bearing cross-edges (not within one basin):**
@@ -148,6 +148,7 @@ Status key: `?`=not yet decoded · `~`=glossed (LIVE by default) · `??`=cryptic
 57. `~LIVE` That Others Also — sonder: everyone hurts/agonises/wants a restart, even the people you admire.
 58. `~LIVE` Be reminded — we forget and habituate; need reminding more than teaching; the notes are a playground to love again.
 59. `~LIVE` Fun / humour — not so serious; take it easy, take it silly; less stressed, more chilled.
+60. `~LIVE` First 3 miles — arrive at flow by breaking through the 'wall'. *(top-bunch #2; user-added 2026-05-16, NOT in source — working-version original)*
 
 ## Consolidation map (canonical set)
 
@@ -225,7 +226,7 @@ Retrieval rule: when any variant is hit, surface the canonical node, not all cop
 
 - #1 mechanism when a task is genuinely not enjoyable (out of doc scope per user; parked).
 - Pink magic / "gooy love" (Parts) — deferred.
-- **Gap: top-bunch #2 "first 3 miles / flow" has no dedicated principle node** in the 59 — only basin G. The 2nd-most-live principle is unwritten in the source. Candidate to add as a named principle if the user wants.
+- ~~Gap: top-bunch #2 has no node~~ → RESOLVED 2026-05-16: added as principle **60 First 3 miles** (working-version original, not in source).
 
 ## Related
 
