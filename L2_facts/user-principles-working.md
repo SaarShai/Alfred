@@ -53,6 +53,22 @@ Principles most others route back to.
 - Connective tissue: reinterpretation > circumstance ("happy = interpretations − expectations"). *(inferred)*
 - Self-blame as a negative hub: *Alfred inference, user is NOT sure it's core — likely overstated by Alfred from loud confessional sections. Treat as a theme, not the center.*
 
+## Top bunch — deep (2026-05-16)
+
+The 4 live, unpacked against the map.
+
+**#3 NOW (hub A) and #4 No opinion (hub B) are the two entry points — and they're the *method*, not the goal.** NOW = where to be; No-opinion/Less-thought = how to get there (stop narrating). They sit on the spine you don't name: reinterpretation (48/49) + surrender (basin D). You reach for the hubs; the spine is what makes them hold. Failure mode: without the spine, "be in the NOW" becomes one more thing to manage.
+
+**#1 Enjoyment over management (Enjoy 17, basin F) is an *application*, not a hub.** It rides on 3+4: you can only choose enjoyment once thinking is quiet (4) and you're in the moment (3). Its "over management" half has no node — it's the live edge between enjoying and the Quit-Jobs/No-obligation cluster (22/27/28). Failure mode: "find joy in *everything*" collides with reality the moment a task genuinely isn't fun.
+
+**#2 First 3 miles (60, basin G) is the other application — and it directly contradicts #1.** #1 (with Easy-not-hard 28) says *it must not be hard, enjoy it*. #2 (with Seek discomfort 32) says *break through the wall*. The wall is, by definition, the un-enjoyable part. **Your two most-live principles fight each other.** This is the same effort-vs-effortless fault line the archive never resolves — now sitting at the very top of your stack.
+
+**The resolution is already in your archive — and it's not in your top bunch.** Principle 6 / 39 / basin H — *"What I'm avoiding I'm inviting… look forward to it"* (Frankl/paradoxical intention). That is the bridge: it makes the wall (#2) into something you look forward to (#1). Without it, #1 and #2 are at war and you oscillate. With it, the sequence is coherent:
+
+> No-opinion (4, stop narrating the wall as suffering) → invite it (6, look forward to the hard onset) → break through (2) → land in NOW (3) → enjoy (1).
+
+**Sharpest takeaway:** your live set is missing its own connective tissue. The principle that reconciles your top two — "look forward to it" — is sitting at #6 in the archive, not in your rotation. The contradiction you feel between *enjoy it* and *push through the wall* isn't a flaw in the principles; it's a missing link you already wrote down years ago and stopped reaching for.
+
 ## Network map
 
 How the 59 route together. Numbers = inventory IDs. Hubs are entry points; attractors are the basins most principles fall into; edges are the load-bearing wiring.
