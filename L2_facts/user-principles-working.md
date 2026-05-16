@@ -225,6 +225,7 @@ Retrieval rule: when any variant is hit, surface the canonical node, not all cop
 
 - #1 mechanism when a task is genuinely not enjoyable (out of doc scope per user; parked).
 - Pink magic / "gooy love" (Parts) — deferred.
+- **Gap: top-bunch #2 "first 3 miles / flow" has no dedicated principle node** in the 59 — only basin G. The 2nd-most-live principle is unwritten in the source. Candidate to add as a named principle if the user wants.
 
 ## Related
 
