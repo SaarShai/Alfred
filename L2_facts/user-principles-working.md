@@ -53,6 +53,36 @@ Principles most others route back to.
 - Connective tissue: reinterpretation > circumstance ("happy = interpretations − expectations"). *(inferred)*
 - Self-blame as a negative hub: *Alfred inference, user is NOT sure it's core — likely overstated by Alfred from loud confessional sections. Treat as a theme, not the center.*
 
+## Network map
+
+How the 59 route together. Numbers = inventory IDs. Hubs are entry points; attractors are the basins most principles fall into; edges are the load-bearing wiring.
+
+**Hubs (user-confirmed) — retrieval entry points:**
+- **NOW** (1) — present-moment / anti-time-travel.
+- **No opinion + Less thought** (7,8) — dissolve thinking.
+- Connective spine: **reinterpretation** — happy = interpretations − expectations (48) / Context over content (49). Sits under both hubs and Acceptance.
+
+**Attractors (basins) and their members:**
+- **A. Now / anti-time-travel** ← NOW(1), Endless+Shattering(18), No need to figure it out now(24), Predictions make reality(20), Be reminded(58), "log off after 3". Hub: NOW.
+- **B. Dissolve thinking** ← No opinion(7), Less thought(8), Is it true?!(15), Quality of your thoughts(37), Replace(30), Over thinking/"Gotcha"(53), "shitty first draft". Hub: No opinion.
+- **C. Reinterpret / lower expectations** ← happy=interp−expect(48), Context over content(49), Focusing illusion(36), It's just pixels(55), no big deal(56), Not binary(54), Imagine(21). Spine of both hubs.
+- **D. Accept / surrender (Stoicism)** ← Acceptance(34), Desire/No preference(10), Desire(35), Let them(12), Guest(45), Not my Responsibility(23), No responsibility(44), Deserving(46), No need to figure it out(24), No glory(26), No comparison(25), Nothing means anything(3). Sub-framework: Stoicism (amor fati). Tone: relief (per Meaningless).
+- **E. Self-relation / drop self-blame** ← No shame(11), With yourself(19), Respect yourself(42), Doing my best(47), Permission(14), Who are you(40), Confident me(41), For them(43), No responsibility(44). (The theme, not the center — per user.)
+- **F. Enjoy / play** ← Enjoy(17, top-bunch #1), Play(2), Fun/humour(59), 25% more(51), Epic(16), Permission(14), Looking forward to it(6). Downstream *application*, not a hub.
+- **G. Act / discomfort / flow** ← Action, Seek discomfort(32), Choose(31), Easy-not-hard(28), Embrace the mess(33), Replace(30), Trust/Belief/Doubt(29), Manifesting. Holds top-bunch #2 (first 3 miles).
+- **H. Avoidance → invite (mechanism)** ← Looking forward to it(6), What feeling are you avoiding(39), Fear of fear(52), Seek discomfort(32), Leftover feelings(9), What is this feeling(4). The archive's main *operation*.
+
+**Load-bearing cross-edges (not within one basin):**
+- H → G: inviting what you avoid (6/39) feeds seeking discomfort (32) and dissolving fear-of-fear (52).
+- C → B & D: reinterpretation (48/49) is *why* "no opinion" and "acceptance" work — it's the shared mechanism, not a sibling.
+- B → A: less thinking (8) is how you stay in NOW (1) — dissolve is the method, NOW is the destination.
+- Replace (30) = the operational bridge: "don't fight the bad, switch attention" links B (dissolve) → G (act) → F (enjoy).
+- E routes into D: drop self-blame by way of "not my responsibility / guest / no deserving" (44/45/46).
+
+**Top bunch on the map:** #1 Enjoy = basin F · #2 first-3-miles = basin G · #3 NOW = hub A · #4 No opinion = hub B. Live set spans entry (A,B) + application (F,G) — the spine (C) and surrender (D) are the machinery underneath.
+
+**Standalone / low-link:** Bird by bird (user: doesn't pair much) · Trumpets (imagination, not a node) · Stories (peripheral).
+
 ## Life Principles — inventory & decode status
 
 Decode rule (user-stated): presence in the doc ⇒ almost certainly LIVE. Alfred supplies the gloss; only ask the user on genuinely cryptic items. No rote "one-line + live?" per principle.
