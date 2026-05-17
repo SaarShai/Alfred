@@ -22,6 +22,13 @@ Reinterpretation minus expectation/ego; drop the "should," expect hardship, don'
 - **Status:** LIVE
 - **Source:** [[raw/2026-05-12-gemini-spark-google-doc]] (immutable; verbatim text there)
 
+## Full formula (source, lines ~2157–2159)
+
+Source states the expanded form: **happy = interpretation − expectation − ego**, where:
+- *interpretation = context* (environment, culture, story)
+- *expectation includes comparison and envy*
+- "Do expect" side: for it to hurt, for it to be fleeting. "Don't expect": easy, painless, bliss, perfection, justice, glory, success, gratitude. "Destroy 'should' — it's the motor of expectation."
+
 ## Connects to
 
 - [[Principles/context-over-content]] — same basin spine twin: it's the context, not content

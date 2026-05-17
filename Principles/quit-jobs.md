@@ -22,6 +22,10 @@ Quit self-assigned jobs (worrying, proving, optimising time); or reassign the pa
 - **Status:** LIVE
 - **Source:** [[raw/2026-05-12-gemini-spark-google-doc]] (immutable; verbatim text there)
 
+## Core decode (user-read 2026-05-16)
+
+The explicit operational inventory of the "management" pole of [[Principles/enjoy]] (#1) and [[Principles/no-obligation]]. Source's enumerated "Jobs to Quit": worrying, proving, "Curriculum and productivity tsar" (designing/supervising/evaluating own education), optimising-time, making-a-big-deal, sense-making, good/bad labelling, being-on-guard, figuring-everything-out, "Preparing for the ultimate suffering". The mechanism is [[Principles/replace]] in action: don't force the part to stop — reassign it a new job. Source attributes the "always something wrong / preparing for ultimate suffering" job to "your ima" (mom). Source-grounded note only; no further interpretation (Parts work deferred per project boundary).
+
 ## Connects to
 
 - [[Principles/choose]] — same basin: commit, drop the unmade self-assigned jobs

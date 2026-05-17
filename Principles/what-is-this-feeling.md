@@ -26,7 +26,7 @@ Name the unprocessed emotion; fear = signal something matters; the way out is th
 
 - [[Principles/what-feeling-are-you-avoiding]] — same basin: every issue is an unfelt emotion
 - [[Principles/looking-forward-to-it]] — same basin mechanism: name it, then invite it
-- [[Principles/leftover-feelings-and-phantom-fears]] — same basin: when the feeling has no real cause
+- [[Principles/leftover-feelings-and-phantom-fears]] — the frequent *answer*: this is the question, leftover-feelings is what you usually find (orphaned/phantom, not a signal)
 - [[Principles/fear-of-fear]] — same basin: the fear hurts, not the emotion
 - [[Principles/seek-discomfort]] — H→G: naming feeds going through it
 

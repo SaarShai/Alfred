@@ -29,5 +29,6 @@ You're a negatively-biased judge; ask "is it true?"; turn "can't" into "why not?
 - [[Principles/the-quality-of-your-thoughts]] — same basin: choose the truer book
 - [[Principles/gotcha]] — same basin: catch the rogue thought, then test it
 - [[Principles/predictions-make-reality]] — is the predicted fatigue actually true?
+- [[Principles/emergency-batch]] — member #1 of the on-request triage set
 
 <!-- tags: basin-b -->

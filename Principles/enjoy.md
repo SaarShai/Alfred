@@ -28,7 +28,8 @@ If now feels like chore/waiting you're living it wrong; enjoy anyway; enjoyment 
 - [[Principles/permission]] — same basin: permission to enjoy, even 10 minutes
 - [[Principles/25-percent-more]] — same basin: dial now 25% more enjoyable
 - [[Principles/now]] — application of the hub: enjoy only once you're in the moment
-- [[Principles/looking-forward-to-it]] — the bridge that reconciles enjoy with first-3-miles
+- [[Principles/looking-forward-to-it]] — sub-principle of enjoy: how #1 reaches an un-fun task (invited-hard → enjoyed); the bridge that reconciles enjoy with first-3-miles
 - [[Principles/first-3-miles]] — directly contradicts it (enjoy vs break the wall)
+- [[Principles/emergency-batch]] — member #2 (the pledge to enjoy no matter what)
 
 <!-- tags: basin-f, top-bunch -->

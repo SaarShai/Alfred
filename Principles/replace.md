@@ -29,5 +29,6 @@ Don't fight the bad; switch attention to and grow what's right (can't think noth
 - [[Principles/the-quality-of-your-thoughts]] — same basin: choose the better book
 - [[Principles/seek-discomfort]] — operational bridge B→G: switch attention into action
 - [[Principles/enjoy]] — operational bridge B→G→F: grow what's right, enjoy
+- [[Principles/looking-forward-to-it]] — sub-principle of replace: invite = replace the dread-frame with anticipation, don't fight it
 
 <!-- tags: basin-b -->

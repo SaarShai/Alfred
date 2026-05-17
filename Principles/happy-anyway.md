@@ -29,5 +29,6 @@ Proactive unconditional happiness, chosen and worked at; never a victim; "it's u
 - [[Principles/25-percent-more]] — same basin: you can always dial it more enjoyable
 - [[Principles/choose]] — chosen happiness is a committed decision
 - [[Principles/happy-interpretations-minus-expectations]] — the spine: happiness is reinterpretation
+- [[Principles/emergency-batch]] — member #2 (the pledge to enjoy no matter what)
 
 <!-- tags: basin-f -->

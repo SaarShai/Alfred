@@ -22,6 +22,10 @@ tags: [user-principles, principle, basin-a, hub, top-bunch]
 - **Status:** LIVE · hub · top-bunch #3
 - **Source:** [[raw/2026-05-12-gemini-spark-google-doc]] (immutable; verbatim text there)
 
+## Core decode (user-confirmed 2026-05-16)
+
+The principle's felt engine is **"the feeling of procrastinating on life"** — the *provisional life*: living as if real life starts later, a constant inner refusal to commit to the moment. Source anchor: the Marie-Louise von Franz quote in NOW's quotes section ("one is not yet in real life… the real thing will come about [later]… a constant inner refusal to commit oneself to the moment"). This is the named **"force"** in the NOW source (line ~153) that surfaces as napping / feeling-bad / not-ready / "something's wrong". NOW is the direct counter to it.
+
 ## Connects to
 
 - [[Principles/less-thought]] — less thinking (8→1) is the method; NOW is the destination

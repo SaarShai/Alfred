@@ -29,5 +29,6 @@ You can always dial now 25% more enjoyable/enthusiastic; turn it to 11, then 20.
 - [[Principles/play]] — same basin: dial up the play
 - [[Principles/permission]] — same basin: permission to turn it up
 - [[Principles/happy-anyway]] — same basin: you can always choose more
+- [[Principles/emergency-batch]] — member #3 of the on-request triage set
 
 <!-- tags: basin-f -->

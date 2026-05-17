@@ -22,6 +22,10 @@ Fuck the clock/sleep; always morning till bedtime; shatter the felt time-of-day;
 - **Status:** LIVE
 - **Source:** [[raw/2026-05-12-gemini-spark-google-doc]] (immutable; verbatim text there)
 
+## Core decode (user-confirmed 2026-05-16)
+
+This is the principle-level engine of the same "force" behind [[Principles/now]] (the nap / feeling-bad / "something's wrong" pull) and the `Week log off after three` decode: the predicted afternoon/evening energy-drop and the tyranny of sleep. The counter is *the Shattering* — break the felt position-in-the-day ("it's ALWAYS MORNING until actual bedtime"); sleep is a break to get over with, not a reward to look forward to.
+
 ## Connects to
 
 - [[Principles/now]] — basin A hub: shatter the clock, stay in the present

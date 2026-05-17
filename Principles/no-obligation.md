@@ -22,6 +22,10 @@ Drop the duty/drudgery/behind feeling; you're on holiday, play; must feel effort
 - **Status:** LIVE
 - **Source:** [[raw/2026-05-12-gemini-spark-google-doc]] (immutable; verbatim text there)
 
+## Core decode (user-read 2026-05-16)
+
+The autobiographical root of the "management" pole of [[Principles/enjoy]] (#1) and the "force" behind [[Principles/now]] / [[Principles/endless-and-shattering]]. Source is explicit: the responsibility from age 13–17 "broke me"; the drop-out → relief → "world collapsed" loop; "I was the smartest so I must know the best use of my time"; OCD about wasting brainpower; and the obligation-part is named as the *source* of the fatigue/sleepiness ("you're only sleepy because of a sense of obligation; you check on V only from a sense of obligation"). Management = this obligation-part; the principle is releasing it, not satisfying it.
+
 ## Connects to
 
 - [[Principles/enjoy]] — basin F anchor: holiday, play, not drudgery

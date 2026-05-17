@@ -24,7 +24,8 @@ An icky feeling with no real cause; orphaned/phantom, like forgetting why you wa
 
 ## Connects to
 
-- [[Principles/what-is-this-feeling]] — same basin: name the feeling that has no clear cause
+- [[Principles/what-is-this-feeling]] — the *question* this answers: ask "what is this feeling?" → usually find it's a leftover/phantom, not a signal
+- [[Principles/now]] — the shame→sleepiness→shame loop here is the same "force"/nap motif behind NOW
 - [[Principles/what-feeling-are-you-avoiding]] — same basin: the orphaned feeling is unfelt emotion
 - [[Principles/fear-of-fear]] — same basin: phantom fear feeds the recursion
 - [[Principles/predictions-make-reality]] — phantom fears are false warning lights
