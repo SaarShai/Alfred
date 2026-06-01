@@ -1,0 +1,12 @@
+Distribute principles into interlinked Principles/ folder
+
+60 one-page-per-principle docs + README/network/top-bunch/decodings/
+consolidation/sections, fully wikilinked by hub/basin/edge. Register
+Principles/ in schema.md + index.md; wiki.py: keep individual principle
+pages out of L1 (folder represented by Principles/README, like raw/).
+Supersede L2_facts/user-principles-{working,collection,index} to redirect
+stubs; repoint backlinks. Apply user link rulings: easy-not-hard is
+standalone (no #60 tension); love-out=E; replace=B; meaningless/relief
+= surrender. Lint 0/0, doctor ok.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
