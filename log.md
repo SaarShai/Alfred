@@ -56,3 +56,4 @@
 - Updated user-operating-profile: ranked main pursuits (Wanderland/Screenery, Animayte, improving AI use, collecting+documenting wisdom) + general admin/life. Source: user prompt 2026-06-02.
 - Created projects/wanderland/README (pursuit #1 scaffold): Screenery files/designs, Alicia's work, China mfg/distributor partnership, Other(Joff/Stir/Hilton, EquipHotel). Added to index.md + L1_index. Source: user prompt 2026-06-02.
 - Updated projects/wanderland: expanded Screenery into Alicia ownership (foam padding/glue/sheets stock), AI designer (Illustrator-editing AI project), Orders (existing+incoming). Resolved "Alicia's work" = materials ownership. Source: user prompt 2026-06-02.
+- Updated projects/wanderland: AI designer expanded -> finalize file checklist, file ledger (final set list/artboards-sheets breakdown/production notes), assembly manual per design. Source: user prompt 2026-06-02.

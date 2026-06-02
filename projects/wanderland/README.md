@@ -28,6 +28,9 @@ Wanderland
 │   │   ├─ glue
 │   │   └─ sheets stock
 │   ├─ AI designer — AI folder/project for editing Illustrator files
+│   │   ├─ finalize file checklist
+│   │   ├─ file ledger — final set list · artboards/sheets breakdown · production notes
+│   │   └─ assembly manual/instructions (per design)
 │   └─ Orders — existing + incoming client orders
 ├─ Chinese manufacturer / distributor partnership
 └─ Other
@@ -40,7 +43,10 @@ Wanderland
 | Node | What it is | Status |
 |---|---|---|
 | Alicia's ownership | Alicia owns Screenery materials/supply: foam padding, glue, sheets stock. | active; detail TBD |
-| AI designer | An AI folder/project for editing Illustrator (.ai) files. | active; detail TBD |
+| AI designer | An AI folder/project for editing Illustrator (.ai) files. | active; see below |
+| AI designer → finalize file checklist | Checklist to finalize a design file. | needs detail |
+| AI designer → file ledger | Per-design ledger: final set list, artboards/sheets breakdown, production notes. | needs detail |
+| AI designer → assembly manual | Assembly manual/instructions, one per design. | needs detail |
 | Orders | Existing and incoming client orders. | active; detail TBD |
 
 (Inference, unconfirmed: Screenery is a physical product built from glued foam padding + sheet stock — implied by the materials list.)
