@@ -27,6 +27,7 @@
   const collapsed = d => !!(d._children && !d.children);
   const colorOf = d => d.depth === 0 ? TREE_COLORS[d.ti % TREE_COLORS.length] : PALETTE[(d.branch >= 0 ? d.branch : 0) % PALETTE.length];
   const repoRel = url => (url || '').replace(/^(\.\.\/)+/, '');
+  const keyOf = d => d.data.id || d.data.url;  // stable view-state key (survives path changes)
 
   let SERVER = false;
   let states = [];
@@ -52,13 +53,21 @@
   function buildStates(TREES) {
     canvas.selectAll('*').remove();
     states = []; uid = 0;
+    let dirtyS = false, dirtyO = false;
     TREES.forEach((data, ti) => {
       const root = d3.hierarchy(data);
       root.hx0 = 0; root.vy0 = 0;
       root.descendants().forEach(d => {
         d.id = uid++; d._children = d.children; d.ti = ti;
-        d.scale = SCALES[d.data.url];
-        const off = OFFSETS[d.data.url]; d.ox = off ? off.x : 0; d.oy = off ? off.y : 0;
+        const k = keyOf(d), ou = d.data.url;
+        // size — migrate any legacy url-keyed value onto the stable id
+        let sc = SCALES[k];
+        if (sc === undefined && k !== ou && SCALES[ou] !== undefined) { sc = SCALES[ou]; SCALES[k] = sc; delete SCALES[ou]; dirtyS = true; }
+        d.scale = sc;
+        // position offset — same migration
+        let of = OFFSETS[k];
+        if (!of && k !== ou && OFFSETS[ou]) { of = OFFSETS[ou]; OFFSETS[k] = of; delete OFFSETS[ou]; dirtyO = true; }
+        d.ox = of ? of.x : 0; d.oy = of ? of.y : 0;
         let a = d; while (a.depth > 1) a = a.parent;
         d.branch = a.depth === 0 ? -1 : a.parent.children.indexOf(a);
       });
@@ -66,6 +75,8 @@
       const g = canvas.append('g').attr('class', 'tree');
       states.push({ data, root, g, gLink: g.append('g'), gNode: g.append('g'), ti, yOffset: 0 });
     });
+    if (dirtyS) saveScales();
+    if (dirtyO) saveOffsets();
   }
 
   function layout() {
@@ -95,7 +106,7 @@
       drawTree(states[d.ti]);
     })
     .on('end', function (event, d) {
-      OFFSETS[d.data.url] = { x: d.ox || 0, y: d.oy || 0 };
+      OFFSETS[keyOf(d)] = { x: d.ox || 0, y: d.oy || 0 };
       saveOffsets();
     });
 
@@ -307,7 +318,7 @@
   function nudgeScale(dir) {
     if (!sizeNode) return;
     sizeNode.scale = Math.max(0.4, Math.min(2.5, (sizeNode.scale || 1) * (dir > 0 ? 1.15 : 1 / 1.15)));
-    SCALES[sizeNode.data.url] = sizeNode.scale; saveScales();
+    SCALES[keyOf(sizeNode)] = sizeNode.scale; saveScales();
     document.getElementById('size-val').textContent = Math.round(sizeNode.scale * 100) + '%';
     refresh(sizeNode);
   }

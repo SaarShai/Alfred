@@ -1,4 +1,5 @@
 ---
+nid: n72pkpt
 title: "foam padding"
 type: node
 status: active

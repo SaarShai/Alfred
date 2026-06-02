@@ -1,4 +1,5 @@
 ---
+nid: nuxq2s3
 title: "Joff (Stir / Hilton)"
 type: node
 status: active

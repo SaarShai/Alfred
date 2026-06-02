@@ -1,4 +1,5 @@
 ---
+nid: n3hx96y
 title: "AI designer"
 type: node
 status: active

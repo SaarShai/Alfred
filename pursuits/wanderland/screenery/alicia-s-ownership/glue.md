@@ -1,4 +1,5 @@
 ---
+nid: nsd1btm
 title: "glue"
 type: node
 status: active

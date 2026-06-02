@@ -1,4 +1,5 @@
 ---
+nid: nnia605
 title: "Chinese manufacturer / distributor partnership"
 type: node
 status: active

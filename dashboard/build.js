@@ -23,13 +23,26 @@ function frontmatter(file) {
   const fm = m ? m[1] : '';
   const title = (fm.match(/^title:\s*(.+)$/m) || [])[1];
   const childLine = (fm.match(/^children:\s*\[(.*)\]\s*$/m) || [])[1];
+  const nid = (fm.match(/^nid:\s*(.+)$/m) || [])[1];
   const h1 = (txt.match(/^#\s+(.+)$/m) || [])[1];
   return {
     title: clean(title) || (h1 && h1.trim()) || null,
+    nid: clean(nid),
     children: childLine ? childLine.split(',').map(s => s.trim()).filter(Boolean) : [],
   };
 }
 function clean(s) { return s == null ? null : s.trim().replace(/^["']|["']$/g, ''); }
+
+// stable per-node id: persists across renames/leaf→branch conversions, so view-state (size, position) survives
+const usedIds = new Set();
+function genId() { let id; do { id = 'n' + Math.random().toString(36).slice(2, 8); } while (usedIds.has(id)); usedIds.add(id); return id; }
+function ensureNid(file, existing) {
+  if (existing) { usedIds.add(existing); return existing; }
+  const nid = genId();
+  const txt = fs.readFileSync(file, 'utf8').replace(/^---\n/, '---\nnid: ' + nid + '\n');
+  fs.writeFileSync(file, txt);
+  return nid;
+}
 
 // resolve a child slug living in baseDir; return {file, dir(if branch)}
 function resolve(baseDir, slug) {
@@ -47,6 +60,7 @@ function build(baseDir, slug, trail) {
   nodeCount++;
   const node = {
     name: fm.title || slug,
+    id: ensureNid(r.file, fm.nid),
     url: path.relative(DASH, r.file),
   };
   if (r.dir && fm.children.length) {

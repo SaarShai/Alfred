@@ -1,4 +1,5 @@
 ---
+nid: ntwbp1q
 title: "Collecting & documenting wisdom"
 type: node
 status: active

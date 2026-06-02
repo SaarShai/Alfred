@@ -1,4 +1,5 @@
 ---
+nid: ntqhn74
 title: "file ledger"
 type: node
 status: active

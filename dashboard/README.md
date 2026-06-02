@@ -16,6 +16,8 @@ Visual view of the pursuits node tree. **The wiki is the source of truth** — t
 - **＋ on hover** over a node → add a child **note**; **＋ Add note** in the header → add a new top-level pursuit. A note creates a real wiki doc (`status: note`) and wires it in as a child; the view refreshes immediately.
 - **Gear icon** (above the doc icon) → size dialog with ▲/▼ to grow/shrink that node **and its whole subtree**. Sizes persist per browser via `localStorage` (view-only — not written to the wiki).
 - **Drag a node** → repositions that node **and its children** (offset cascades to the subtree); dragging **empty space** still pans the canvas. Positions persist per browser via `localStorage` (view-only). A small click still expands/collapses or opens the doc.
+
+Size and position are saved immediately and keyed by a **stable per-node `nid`** (in each node's frontmatter), so they survive renames and leaf→branch conversions — adding a child to a sized note no longer resets it.
 - Click a **branch** to expand/collapse · scroll = zoom · drag = pan · `#` badge = hidden children · Buttons: Expand all / Collapse / Fit.
 
 ## Source of truth → how it maps

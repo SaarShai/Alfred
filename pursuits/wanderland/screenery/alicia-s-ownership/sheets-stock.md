@@ -1,4 +1,5 @@
 ---
+nid: ngb7m1s
 title: "sheets stock"
 type: node
 status: active

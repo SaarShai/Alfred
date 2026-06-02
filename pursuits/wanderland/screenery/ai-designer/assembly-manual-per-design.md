@@ -1,4 +1,5 @@
 ---
+nid: nkos2yy
 title: "assembly manual (per design)"
 type: node
 status: active

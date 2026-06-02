@@ -1,4 +1,5 @@
 ---
+nid: nuob8ad
 title: "EquipHotel"
 type: node
 status: active

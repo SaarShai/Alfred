@@ -1,4 +1,5 @@
 ---
+nid: nvuujad
 title: "finalize file checklist"
 type: node
 status: active

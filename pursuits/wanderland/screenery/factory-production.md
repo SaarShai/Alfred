@@ -1,4 +1,5 @@
 ---
+nid: nxo5ck7
 title: "Factory (production)"
 type: node
 status: note
