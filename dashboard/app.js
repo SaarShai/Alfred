@@ -12,7 +12,7 @@
   const eComp = root => root.eachBefore(d => { d.escale = (d.parent ? d.parent.escale : 1) * (d.scale || 1); });
   const rowSlot = d => baseH(d) * (d.escale || 1) + ROW_GAP;
   const tree = d3.tree().nodeSize([1, dy]).separation((a, b) => (rowSlot(a) + rowSlot(b)) / 2);
-  const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+  const diagonal = d3.linkHorizontal().x(d => d.hx).y(d => d.vy);
 
   const svg = d3.select('svg');
   const canvas = svg.append('g');
@@ -35,16 +35,30 @@
   let SCALES = {};
   try { SCALES = JSON.parse(localStorage.getItem('pursuits-scales') || '{}'); } catch (e) {}
   function saveScales() { try { localStorage.setItem('pursuits-scales', JSON.stringify(SCALES)); } catch (e) {} }
+  // per-node manual drag offset (applies to the node + its subtree), persisted by doc url
+  let OFFSETS = {};
+  try { OFFSETS = JSON.parse(localStorage.getItem('pursuits-offsets') || '{}'); } catch (e) {}
+  function saveOffsets() { try { localStorage.setItem('pursuits-offsets', JSON.stringify(OFFSETS)); } catch (e) {} }
+  // cumulative offset down the tree → render coords (hx,vy) = layout (y,x) + inherited offset
+  function computePos(root) {
+    root.eachBefore(d => {
+      d.cox = (d.parent ? d.parent.cox : 0) + (d.ox || 0);
+      d.coy = (d.parent ? d.parent.coy : 0) + (d.oy || 0);
+      d.hx = d.y + d.cox;
+      d.vy = d.x + d.coy;
+    });
+  }
 
   function buildStates(TREES) {
     canvas.selectAll('*').remove();
     states = []; uid = 0;
     TREES.forEach((data, ti) => {
       const root = d3.hierarchy(data);
-      root.x0 = 0; root.y0 = 0;
+      root.hx0 = 0; root.vy0 = 0;
       root.descendants().forEach(d => {
         d.id = uid++; d._children = d.children; d.ti = ti;
         d.scale = SCALES[d.data.url];
+        const off = OFFSETS[d.data.url]; d.ox = off ? off.x : 0; d.oy = off ? off.y : 0;
         let a = d; while (a.depth > 1) a = a.parent;
         d.branch = a.depth === 0 ? -1 : a.parent.children.indexOf(a);
       });
@@ -59,11 +73,37 @@
     states.forEach(s => {
       eComp(s.root);
       tree(s.root);
+      computePos(s.root);
       let minX = Infinity, maxX = -Infinity;
-      s.root.each(d => { minX = Math.min(minX, d.x); maxX = Math.max(maxX, d.x); });
+      s.root.each(d => { minX = Math.min(minX, d.vy); maxX = Math.max(maxX, d.vy); });
       s.yOffset = offset - minX;
       offset += (maxX - minX) + GAP;
     });
+  }
+
+  // drag a node → move it + its subtree (offset cascades to descendants); empty-space drag still pans
+  const drag = d3.drag().clickDistance(5)
+    .on('start', function (event, d) {
+      event.sourceEvent.stopPropagation();
+      const p = d3.pointer(event, canvas.node());
+      d._p0 = p; d._ox0 = d.ox || 0; d._oy0 = d.oy || 0;
+    })
+    .on('drag', function (event, d) {
+      const p = d3.pointer(event, canvas.node());
+      d.ox = d._ox0 + (p[0] - d._p0[0]);
+      d.oy = d._oy0 + (p[1] - d._p0[1]);
+      drawTree(states[d.ti]);
+    })
+    .on('end', function (event, d) {
+      OFFSETS[d.data.url] = { x: d.ox || 0, y: d.oy || 0 };
+      saveOffsets();
+    });
+
+  // instant (no-transition) reposition of one tree — used during drag
+  function drawTree(s) {
+    computePos(s.root);
+    s.gNode.selectAll('g.node').attr('transform', d => 'translate(' + d.hx + ',' + d.vy + ') scale(' + (d.escale || 1) + ')');
+    s.gLink.selectAll('path').attr('d', diagonal);
   }
 
   function docGlyph(sel) {
@@ -79,13 +119,14 @@
 
     const node = s.gNode.selectAll('g.node').data(nodes, d => d.id);
     const nodeEnter = node.enter().append('g').attr('class', 'node')
-      .attr('transform', 'translate(' + src.y0 + ',' + src.x0 + ')')
+      .attr('transform', 'translate(' + src.hx0 + ',' + src.vy0 + ')')
       .attr('fill-opacity', 0).attr('stroke-opacity', 0)
       .on('click', (e, d) => {
         const hasKids = d.children || d._children;
         if (!hasKids) { openDoc(d); return; }
         d.children = d.children ? null : d._children; refresh(d);
-      });
+      })
+      .call(drag);
 
     const W = d => nodeW(d.data.name, d.depth === 0);
 
@@ -137,22 +178,22 @@
     merged.select('.badge').style('display', d => collapsed(d) ? null : 'none');
     merged.select('.badge .count').text(d => collapsed(d) ? d._children.length : '');
     merged.transition(t)
-      .attr('transform', d => 'translate(' + d.y + ',' + d.x + ') scale(' + (d.escale || 1) + ')')
+      .attr('transform', d => 'translate(' + d.hx + ',' + d.vy + ') scale(' + (d.escale || 1) + ')')
       .attr('fill-opacity', 1).attr('stroke-opacity', 1);
 
     node.exit().transition(t).remove()
-      .attr('transform', 'translate(' + src.y + ',' + src.x + ')')
+      .attr('transform', 'translate(' + src.hx + ',' + src.vy + ')')
       .attr('fill-opacity', 0).attr('stroke-opacity', 0);
 
     const link = s.gLink.selectAll('path').data(links, d => d.target.id);
     const linkEnter = link.enter().append('path').attr('class', 'link')
       .attr('stroke', d => colorOf(d.target))
-      .attr('d', () => { const o = { x: src.x0, y: src.y0 }; return diagonal({ source: o, target: o }); });
+      .attr('d', () => { const o = { hx: src.hx0, vy: src.vy0 }; return diagonal({ source: o, target: o }); });
     link.merge(linkEnter).transition(t).attr('d', diagonal).attr('stroke', d => colorOf(d.target));
     link.exit().transition(t).remove()
-      .attr('d', () => { const o = { x: src.x, y: src.y }; return diagonal({ source: o, target: o }); });
+      .attr('d', () => { const o = { hx: src.hx, vy: src.vy }; return diagonal({ source: o, target: o }); });
 
-    s.root.eachBefore(d => { d.x0 = d.x; d.y0 = d.y; });
+    s.root.eachBefore(d => { d.hx0 = d.hx; d.vy0 = d.vy; });
   }
 
   function refresh(source) {
@@ -168,7 +209,7 @@
     layout();
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     states.forEach(s => s.root.each(d => {
-      const X = MARGIN_L + d.y, Y = s.yOffset + d.x;
+      const X = MARGIN_L + d.hx, Y = s.yOffset + d.vy;
       minX = Math.min(minX, X); maxX = Math.max(maxX, X);
       minY = Math.min(minY, Y); maxY = Math.max(maxY, Y);
     }));

@@ -32,7 +32,8 @@
   svg{width:100vw;height:100vh;display:block;cursor:grab}
   svg:active{cursor:grabbing}
   .link{fill:none;stroke-opacity:.5;stroke-width:1.6px}
-  .node{cursor:pointer}
+  .node{cursor:grab}
+  .node:active{cursor:grabbing}
   .node rect{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35));transition:filter .15s}
   .node:hover rect{filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
   .node text.label{font-size:13px;font-weight:600;fill:var(--card-ink)}
@@ -108,7 +109,7 @@
 </header>
 <svg></svg>
 <div id="offline-banner">Read-only view — editing &amp; add-note need the app. Run <code>node dashboard/serve.js</code> (or double-click <code>dashboard/start.command</code>), then open <code>http://localhost:8777</code>.</div>
-<div class="hint">doc icon = open & edit the doc here · hover a node → ＋ adds a child note · click branch = expand/collapse · scroll = zoom · drag = pan</div>
+<div class="hint">doc icon = open & edit the doc · gear = resize subtree · hover → ＋ adds a child note · drag a node = move it + its children · click branch = expand/collapse · scroll = zoom · drag empty space = pan</div>
 
 <div id="editor" class="drawer" hidden>
   <div class="drawer-head">
