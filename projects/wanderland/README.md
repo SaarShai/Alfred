@@ -66,14 +66,17 @@ Wanderland
 
 ## Dashboard
 
-Visual tree (markmap — interactive collapse/zoom). Navigable nodes only; no access info.
+Interactive tree (D3 collapsible tree, offline). Navigable nodes only; no access info.
+Click a node to collapse/expand · scroll to zoom · drag to pan · long labels truncate (full text on hover) · collapsed nodes show a child-count badge.
 
-- Source (edit this): [dashboard/wanderland.tree.md](../../dashboard/wanderland.tree.md)
-- Generated view (open in browser): `dashboard/wanderland.html` — self-contained, offline.
-- Regenerate after editing the source:
+- **Open**: `dashboard/index.html` (double-click, or `open dashboard/index.html`).
+- **Edit the tree** (single source of truth): [dashboard/wanderland.tree.md](../../dashboard/wanderland.tree.md)
+- **Regenerate** after editing the source:
   ```bash
-  npx -y markmap-cli dashboard/wanderland.tree.md -o dashboard/wanderland.html --offline --no-open
+  node dashboard/build.js   # md -> dashboard/data.js
   ```
+- Files: `index.html` + `app.js` (D3 viewer) · `data.js` (generated) · `vendor/d3.min.js` (vendored, offline) · `build.js` (md→data) · `serve.js` (local static server for previews).
+- Old v0 (markmap): `dashboard/wanderland.html` — superseded by the D3 version.
 
 ## Open questions
 

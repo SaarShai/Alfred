@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wanderland — tree dashboard</title>
+<style>
+  :root{
+    --bg1:#0f172a; --bg2:#1e293b; --ink:#e2e8f0; --muted:#94a3b8;
+    --card:#ffffff; --card-ink:#0f172a; --line:#475569;
+    --c0:#6366f1; --c1:#0ea5e9; --c2:#10b981; --c3:#f59e0b; --c4:#ef4444; --c5:#a855f7;
+    --font: ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:var(--font);background:
+    radial-gradient(1200px 800px at 20% -10%, #243049 0%, transparent 60%),
+    linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--ink);overflow:hidden}
+  header{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:14px;
+    padding:14px 20px;z-index:10;
+    background:linear-gradient(180deg,rgba(15,23,42,.85),rgba(15,23,42,0));backdrop-filter:blur(6px)}
+  header h1{margin:0;font-size:18px;letter-spacing:.3px;font-weight:650}
+  header .sub{color:var(--muted);font-size:12px;font-weight:500}
+  .spacer{flex:1}
+  .btns{display:flex;gap:8px}
+  button{font:inherit;font-size:12px;font-weight:600;color:var(--ink);
+    background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.25);
+    padding:7px 12px;border-radius:9px;cursor:pointer;transition:.15s}
+  button:hover{background:rgba(148,163,184,.22);border-color:rgba(148,163,184,.45)}
+  svg{width:100vw;height:100vh;display:block;cursor:grab}
+  svg:active{cursor:grabbing}
+  .link{fill:none;stroke-opacity:.5;stroke-width:1.6px}
+  .node{cursor:pointer}
+  .node rect{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35));transition:filter .15s}
+  .node:hover rect{filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  .node text.label{font-size:13px;font-weight:600;fill:var(--card-ink)}
+  .node .count{font-size:10px;font-weight:700;fill:#fff}
+  .hint{position:fixed;bottom:12px;left:20px;color:var(--muted);font-size:11px;z-index:10}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Wanderland</h1>
+  <span class="sub">tree dashboard</span>
+  <div class="spacer"></div>
+  <div class="btns">
+    <button id="expand">Expand all</button>
+    <button id="collapse">Collapse</button>
+    <button id="fit">Fit</button>
+  </div>
+</header>
+<svg></svg>
+<div class="hint">click a node to collapse / expand · scroll to zoom · drag to pan</div>
+
+<script src="./vendor/d3.min.js"></script>
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
