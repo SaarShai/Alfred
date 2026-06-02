@@ -61,6 +61,23 @@
   .sheet textarea{resize:vertical}
   .sheet .row{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
   .sheet .msg{min-height:16px;margin-top:8px;font-size:12px;color:var(--c3)}
+
+  /* doc editor drawer */
+  .drawer{position:fixed;top:0;right:0;bottom:0;z-index:60;width:min(560px,95vw);
+    display:flex;flex-direction:column;background:#0b1220;
+    border-left:1px solid rgba(148,163,184,.25);box-shadow:-12px 0 40px rgba(0,0,0,.5)}
+  .drawer[hidden]{display:none}
+  .drawer-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(148,163,184,.18)}
+  .drawer-head #ed-title{font-size:15px;font-weight:700}
+  .drawer-head .path{color:var(--muted);font-size:11px;margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .drawer-head .spacer{flex:1}
+  #ed-text{flex:1;margin:14px 18px;padding:12px;resize:none;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;
+    color:var(--ink);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.2);border-radius:10px}
+  #ed-text:focus{outline:none;border-color:var(--c0)}
+  .drawer-foot{display:flex;align-items:center;gap:8px;padding:0 18px 16px}
+  .drawer-foot .spacer{flex:1}
+  .drawer-foot .msg{font-size:12px;color:var(--c2)}
 </style>
 </head>
 <body>
@@ -76,7 +93,25 @@
   </div>
 </header>
 <svg></svg>
-<div class="hint">doc icon = open/edit the doc · hover a node → ＋ adds a child note · click branch = expand/collapse · scroll = zoom · drag = pan</div>
+<div class="hint">doc icon = open & edit the doc here · hover a node → ＋ adds a child note · click branch = expand/collapse · scroll = zoom · drag = pan</div>
+
+<div id="editor" class="drawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <div id="ed-title">doc</div>
+      <div class="path" id="ed-path"></div>
+    </div>
+    <div class="spacer"></div>
+    <button id="ed-close">✕</button>
+  </div>
+  <textarea id="ed-text" spellcheck="false"></textarea>
+  <div class="drawer-foot">
+    <button id="ed-openext">Open in app</button>
+    <span class="spacer"></span>
+    <span class="msg" id="ed-msg"></span>
+    <button id="ed-save" class="primary">Save</button>
+  </div>
+</div>
 
 <div id="modal" class="modal" hidden>
   <div class="sheet">

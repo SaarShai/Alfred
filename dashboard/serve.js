@@ -28,6 +28,12 @@ function safePursuits(rel) {
   if (abs !== PURSUITS && !abs.startsWith(PURSUITS + path.sep)) return null;
   return abs;
 }
+function titleOf(txt) {
+  const t = (txt.match(/^title:\s*(.+)$/m) || [])[1];
+  if (t) return t.trim().replace(/^["']|["']$/g, '');
+  const h = (txt.match(/^#\s+(.+)$/m) || [])[1];
+  return h ? h.trim() : null;
+}
 function getChildren(txt) {
   const l = (txt.match(/^children:\s*\[(.*)\]\s*$/m) || [])[1];
   return l ? l.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -93,6 +99,32 @@ http.createServer((req, res) => {
           if (err) return json(res, { ok: false, error: 'build failed: ' + err.message }, 500);
           const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.TREES = /, '').replace(/;\s*$/, '');
           json(res, { ok: true, created, trees: JSON.parse(raw) });
+        });
+      } catch (e) { json(res, { ok: false, error: String(e.message || e) }, 400); }
+    });
+    return;
+  }
+
+  if (p === '/api/doc') {
+    const abs = safePursuits(u.searchParams.get('path'));
+    if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
+    const content = fs.readFileSync(abs, 'utf8');
+    return json(res, { ok: true, content, title: titleOf(content) });
+  }
+
+  if (p === '/api/save' && req.method === 'POST') {
+    let b = ''; req.on('data', c => b += c);
+    req.on('end', () => {
+      try {
+        const { path: rel, content } = JSON.parse(b || '{}');
+        const abs = safePursuits(rel);
+        if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
+        if (typeof content !== 'string') return json(res, { ok: false, error: 'no content' }, 400);
+        fs.writeFileSync(abs, content);
+        rebuild(err => {
+          if (err) return json(res, { ok: false, error: 'build failed: ' + err.message }, 500);
+          const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.TREES = /, '').replace(/;\s*$/, '');
+          json(res, { ok: true, title: titleOf(content), trees: JSON.parse(raw) });
         });
       } catch (e) { json(res, { ok: false, error: String(e.message || e) }, 400); }
     });

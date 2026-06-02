@@ -163,9 +163,43 @@
   }
 
   function openDoc(d) {
-    const rel = repoRel(d.data.url);
-    if (SERVER) fetch('/api/open?path=' + encodeURIComponent(rel)).catch(() => {});
-    else if (d.data.url) window.open(d.data.url, '_blank');
+    if (SERVER) openEditor(d);
+    else if (d.data.url) window.open(d.data.url, '_blank'); // static mode: read-only view
+  }
+
+  // ---- inline doc editor ----
+  let edNode = null, edPath = null;
+  async function openEditor(d) {
+    edNode = d; edPath = repoRel(d.data.url);
+    document.getElementById('ed-title').textContent = d.data.name;
+    document.getElementById('ed-path').textContent = edPath;
+    document.getElementById('ed-msg').textContent = 'Loading…';
+    document.getElementById('ed-text').value = '';
+    document.getElementById('editor').hidden = false;
+    try {
+      const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath));
+      const j = await r.json();
+      if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
+      document.getElementById('ed-text').value = j.content;
+      document.getElementById('ed-msg').textContent = '';
+    } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
+  }
+  function closeEditor() { document.getElementById('editor').hidden = true; edNode = null; edPath = null; }
+  async function saveDoc() {
+    const content = document.getElementById('ed-text').value;
+    const msg = document.getElementById('ed-msg');
+    msg.textContent = 'Saving…';
+    try {
+      const r = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: edPath, content }) });
+      const j = await r.json();
+      if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; }
+      msg.textContent = 'Saved ✓';
+      if (j.title && edNode && j.title !== edNode.data.name) {  // title changed → relabel tree
+        window.TREES = j.trees; const keep = edPath;
+        buildStates(window.TREES); refresh(null); setTimeout(fit, 360);
+        document.getElementById('ed-title').textContent = j.title;
+      }
+    } catch (e) { msg.textContent = 'Error: ' + e.message; }
   }
 
   // ---- add-note modal ----
@@ -207,7 +241,13 @@
   document.getElementById('note-cancel').onclick = closeModal;
   document.getElementById('note-save').onclick = submitAdd;
   document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+  document.getElementById('ed-close').onclick = closeEditor;
+  document.getElementById('ed-save').onclick = saveDoc;
+  document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeEditor(); }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
+  });
   window.addEventListener('resize', fit);
 
   // detect server mode, then render

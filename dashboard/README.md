@@ -12,7 +12,7 @@ Visual view of the pursuits node tree. **The wiki is the source of truth** — t
 
 ## Using it
 
-- **Doc icon** (on every node) → opens that node's wiki doc so you can read/edit it (app mode opens it in your default app via macOS `open`).
+- **Doc icon** (on every node) → opens an **inline editor** (right drawer): edit the doc and **Save** (or ⌘/Ctrl-S) writes it straight back to the file; **Open in app** opens it externally. (Static mode has no editor — the doc icon just opens the raw `.md` read-only.)
 - **＋ on hover** over a node → add a child **note**; **＋ Add note** in the header → add a new top-level pursuit. A note creates a real wiki doc (`status: note`) and wires it in as a child; the view refreshes immediately.
 - Click a **branch** to expand/collapse · scroll = zoom · drag = pan · `#` badge = hidden children · Buttons: Expand all / Collapse / Fit.
 
@@ -43,4 +43,6 @@ Each tree node is a wiki page under [`pursuits/`](../pursuits):
 
 - `GET /api/ping` → `{ok}` (used to detect app vs static mode)
 - `GET /api/open?path=pursuits/…md` → opens the doc in your default app (macOS `open`); path restricted to `pursuits/`
+- `GET /api/doc?path=pursuits/…md` → `{content, title}` for the inline editor
+- `POST /api/save {path, content}` → writes the doc back, rebuilds `data.js`, returns `{title, trees}` (tree relabels if the `title:` changed)
 - `POST /api/add {parent, title, note}` → creates the node doc, wires it into the parent's `children:`, rebuilds `data.js`, returns the fresh forest. A leaf parent is auto-promoted to a branch (`<slug>/index.md`).
