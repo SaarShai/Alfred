@@ -6,8 +6,12 @@
   const PALETTE = ['var(--c0)', 'var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)'];
   const TREE_COLORS = ['var(--c0)', 'var(--c2)', 'var(--c3)', 'var(--c5)'];
 
-  const dx = 36, dy = 260, GAP = 80, MARGIN_L = 60;
-  const tree = d3.tree().nodeSize([dx, dy]);
+  const dy = 280, GAP = 90, MARGIN_L = 60, ROW_GAP = 34;
+  const baseH = d => (d.depth === 0 ? 32 : 28);
+  // effective scale = product of own + ancestor scales (so a node sizes itself AND its subtree)
+  const eComp = root => root.eachBefore(d => { d.escale = (d.parent ? d.parent.escale : 1) * (d.scale || 1); });
+  const rowSlot = d => baseH(d) * (d.escale || 1) + ROW_GAP;
+  const tree = d3.tree().nodeSize([1, dy]).separation((a, b) => (rowSlot(a) + rowSlot(b)) / 2);
   const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
 
   const svg = d3.select('svg');
@@ -27,6 +31,10 @@
   let SERVER = false;
   let states = [];
   let uid = 0;
+  // per-node size, persisted by doc url (survives reloads; no disk writes)
+  let SCALES = {};
+  try { SCALES = JSON.parse(localStorage.getItem('pursuits-scales') || '{}'); } catch (e) {}
+  function saveScales() { try { localStorage.setItem('pursuits-scales', JSON.stringify(SCALES)); } catch (e) {} }
 
   function buildStates(TREES) {
     canvas.selectAll('*').remove();
@@ -36,6 +44,7 @@
       root.x0 = 0; root.y0 = 0;
       root.descendants().forEach(d => {
         d.id = uid++; d._children = d.children; d.ti = ti;
+        d.scale = SCALES[d.data.url];
         let a = d; while (a.depth > 1) a = a.parent;
         d.branch = a.depth === 0 ? -1 : a.parent.children.indexOf(a);
       });
@@ -48,6 +57,7 @@
   function layout() {
     let offset = 0;
     states.forEach(s => {
+      eComp(s.root);
       tree(s.root);
       let minX = Infinity, maxX = -Infinity;
       s.root.each(d => { minX = Math.min(minX, d.x); maxX = Math.max(maxX, d.x); });
@@ -101,6 +111,14 @@
     doc.append('circle').attr('r', 9).attr('fill', colorOf);
     doc.each(function () { docGlyph(d3.select(this)); });
 
+    // settings (gear) icon — above the doc icon — opens the size dialog
+    const gear = nodeEnter.append('g').attr('class', 'gearbtn')
+      .attr('transform', d => 'translate(' + (W(d) / 2 - 2) + ',-18)')
+      .on('click', (e, d) => { e.stopPropagation(); openSizePop(e, d); });
+    gear.append('title').text('Size');
+    gear.append('circle').attr('r', 9).attr('fill', colorOf);
+    gear.append('text').attr('text-anchor', 'middle').attr('dy', '0.32em').attr('font-size', 11).attr('fill', '#fff').text('⚙');
+
     // count badge (collapsed) — outside right
     const badge = nodeEnter.append('g').attr('class', 'badge')
       .attr('transform', d => 'translate(' + (W(d) / 2 + 20) + ',0)');
@@ -109,7 +127,7 @@
 
     // add button (hover, server mode) — below the doc icon
     const add = nodeEnter.append('g').attr('class', 'addbtn')
-      .attr('transform', d => 'translate(' + (W(d) / 2 - 2) + ',20)')
+      .attr('transform', d => 'translate(' + (W(d) / 2 - 2) + ',18)')
       .on('click', (e, d) => { e.stopPropagation(); openAddModal(d); });
     add.append('title').text('Add note here');
     add.append('circle').attr('r', 9).attr('fill', colorOf);
@@ -119,7 +137,7 @@
     merged.select('.badge').style('display', d => collapsed(d) ? null : 'none');
     merged.select('.badge .count').text(d => collapsed(d) ? d._children.length : '');
     merged.transition(t)
-      .attr('transform', d => 'translate(' + d.y + ',' + d.x + ')')
+      .attr('transform', d => 'translate(' + d.y + ',' + d.x + ') scale(' + (d.escale || 1) + ')')
       .attr('fill-opacity', 1).attr('stroke-opacity', 1);
 
     node.exit().transition(t).remove()
@@ -234,6 +252,25 @@
     } catch (e) { msg.textContent = 'Error: ' + e.message; }
   }
 
+  // ---- per-node size dialog ----
+  let sizeNode = null;
+  function openSizePop(e, d) {
+    sizeNode = d;
+    const pop = document.getElementById('sizepop');
+    document.getElementById('size-val').textContent = Math.round((d.scale || 1) * 100) + '%';
+    pop.style.left = Math.min(window.innerWidth - 150, (e.clientX || window.innerWidth / 2) + 8) + 'px';
+    pop.style.top = Math.min(window.innerHeight - 96, (e.clientY || 80) + 8) + 'px';
+    pop.hidden = false;
+  }
+  function closeSizePop() { document.getElementById('sizepop').hidden = true; sizeNode = null; }
+  function nudgeScale(dir) {
+    if (!sizeNode) return;
+    sizeNode.scale = Math.max(0.4, Math.min(2.5, (sizeNode.scale || 1) * (dir > 0 ? 1.15 : 1 / 1.15)));
+    SCALES[sizeNode.data.url] = sizeNode.scale; saveScales();
+    document.getElementById('size-val').textContent = Math.round(sizeNode.scale * 100) + '%';
+    refresh(sizeNode);
+  }
+
   d3.select('#expand').on('click', () => { states.forEach(s => s.root.each(d => { if (d._children) d.children = d._children; })); refresh(null); setTimeout(fit, 360); });
   d3.select('#collapse').on('click', () => { states.forEach(s => s.root.descendants().forEach(d => { if (d.depth >= 1 && d.children) { d._children = d.children; d.children = null; } })); refresh(null); setTimeout(fit, 360); });
   d3.select('#fit').on('click', fit);
@@ -244,8 +281,11 @@
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
+  document.getElementById('size-up').onclick = () => nudgeScale(1);
+  document.getElementById('size-down').onclick = () => nudgeScale(-1);
+  document.addEventListener('click', e => { const pop = document.getElementById('sizepop'); if (!pop.hidden && !pop.contains(e.target)) closeSizePop(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeEditor(); }
+    if (e.key === 'Escape') { closeModal(); closeEditor(); closeSizePop(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
   });
   window.addEventListener('resize', fit);

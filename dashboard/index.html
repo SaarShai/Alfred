@@ -83,6 +83,15 @@
   .drawer-foot{display:flex;align-items:center;gap:8px;padding:0 18px 16px}
   .drawer-foot .spacer{flex:1}
   .drawer-foot .msg{font-size:12px;color:var(--c2)}
+
+  /* per-node size popover */
+  .popover{position:fixed;z-index:70;background:#0b1220;border:1px solid rgba(148,163,184,.28);
+    border-radius:12px;padding:10px 12px;box-shadow:0 12px 36px rgba(0,0,0,.5)}
+  .popover[hidden]{display:none}
+  .popover .pop-title{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;white-space:nowrap}
+  .popover .pop-title span{color:var(--ink);font-weight:700}
+  .popover .pop-row{display:flex;gap:8px}
+  .popover .pop-row button{font-size:14px;line-height:1;padding:8px 12px;min-width:40px}
 </style>
 </head>
 <body>
@@ -132,6 +141,14 @@
       <button id="note-save" class="primary">Add note</button>
     </div>
     <div class="msg" id="note-msg"></div>
+  </div>
+</div>
+
+<div id="sizepop" class="popover" hidden>
+  <div class="pop-title">Size <span id="size-val">100%</span></div>
+  <div class="pop-row">
+    <button id="size-up" title="Bigger (this node + its children)">▲</button>
+    <button id="size-down" title="Smaller (this node + its children)">▼</button>
   </div>
 </div>
 

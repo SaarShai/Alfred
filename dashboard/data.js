@@ -70,6 +70,10 @@ window.TREES = [
                 "url": "../pursuits/wanderland/screenery/orders/incoming-orders.md"
               }
             ]
+          },
+          {
+            "name": "Factory (production)",
+            "url": "../pursuits/wanderland/screenery/factory-production.md"
           }
         ]
       },

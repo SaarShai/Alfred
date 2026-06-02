@@ -14,6 +14,7 @@ Visual view of the pursuits node tree. **The wiki is the source of truth** — t
 
 - **Doc icon** (on every node) → opens an **inline editor** (right drawer): edit the doc and **Save** (or ⌘/Ctrl-S) writes it straight back to the file; **Open in app** opens it externally. (Static mode has no editor — the doc icon just opens the raw `.md` read-only.)
 - **＋ on hover** over a node → add a child **note**; **＋ Add note** in the header → add a new top-level pursuit. A note creates a real wiki doc (`status: note`) and wires it in as a child; the view refreshes immediately.
+- **Gear icon** (above the doc icon) → size dialog with ▲/▼ to grow/shrink that node **and its whole subtree**. Sizes persist per browser via `localStorage` (view-only — not written to the wiki).
 - Click a **branch** to expand/collapse · scroll = zoom · drag = pan · `#` badge = hidden children · Buttons: Expand all / Collapse / Fit.
 
 ## Source of truth → how it maps

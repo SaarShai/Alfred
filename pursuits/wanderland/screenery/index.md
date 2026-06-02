@@ -4,7 +4,7 @@ type: node
 status: active
 created: 2026-06-02
 updated: 2026-06-02
-children: [alicia-s-ownership, ai-designer, orders]
+children: [alicia-s-ownership, ai-designer, orders, factory-production]
 tags: [pursuit-tree]
 ---
 
