@@ -26,6 +26,9 @@
     background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.25);
     padding:7px 12px;border-radius:9px;cursor:pointer;transition:.15s}
   button:hover{background:rgba(148,163,184,.22);border-color:rgba(148,163,184,.45)}
+  button.primary{color:#fff;background:var(--c0);border-color:transparent}
+  button.primary:hover{filter:brightness(1.08);background:var(--c0)}
+  body:not(.server) #addnote{display:none}
   svg{width:100vw;height:100vh;display:block;cursor:grab}
   svg:active{cursor:grabbing}
   .link{fill:none;stroke-opacity:.5;stroke-width:1.6px}
@@ -35,7 +38,29 @@
   .node text.label{font-size:13px;font-weight:600;fill:var(--card-ink)}
   .node text.label.root{font-size:15px;font-weight:750;letter-spacing:.2px}
   .node .count{font-size:10px;font-weight:700;fill:#fff}
+  .docbtn{cursor:pointer}
+  .docbtn:hover circle{filter:brightness(1.12)}
+  .addbtn{cursor:pointer;opacity:0;transition:opacity .12s}
+  .node:hover .addbtn{opacity:1}
+  .addbtn:hover circle{filter:brightness(1.12)}
+  body:not(.server) .addbtn{display:none}
   .hint{position:fixed;bottom:12px;left:20px;color:var(--muted);font-size:11px;z-index:10}
+
+  /* add-note modal */
+  .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:rgba(2,6,23,.55);backdrop-filter:blur(3px)}
+  .modal[hidden]{display:none}
+  .sheet{width:min(440px,92vw);background:#0b1220;border:1px solid rgba(148,163,184,.25);
+    border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .sheet h2{margin:0 0 4px;font-size:16px;font-weight:700}
+  .sheet .ctx{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .sheet label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+  .sheet input,.sheet textarea{width:100%;font:inherit;font-size:13px;color:var(--ink);
+    background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);border-radius:9px;padding:9px 11px}
+  .sheet input:focus,.sheet textarea:focus{outline:none;border-color:var(--c0)}
+  .sheet textarea{resize:vertical}
+  .sheet .row{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .sheet .msg{min-height:16px;margin-top:8px;font-size:12px;color:var(--c3)}
 </style>
 </head>
 <body>
@@ -44,13 +69,30 @@
   <span class="sub">tree dashboard</span>
   <div class="spacer"></div>
   <div class="btns">
+    <button id="addnote" class="primary">＋ Add note</button>
     <button id="expand">Expand all</button>
     <button id="collapse">Collapse</button>
     <button id="fit">Fit</button>
   </div>
 </header>
 <svg></svg>
-<div class="hint">click: branch = expand/collapse, leaf = open doc · ⌘/Ctrl-click = open doc · scroll = zoom · drag = pan</div>
+<div class="hint">doc icon = open/edit the doc · hover a node → ＋ adds a child note · click branch = expand/collapse · scroll = zoom · drag = pan</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="sheet">
+    <h2>Add note</h2>
+    <div class="ctx" id="modal-ctx"></div>
+    <label for="note-title">Title</label>
+    <input id="note-title" type="text" placeholder="Short title (becomes the node + doc)">
+    <label for="note-body">Note</label>
+    <textarea id="note-body" rows="5" placeholder="What's the note? (optional — you can edit the doc later)"></textarea>
+    <div class="row">
+      <button id="note-cancel">Cancel</button>
+      <button id="note-save" class="primary">Add note</button>
+    </div>
+    <div class="msg" id="note-msg"></div>
+  </div>
+</div>
 
 <script src="./vendor/d3.min.js"></script>
 <script src="./data.js"></script>
