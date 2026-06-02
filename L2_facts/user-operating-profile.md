@@ -6,8 +6,8 @@ domain: project
 tier: semantic
 confidence: 0.7
 created: 2026-05-11
-updated: 2026-05-11
-verified: 2026-05-11
+updated: 2026-06-02
+verified: 2026-06-02
 sources: [projects/executive-assistant/README.md, patterns/structured-check-ins.md, queries/2026-05-11-onboarding-pass-1.md, queries/2026-05-11-incisive-expert-style-prompt.md]
 supersedes: []
 superseded-by:
@@ -29,7 +29,12 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 - Subagents should be launched through planned dispatch packets only when a concrete task justifies them.
 - Daily and weekly briefings should start as manual commands, not scheduled automations.
 - Preference capture should use structured check-ins and store only confirmed facts.
-- Current top work priority: Wanderland, the user's company, and Screenery, its product.
+- Current main pursuits, ranked (stated 2026-06-02):
+  1. Wanderland — the company; ships the Screenery product.
+  2. Animayte — virtual pet project.
+  3. Improving the user's use of AI.
+  4. Collecting and documenting wisdom.
+  Plus general admin and life stuff alongside these.
 - First productized workflow to build inside the chief-of-staff system: reusable prompt generation with known snippets, sections, and adaptable templates.
 - Daily briefing preferences should be built iteratively as the system learns what is useful.
 - The assistant's name for this project is Alfred, as in Alfred to the user's Bruce Wayne.
