@@ -43,13 +43,18 @@ Wanderland
 | Node | What it is | Status |
 |---|---|---|
 | Alicia's ownership | Alicia owns Screenery materials/supply: foam padding, glue, sheets stock. | active; detail TBD |
-| AI designer | An AI folder/project for editing Illustrator (.ai) files. | active; see below |
-| AI designer → finalize file checklist | Checklist to finalize a design file. | needs detail |
-| AI designer → file ledger | Per-design ledger: final set list, artboards/sheets breakdown, production notes. | needs detail |
-| AI designer → assembly manual | Assembly manual/instructions, one per design. | needs detail |
+| AI designer | The `screenery-lean` workspace: model-agnostic plan→execute→verify→learn loop for editing Screenery Illustrator `.ai` files. Claude plans, Gemini (Antigravity) executes via the `screenery-design` CLI. | active; see below |
+| AI designer → finalize file checklist | Checklist to finalize a design file. **Exists:** `runbooks/file-review-checklist.md`. | confirm = this |
+| AI designer → file ledger | Per-design ledger: final set list, artboards/sheets breakdown, production notes. **Partial:** `designs/birthday/ledger.md` exists; not yet rolled to all designs. | extend to all designs |
+| AI designer → assembly manual | Assembly manual/instructions, one per design. **Gap:** no per-design manual found; closest is `runbooks/pdf-instruction-extraction.md`. | likely to build |
 | Orders | Existing and incoming client orders. | active; detail TBD |
 
 (Inference, unconfirmed: Screenery is a physical product built from glued foam padding + sheet stock — implied by the materials list.)
+
+**Location & access** (user granted read access 2026-06-02; `~/Documents` is Drive-synced — read-only, no folder moves/renames):
+
+- Current working folder: `~/Documents/screenery-lean` — the AI designer. Orientation: `README.md`, `INDEX.md`, `AGENTS.md` (rules), `DESIGN.md`. Tool: `cli/bin/screenery-design`. Designs: birthday, cafe, castle, festive, novotel-marine, san-francisco-tram, space.
+- Previous project (reference only): `~/Documents/Master Screenery 3.5` — may hold still-relevant info. Drive conflict artifacts present (`* (1).md`, zero-byte) — not authoritative.
 
 ### Wanderland — other
 
