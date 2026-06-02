@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Wanderland — tree dashboard</title>
+<title>Pursuits — tree dashboard</title>
 <style>
   :root{
     --bg1:#0f172a; --bg2:#1e293b; --ink:#e2e8f0; --muted:#94a3b8;
@@ -33,13 +33,14 @@
   .node rect{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35));transition:filter .15s}
   .node:hover rect{filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
   .node text.label{font-size:13px;font-weight:600;fill:var(--card-ink)}
+  .node text.label.root{font-size:15px;font-weight:750;letter-spacing:.2px}
   .node .count{font-size:10px;font-weight:700;fill:#fff}
   .hint{position:fixed;bottom:12px;left:20px;color:var(--muted);font-size:11px;z-index:10}
 </style>
 </head>
 <body>
 <header>
-  <h1 id="title">Wanderland</h1>
+  <h1 id="title">Pursuits</h1>
   <span class="sub">tree dashboard</span>
   <div class="spacer"></div>
   <div class="btns">

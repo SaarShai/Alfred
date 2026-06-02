@@ -1,9 +1,6 @@
----
-title: Wanderland
-markmap:
-  colorFreezeLevel: 2
-  initialExpandLevel: 3
----
+<!-- Source of truth for the pursuits dashboard. Each "# Heading" = a separate tree.
+     2-space-indented "- " bullets = nodes. Navigable nodes only; no access info.
+     Regenerate: node dashboard/build.js  -> dashboard/data.js  (then open dashboard/index.html) -->
 
 # Wanderland
 
@@ -22,9 +19,16 @@ markmap:
   - Orders
     - existing orders
     - incoming orders
+- Alicia's work
 - Chinese manufacturer / distributor partnership
 - Other
   - Joff (Stir / Hilton)
   - EquipHotel
 
-<!-- Regenerate: npx -y markmap-cli dashboard/wanderland.tree.md -o dashboard/wanderland.html --offline --no-open -->
+# Animayte
+
+- virtual pet project
+
+# Improving my use of AI
+
+# Collecting & documenting wisdom

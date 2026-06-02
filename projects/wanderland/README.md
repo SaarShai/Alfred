@@ -32,6 +32,7 @@ Wanderland
 │   │   ├─ file ledger — final set list · artboards/sheets breakdown · production notes
 │   │   └─ assembly manual/instructions (per design)
 │   └─ Orders — existing + incoming client orders
+├─ Alicia's work
 ├─ Chinese manufacturer / distributor partnership
 └─ Other
     ├─ Joff (Stir / Hilton)
@@ -60,23 +61,23 @@ Wanderland
 
 | Node | What it is | Status |
 |---|---|---|
+| Alicia's work | Wanderland-level work stream owned by Alicia — distinct from her Screenery-materials ownership above. Domain TBD. | needs detail |
 | Chinese manufacturer / distributor partnership | Manufacturing / distribution partnership in China. | needs detail |
 | Other → Joff (Stir / Hilton) | Joff, associated with Stir / Hilton. | needs detail |
 | Other → EquipHotel | EquipHotel. (Likely the Paris hospitality trade fair — low confidence, unconfirmed.) | needs detail |
 
 ## Dashboard
 
-Interactive tree (D3 collapsible tree, offline). Navigable nodes only; no access info.
-Click a node to collapse/expand · scroll to zoom · drag to pan · long labels truncate (full text on hover) · collapsed nodes show a child-count badge.
+Pursuits dashboard — **a forest**: all 4 main pursuits as separate trees on one screen (Wanderland is one of them; the others: Animayte, Improving my use of AI, Collecting & documenting wisdom). D3 collapsible trees, offline. Navigable nodes only; no access info.
+Click a node to collapse/expand · scroll to zoom · drag to pan · `#` badge = hidden children · non-root labels truncate (full text on hover).
 
 - **Open**: `dashboard/index.html` (double-click, or `open dashboard/index.html`).
-- **Edit the tree** (single source of truth): [dashboard/wanderland.tree.md](../../dashboard/wanderland.tree.md)
+- **Edit the trees** (single source of truth, one `#` heading per tree): [dashboard/pursuits.md](../../dashboard/pursuits.md)
 - **Regenerate** after editing the source:
   ```bash
-  node dashboard/build.js   # md -> dashboard/data.js
+  node dashboard/build.js   # pursuits.md -> dashboard/data.js
   ```
 - Files: `index.html` + `app.js` (D3 viewer) · `data.js` (generated) · `vendor/d3.min.js` (vendored, offline) · `build.js` (md→data) · `serve.js` (local static server for previews).
-- Old v0 (markmap): `dashboard/wanderland.html` — superseded by the D3 version.
 
 ## Open questions
 
