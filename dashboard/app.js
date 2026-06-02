@@ -252,7 +252,7 @@
 
   // detect server mode, then render
   fetch('/api/ping').then(r => r.ok).then(ok => { SERVER = !!ok; }).catch(() => { SERVER = false; })
-    .finally(() => { document.body.classList.toggle('server', SERVER); });
+    .finally(() => { document.body.classList.toggle('server', SERVER); document.body.classList.add('checked'); });
   buildStates(window.TREES);
   refresh(null);
   setTimeout(fit, 60);

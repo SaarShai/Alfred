@@ -140,4 +140,8 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
     res.end(buf);
   });
-}).listen(PORT, () => rebuild(() => console.log('dashboard app on http://localhost:' + PORT)));
+}).listen(PORT, () => rebuild(() => {
+  const url = 'http://localhost:' + PORT;
+  console.log('dashboard app on ' + url + '  (Ctrl-C to stop)');
+  if (!process.env.NO_OPEN) { try { execFile('open', [url], () => {}); } catch (e) {} }
+}));

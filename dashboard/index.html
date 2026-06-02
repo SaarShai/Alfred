@@ -45,6 +45,11 @@
   .addbtn:hover circle{filter:brightness(1.12)}
   body:not(.server) .addbtn{display:none}
   .hint{position:fixed;bottom:12px;left:20px;color:var(--muted);font-size:11px;z-index:10}
+  #offline-banner{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:20;
+    max-width:90vw;padding:10px 16px;border-radius:10px;font-size:12.5px;
+    background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.5);color:#fde68a}
+  #offline-banner code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:5px}
+  body.checked:not(.server) #offline-banner{display:block}
 
   /* add-note modal */
   .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
@@ -93,6 +98,7 @@
   </div>
 </header>
 <svg></svg>
+<div id="offline-banner">Read-only view — editing &amp; add-note need the app. Run <code>node dashboard/serve.js</code> (or double-click <code>dashboard/start.command</code>), then open <code>http://localhost:8777</code>.</div>
 <div class="hint">doc icon = open & edit the doc here · hover a node → ＋ adds a child note · click branch = expand/collapse · scroll = zoom · drag = pan</div>
 
 <div id="editor" class="drawer" hidden>
