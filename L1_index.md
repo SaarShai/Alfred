@@ -29,6 +29,7 @@ Compact pointers. Fetch details on demand.
 - patterns/reasoning-and-planning-prompt-snippets (pattern tags=prompter,reasoning,planning,chain-of-thought,agents) -> `patterns/reasoning-and-planning-prompt-snippets.md`
 - patterns/reusable-prompt-library (pattern tags=prompter,prompt-library,templates,snippets) -> `patterns/reusable-prompt-library.md`
 - patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
+- projects/wanderland/README (project tags=wanderland,screenery,hospitality,partnerships,alfred,pursuit-1) -> `projects/wanderland/README.md`
 - projects/executive-assistant/README (project tags=alfred,personal-ceo,chief-of-staff,gstack,prompter) -> `projects/executive-assistant/README.md`
 - projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
 - L2_facts/obligations (fact tags=obligations,reminders,deadlines,recurring,executive-assistant,daily-briefing,weekly-planning) -> `L2_facts/obligations.md`

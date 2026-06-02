@@ -54,3 +54,4 @@
 
 ## 2026-06-02
 - Updated user-operating-profile: ranked main pursuits (Wanderland/Screenery, Animayte, improving AI use, collecting+documenting wisdom) + general admin/life. Source: user prompt 2026-06-02.
+- Created projects/wanderland/README (pursuit #1 scaffold): Screenery files/designs, Alicia's work, China mfg/distributor partnership, Other(Joff/Stir/Hilton, EquipHotel). Added to index.md + L1_index. Source: user prompt 2026-06-02.

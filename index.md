@@ -35,6 +35,9 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - `queries/` — durable Q&A
 - `L4_archive/` — cold history kept only when useful
 
+## Active Project - Wanderland (pursuit #1)
+- [[projects/wanderland/README]] - company + Screenery; work streams: Screenery files/designs, Alicia's work, China mfg/distributor partnership, Other (Joff/Stir/Hilton, EquipHotel)
+
 ## Active Project - Executive Assistant
 - [[projects/executive-assistant/README]] - repo-local chief-of-staff workspace: role, scope, boundaries, operating model
 - [[concepts/executive-assistant-operating-model]] - intake, decision, execution, and memory loops
