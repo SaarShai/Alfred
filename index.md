@@ -35,8 +35,12 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - `queries/` — durable Q&A
 - `L4_archive/` — cold history kept only when useful
 
+## Pursuits tree + dashboard
+- [[pursuits/index]] - forest root: 4 pursuit trees as wiki node docs (Wanderland, Animayte, Improving my use of AI, Collecting & documenting wisdom); one doc per node, parent lists children
+- `dashboard/index.html` - visual D3 view generated from `pursuits/`; nodes open their doc. System docs: `dashboard/README.md`. Regenerate: `node dashboard/build.js`
+
 ## Active Project - Wanderland (pursuit #1)
-- [[projects/wanderland/README]] - company + Screenery; work streams: Screenery files/designs, Alicia's work, China mfg/distributor partnership, Other (Joff/Stir/Hilton, EquipHotel)
+- [[projects/wanderland/README]] - company + Screenery; node tree at [[pursuits/wanderland]] (work streams: Screenery → Alicia's ownership/AI designer/Orders; Alicia's work; China mfg/distributor partnership; Other → Joff/Stir/Hilton, EquipHotel)
 
 ## Active Project - Executive Assistant
 - [[projects/executive-assistant/README]] - repo-local chief-of-staff workspace: role, scope, boundaries, operating model

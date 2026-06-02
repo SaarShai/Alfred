@@ -59,7 +59,11 @@
     const nodeEnter = node.enter().append('g').attr('class', 'node')
       .attr('transform', 'translate(' + src.y0 + ',' + src.x0 + ')')
       .attr('fill-opacity', 0).attr('stroke-opacity', 0)
-      .on('click', (e, d) => { d.children = d.children ? null : d._children; refresh(d); });
+      .on('click', (e, d) => {
+        const hasKids = d.children || d._children;
+        if (e.metaKey || e.ctrlKey || !hasKids) { if (d.data.url) window.open(d.data.url, '_blank'); return; }
+        d.children = d.children ? null : d._children; refresh(d);
+      });
 
     nodeEnter.append('rect')
       .attr('height', d => d.depth === 0 ? 32 : 28).attr('y', d => d.depth === 0 ? -16 : -14)

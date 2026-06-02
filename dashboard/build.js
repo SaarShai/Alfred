@@ -1,42 +1,66 @@
 #!/usr/bin/env node
-// Build the forest data for the pursuits dashboard from the markdown source.
-// Source of truth: dashboard/pursuits.md  ->  dashboard/data.js  (window.TREES = [...])
-// Each "# Heading" = a separate tree. Static viewer: index.html + app.js (+ vendored d3).
-// No deps. Offline. Run: node dashboard/build.js   (then open dashboard/index.html)
+// Build the pursuits dashboard data by WALKING THE WIKI (source of truth).
+// Roots: pursuits/index.md `children:`. Each node is a wiki page:
+//   branch -> <slug>/index.md (its own `children:` list)   leaf -> <slug>.md
+// Output: dashboard/data.js  (window.TREES = [{name, url, children?}, ...])
+// Node `url` is relative to dashboard/, so dashboard nodes can open the doc.
+// No deps. Offline. Run: node dashboard/build.js
 'use strict';
 const fs = require('fs');
 const path = require('path');
 
-const DIR = __dirname;
-const SRC = path.join(DIR, 'pursuits.md');
-const OUT = path.join(DIR, 'data.js');
+const DASH = __dirname;
+const ROOT = path.resolve(DASH, '..');
+const PURSUITS = path.join(ROOT, 'pursuits');
+const OUT = path.join(DASH, 'data.js');
 
-function parse(md) {
-  const lines = md.split('\n');
-  let inFront = false, root = null, stack = [];
-  const trees = [];
-  for (const raw of lines) {
-    const line = raw.replace(/\s+$/, '');
-    if (line.trim() === '---') { inFront = !inFront; continue; }
-    if (inFront) continue;
-    if (line.trim().startsWith('<!--')) continue;
-    const h1 = line.match(/^#\s+(.*)$/);
-    if (h1) { root = { name: h1[1].trim(), children: [] }; trees.push(root); stack = [{ depth: -1, node: root }]; continue; }
-    const m = line.match(/^(\s*)-\s+(.+)$/);
-    if (!m || !root) continue;
-    const depth = Math.floor(m[1].length / 2);
-    const node = { name: m[2].trim(), children: [] };
-    while (stack.length && stack[stack.length - 1].depth >= depth) stack.pop();
-    (stack.length ? stack[stack.length - 1].node : root).children.push(node);
-    stack.push({ depth, node });
-  }
-  (function clean(n) { if (!n.children) return; if (n.children.length === 0) delete n.children; else n.children.forEach(clean); });
-  trees.forEach(function walk(n) { if (!n.children) return; if (n.children.length === 0) delete n.children; else n.children.forEach(walk); });
-  return trees;
+const warnings = [];
+let nodeCount = 0;
+
+function frontmatter(file) {
+  const txt = fs.readFileSync(file, 'utf8');
+  const m = txt.match(/^---\n([\s\S]*?)\n---/);
+  const fm = m ? m[1] : '';
+  const title = (fm.match(/^title:\s*(.+)$/m) || [])[1];
+  const childLine = (fm.match(/^children:\s*\[(.*)\]\s*$/m) || [])[1];
+  const h1 = (txt.match(/^#\s+(.+)$/m) || [])[1];
+  return {
+    title: clean(title) || (h1 && h1.trim()) || null,
+    children: childLine ? childLine.split(',').map(s => s.trim()).filter(Boolean) : [],
+  };
+}
+function clean(s) { return s == null ? null : s.trim().replace(/^["']|["']$/g, ''); }
+
+// resolve a child slug living in baseDir; return {file, dir(if branch)}
+function resolve(baseDir, slug) {
+  const branchIndex = path.join(baseDir, slug, 'index.md');
+  if (fs.existsSync(branchIndex)) return { file: branchIndex, dir: path.join(baseDir, slug) };
+  const leaf = path.join(baseDir, slug + '.md');
+  if (fs.existsSync(leaf)) return { file: leaf, dir: null };
+  return null;
 }
 
-const trees = parse(fs.readFileSync(SRC, 'utf8'));
+function build(baseDir, slug, trail) {
+  const r = resolve(baseDir, slug);
+  if (!r) { warnings.push('missing node: ' + path.join(baseDir, slug) + ' (referenced by ' + trail + ')'); return null; }
+  const fm = frontmatter(r.file);
+  nodeCount++;
+  const node = {
+    name: fm.title || slug,
+    url: path.relative(DASH, r.file),
+  };
+  if (r.dir && fm.children.length) {
+    node.children = fm.children.map(c => build(r.dir, c, slug)).filter(Boolean);
+    if (!node.children.length) delete node.children;
+  }
+  return node;
+}
+
+const rootIndex = path.join(PURSUITS, 'index.md');
+if (!fs.existsSync(rootIndex)) { console.error('missing pursuits/index.md'); process.exit(1); }
+const roots = frontmatter(rootIndex).children;
+const trees = roots.map(slug => build(PURSUITS, slug, 'pursuits/index.md')).filter(Boolean);
+
 fs.writeFileSync(OUT, 'window.TREES = ' + JSON.stringify(trees, null, 2) + ';\n');
-const count = n => 1 + (n.children ? n.children.reduce((s, x) => s + count(x), 0) : 0);
-const total = trees.reduce((s, t) => s + count(t), 0);
-console.log('wrote ' + path.relative(process.cwd(), OUT) + '  (' + trees.length + ' trees, ' + total + ' nodes)');
+console.log('wrote ' + path.relative(process.cwd(), OUT) + '  (' + trees.length + ' trees, ' + nodeCount + ' nodes)');
+if (warnings.length) { console.log('WARNINGS:'); warnings.forEach(w => console.log('  - ' + w)); }
