@@ -40,7 +40,7 @@ Trigger: verified finding · user-confirmed decision · source ingested · reusa
 5. Fill v2 frontmatter completely, including `pursuit:`.
 6. **Why-clause** (decisions/conventions): body must contain `because…` / `so that…` / `to avoid…` / `in order to…`. Reasonless decisions are rejected by the gate.
 7. For procedures/failures: state when it applies + the exact prevention rule.
-8. Add ≥2 useful `[[wikilinks]]` (link the page to its `[[pursuits/<slug>]]` node).
+8. Add ≥2 useful wikilinks; link the page to its pursuit node (`pursuits/<slug>`).
 9. `./te wiki index` to refresh pointers; `./te wiki rollup` to refresh pursuit rollups.
 10. Append `log.md` (most `./te wiki` writes do this automatically).
 
@@ -50,7 +50,7 @@ Trigger: verified finding · user-confirmed decision · source ingested · reusa
 ./te wiki lint --strict --fail-on-error
 ```
 
-Broken `[[wikilinks]]`, orphans, duplicate titles, stale `verified:`, v2-frontmatter enforcement. Pursuit nodes use the node-schema (`nid`/`children`/`parent`) and are exempt from v2 page enforcement.
+Broken wikilinks, orphans, duplicate titles, stale `verified:`, v2-frontmatter enforcement. Pursuit nodes use the node-schema (`nid`/`children`/`parent`) and are exempt from v2 page enforcement.
 
 ## Aging
 
