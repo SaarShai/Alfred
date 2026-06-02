@@ -64,6 +64,17 @@ Wanderland
 | Other → Joff (Stir / Hilton) | Joff, associated with Stir / Hilton. | needs detail |
 | Other → EquipHotel | EquipHotel. (Likely the Paris hospitality trade fair — low confidence, unconfirmed.) | needs detail |
 
+## Dashboard
+
+Visual tree (markmap — interactive collapse/zoom). Navigable nodes only; no access info.
+
+- Source (edit this): [dashboard/wanderland.tree.md](../../dashboard/wanderland.tree.md)
+- Generated view (open in browser): `dashboard/wanderland.html` — self-contained, offline.
+- Regenerate after editing the source:
+  ```bash
+  npx -y markmap-cli dashboard/wanderland.tree.md -o dashboard/wanderland.html --offline --no-open
+  ```
+
 ## Open questions
 
 - Confirm Screenery one-line definition (physical product from foam + sheets?).
