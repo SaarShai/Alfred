@@ -17,6 +17,10 @@ This file is the operating contract. Agents must use the wiki before reasoning a
 - `L2_facts/` verified durable facts.
 - `L3_sops/` solved-task playbooks.
 - `L4_archive/` cold session archives and fresh-start packets.
+- `pursuits/` the **trees of pursuits** — the wiki's section axis. One node doc per pursuit/sub-node (forest root `pursuits/index.md`; drives `dashboard/`). Node docs use the lightweight node-schema (`nid` / `type: node` / `children` / `parent`), not page-v2, and are exempt from v2 lint enforcement. Each node carries an auto-generated `<!-- pursuit-rollup -->` block listing its member pages.
+
+## Pursuits as sections
+Every durable page declares which pursuit it serves via the `pursuit:` frontmatter field; the value is a pursuit/sub-node slug (`wanderland`, `screenery`, `animayte`, `improving-my-use-of-ai`, `collecting-documenting-wisdom`, …) or `none` for framework/tooling pages. This is the section axis layered over the cross-cutting type-folders. Refresh the rollups after writes: `./te wiki rollup` (CI: `--check`). A `pursuit:` slug with no matching node is reported as an unknown-slug warning.
 
 ## Frontmatter v2 (new pages)
 ```
@@ -25,6 +29,7 @@ schema_version: 2
 title: Example
 type: entity|summary|decision|source-summary|procedure|concept|pattern|project|query|fact|sop|raw|person|handoff
 domain: framework|tools|patterns|experiments|project
+pursuit: <pursuit-slug>|none
 tier: working|episodic|semantic|procedural
 confidence: 0.0
 created: YYYY-MM-DD
@@ -38,6 +43,9 @@ tags: []
 ```
 
 Legacy v1 pages remain readable. `./te wiki lint --strict` emits migration warnings for v1 pages and enforces v2 fields on v2/template-generated pages.
+
+## Write gate
+Before any durable write, pass the content gate: `./te wiki gate --kind <kind> --file <candidate>` (exit 0 = write). Decisions/conventions must embed a why-clause (`because` / `so that` / `to avoid` / `in order to`). See `skills/write-gate/SKILL.md`. Confidence ages over time via `./te wiki decay` (weekly; see `skills/memory-decay/SKILL.md`); errors / lessons / SOPs / high-evidence pages are protected.
 
 ## Ops
 - **Ingest**: source -> `raw/`, update relevant concepts/projects/patterns, add backlinks, append `log.md`, update `index.md`/`L1_index.md`.

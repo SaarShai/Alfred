@@ -76,9 +76,10 @@ Load only when triggered:
 |---|---|
 | Terse style details | `skills/caveman-ultra/SKILL.md` |
 | Task >3 steps | `skills/plan-first-execute/SKILL.md` |
-| Need wiki memory | `skills/wiki-retrieve/SKILL.md` |
-| Writing memory | `skills/wiki-write/SKILL.md` |
-| Context refresh/clear/`summ` | `skills/context-refresh/SKILL.md` |
+| Need wiki memory (retrieve or write) | `skills/wiki-memory/SKILL.md` |
+| Before any durable write (gate) | `skills/write-gate/SKILL.md` |
+| Age/audit wiki confidence · `/decay` | `skills/memory-decay/SKILL.md` |
+| Context refresh/clear/`summ` · handoff | `.claude/skills/handoff/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md`; `prompts/subagents/lifecycle.prompt.md` |
 | Simplify/lean/prune | `skills/lean-execution/SKILL.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
@@ -113,6 +114,7 @@ The LLM wiki is Alfred's long-term memory.
 - `L2_facts/`: durable facts.
 - `L3_sops/`: solved-task playbooks.
 - `L4_archive/`: cold session archives.
+- `pursuits/`: the **trees of pursuits** — the section axis of the wiki. One node doc per pursuit/sub-node (forest root `pursuits/index.md`; drives `dashboard/`). Every durable page declares `pursuit: <slug>` (or `none`); each pursuit node carries an auto-generated rollup of its member pages. Refresh with `./te wiki rollup`.
 - `vendor/gstack/`: the gstack engine. Immutable vendor tree — never edit; upgrade via `/gstack-upgrade`.
 
 Do not use external note apps, home-directory or machine-wide agent/MCP config, or external wikis unless the user explicitly asks.
@@ -128,6 +130,15 @@ Use progressive retrieval:
 ```
 
 Fetch full pages only after compact relevance. Cite wiki paths/IDs.
+
+Gated write path (no execution → no memory; no reason → no decision):
+
+```bash
+./te wiki gate --kind decision --file <candidate>   # write-gate precheck (exit 0 = write)
+./te wiki new --template page --title "<t>" --domain "<d>" --pursuit "<slug>"
+./te wiki index && ./te wiki rollup                 # refresh pointers + pursuit rollups
+./te wiki decay                                      # weekly: age confidence (dry-run; --apply to write)
+```
 
 ## Documentation Rules
 

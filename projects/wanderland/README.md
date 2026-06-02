@@ -3,6 +3,7 @@ schema_version: 2
 title: Wanderland — company and work streams
 type: project
 domain: project
+pursuit: wanderland
 tier: semantic
 confidence: 0.6
 created: 2026-06-02

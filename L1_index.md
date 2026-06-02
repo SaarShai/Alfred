@@ -29,8 +29,6 @@ Compact pointers. Fetch details on demand.
 - patterns/reasoning-and-planning-prompt-snippets (pattern tags=prompter,reasoning,planning,chain-of-thought,agents) -> `patterns/reasoning-and-planning-prompt-snippets.md`
 - patterns/reusable-prompt-library (pattern tags=prompter,prompt-library,templates,snippets) -> `patterns/reusable-prompt-library.md`
 - patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
-- pursuits/index (node forest-root tags=pursuit-tree,forest-root) -> `pursuits/index.md` (4 pursuit trees as node docs; dashboard generated from these via `node dashboard/build.js`; see `dashboard/README.md`)
-- projects/wanderland/README (project tags=wanderland,screenery,hospitality,partnerships,alfred,pursuit-1) -> `projects/wanderland/README.md`
 - projects/executive-assistant/README (project tags=alfred,personal-ceo,chief-of-staff,gstack,prompter) -> `projects/executive-assistant/README.md`
 - projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
 - L2_facts/obligations (fact tags=obligations,reminders,deadlines,recurring,executive-assistant,daily-briefing,weekly-planning) -> `L2_facts/obligations.md`
@@ -44,4 +42,4 @@ Compact pointers. Fetch details on demand.
 - L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
 - L3_sops/gstack-alfred-precedence (sop tags=gstack,precedence,governance,reconciliation,alfred,decision-gates,memory-authority) -> `L3_sops/gstack-alfred-precedence.md`
 - Principles/README (project tags=user-principles,principles,index,personal-knowledge,alfred) -> `Principles/README.md`
-- queries/2026-05-11-chief-of-staff-readiness-dry-run (query tags=briefing,dry-run,chief-of-staff,readiness) -> `queries/2026-05-11-chief-of-staff-readiness-dry-run.md`
+- dashboard/README (page) -> `dashboard/README.md`

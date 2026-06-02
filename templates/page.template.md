@@ -3,6 +3,7 @@ schema_version: 2
 title: "{{title}}"
 type: concept
 domain: "{{domain}}"
+pursuit: "{{pursuit}}"
 tier: semantic
 confidence: 0.5
 created: "{{date}}"

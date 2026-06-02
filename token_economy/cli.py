@@ -164,11 +164,50 @@ def cmd_wiki(args: argparse.Namespace) -> int:
     elif args.wiki_cmd == "ingest":
         print_json(wiki.ingest(args.source, args.title))
     elif args.wiki_cmd == "new":
-        print_json(wiki.new_page(args.template, args.title, args.domain, args.slug))
+        print_json(wiki.new_page(args.template, args.title, args.domain, args.slug, args.pursuit))
     elif args.wiki_cmd == "query":
         hits = wiki.search(args.query, args.k)
         print_json({"query": args.query, "hits": hits, "next": "Use `te wiki timeline <id>` then `te wiki fetch <id>` for relevant hits only."})
+    elif args.wiki_cmd == "gate":
+        repo = Path(cfg.repo_root)
+        tool = repo / "skills" / "write-gate" / "tools" / "write_gate.py"
+        cmd = [sys.executable, str(tool), args.mode, "--kind", args.kind]
+        if args.text is not None:
+            cmd += ["--text", args.text]
+        elif args.file is not None:
+            cmd += ["--file", args.file]
+        return _run_passthrough(cmd, repo, "write-gate")
+    elif args.wiki_cmd == "decay":
+        repo = Path(cfg.repo_root)
+        tool = repo / "skills" / "memory-decay" / "tools" / "decay.py"
+        cmd = [sys.executable, str(tool), "--root", str(cfg.wiki_root)]
+        if args.apply:
+            cmd.append("--apply")
+        if args.halflife_days is not None:
+            cmd += ["--halflife-days", str(args.halflife_days)]
+        if args.archive_candidates is not None:
+            cmd += ["--archive-candidates", str(args.archive_candidates)]
+        if args.json:
+            cmd.append("--json")
+        return _run_passthrough(cmd, repo, "memory-decay")
+    elif args.wiki_cmd == "rollup":
+        repo = Path(cfg.repo_root)
+        tool = repo / "tools" / "pursuit_rollup.py"
+        cmd = [sys.executable, str(tool), "--root", str(cfg.wiki_root)]
+        if args.check:
+            cmd.append("--check")
+        return _run_passthrough(cmd, repo, "pursuit-rollup")
     return 0
+
+
+def _run_passthrough(cmd: list[str], cwd: Path, label: str) -> int:
+    """Run a vendored skill tool, streaming its output. Single source of truth
+    stays the skill tool; `te wiki <cmd>` is just the native entrypoint."""
+    import subprocess
+    if not Path(cmd[1]).exists():
+        print(f"error: {label} tool not found at {cmd[1]}", file=sys.stderr)
+        return 2
+    return subprocess.call(cmd, cwd=str(cwd))
 
 
 def cmd_docs(args: argparse.Namespace) -> int:
@@ -503,12 +542,31 @@ def build_parser() -> argparse.ArgumentParser:
     wn.add_argument("--template", choices=["page", "decision", "source-summary", "import-manifest"], default="page")
     wn.add_argument("--title", required=True)
     wn.add_argument("--domain", default="framework")
+    wn.add_argument("--pursuit", default="none", help="pursuit slug this page serves (section axis); 'none' for framework/tooling pages")
     wn.add_argument("--slug")
     wn.set_defaults(func=cmd_wiki)
     wq = wsub.add_parser("query")
     wq.add_argument("query")
     wq.add_argument("-k", type=int, default=10)
     wq.set_defaults(func=cmd_wiki)
+    # --- write-gate / memory-decay / pursuit-rollup passthroughs -----------
+    # Single source of truth = the vendored skill tools; these wire them into
+    # the native `./te wiki` idiom used across Alfred (start.md).
+    wg = wsub.add_parser("gate", help="write-gate: content-quality precheck before a durable write")
+    wg.add_argument("--kind", default="fact", help="fact|decision|convention|error|sop")
+    wg.add_argument("--text")
+    wg.add_argument("--file")
+    wg.add_argument("--mode", choices=["gate", "score", "explain"], default="gate")
+    wg.set_defaults(func=cmd_wiki)
+    wd = wsub.add_parser("decay", help="memory-decay: age page confidence (dry-run unless --apply)")
+    wd.add_argument("--apply", action="store_true")
+    wd.add_argument("--halflife-days", type=float)
+    wd.add_argument("--archive-candidates", type=float)
+    wd.add_argument("--json", action="store_true")
+    wd.set_defaults(func=cmd_wiki)
+    wr = wsub.add_parser("rollup", help="refresh pursuit→pages rollups on pursuit index pages")
+    wr.add_argument("--check", action="store_true", help="fail (exit 1) if any rollup is stale; no writes")
+    wr.set_defaults(func=cmd_wiki)
 
     docs = sub.add_parser("docs")
     dsub = docs.add_subparsers(dest="docs_cmd", required=True)

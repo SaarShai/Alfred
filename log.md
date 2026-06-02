@@ -68,3 +68,7 @@
 - Dashboard: per-node settings(gear) icon above doc icon -> size popover (▲/▼) scales the node AND its subtree (effective scale = product of ancestor scales; d3 layout uses nodeSize([1,dy]) + scale-aware separation; node group transform scale). Sizes persist per browser via localStorage (view-only, not written to wiki). Verified: gear renders, scaling cascades to children, persists across reload. Source: user prompt 2026-06-02.
 - Dashboard: per-node drag. d3.drag on node groups moves the node + its subtree via cumulative offsets (ox/oy cascade to descendants; render uses hx=y+cox, vy=x+coy; links/fit updated). Empty-space drag still pans (drag start stopPropagation vs zoom; clickDistance(5) preserves click=toggle/open). Offsets persist per browser in localStorage (pursuits-offsets), view-only. Verified: real mousedrag updates+persists offset; cascade moves subtree only, siblings unchanged. Source: user prompt 2026-06-02.
 - Fix: per-node view-state (size/position) was keyed by url and orphaned when a path changed (e.g. leaf->branch on add-child) -> sizes appeared to reset. Now keyed by a STABLE nid: build.js backfills nid into every node frontmatter and emits node.id; leafToBranch preserves nid (copies content); app.js keys SCALES/OFFSETS by d.data.id with one-time migration from old url keys. Verified: resize persists, survives add-child path change, reload restores. Resize already auto-saved (confirmed). Source: user prompt 2026-06-02.
+## [2026-06-02] update | ZZ Pursuit Wiring Smoke
+
+Created `concepts/zz-pursuit-smoke.md` from `page` template.
+
