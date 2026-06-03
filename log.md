@@ -72,3 +72,7 @@
 
 Created `concepts/zz-pursuit-smoke.md` from `page` template.
 
+## [2026-06-02] update | Wanderland — Later (deferred)
+
+Created `concepts/wanderland-later.md` from `page` template.
+
