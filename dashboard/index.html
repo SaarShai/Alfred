@@ -93,6 +93,26 @@
   .popover .pop-title span{color:var(--ink);font-weight:700}
   .popover .pop-row{display:flex;gap:8px}
   .popover .pop-row button{font-size:14px;line-height:1;padding:8px 12px;min-width:40px}
+
+  /* top principles box (top-left) */
+  #principles{position:fixed;top:64px;left:20px;z-index:9;width:248px;
+    background:linear-gradient(180deg,rgba(11,18,32,.92),rgba(11,18,32,.82));
+    border:1px solid rgba(148,163,184,.25);border-radius:14px;
+    padding:13px 15px 14px;box-shadow:0 14px 40px rgba(0,0,0,.45);backdrop-filter:blur(8px)}
+  #principles .ttl{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--muted);display:flex;align-items:baseline;gap:6px;margin-bottom:9px}
+  #principles .ttl .date{font-size:10px;font-weight:600;letter-spacing:.2px;text-transform:none;opacity:.7}
+  #principles ol{list-style:none;margin:0;padding:0;counter-reset:p}
+  #principles li{counter-increment:p;display:flex;gap:9px;align-items:baseline;padding:5px 0}
+  #principles li+li{border-top:1px solid rgba(148,163,184,.12)}
+  #principles li::before{content:counter(p);flex:none;width:18px;height:18px;border-radius:6px;
+    font-size:11px;font-weight:700;color:#fff;display:grid;place-items:center;
+    background:var(--c0);box-shadow:0 2px 6px rgba(99,102,241,.4)}
+  #principles li:nth-child(2)::before{background:var(--c1)}
+  #principles li:nth-child(3)::before{background:var(--c2)}
+  #principles li:nth-child(4)::before{background:var(--c3)}
+  #principles .name{font-size:13px;font-weight:650;color:var(--ink);line-height:1.25}
+  #principles .gloss{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px}
 </style>
 </head>
 <body>
@@ -108,6 +128,15 @@
   </div>
 </header>
 <svg></svg>
+<aside id="principles">
+  <div class="ttl">Top principles <span class="date">2026-05-16</span></div>
+  <ol>
+    <li><span><span class="name">Enjoy</span><span class="gloss">enjoyment over management</span></span></li>
+    <li><span><span class="name">First 3 miles</span><span class="gloss">push past the wall before flow</span></span></li>
+    <li><span><span class="name">Now</span><span class="gloss">be in the NOW</span></span></li>
+    <li><span><span class="name">No opinion</span><span class="gloss">as few opinions as needed</span></span></li>
+  </ol>
+</aside>
 <div id="offline-banner">Read-only view — editing &amp; add-note need the app. Run <code>node dashboard/serve.js</code> (or double-click <code>dashboard/start.command</code>), then open <code>http://localhost:8777</code>.</div>
 <div class="hint">doc icon = open & edit the doc · gear = resize subtree · hover → ＋ adds a child note · drag a node = move it + its children · click branch = expand/collapse · scroll = zoom · drag empty space = pan</div>
 
