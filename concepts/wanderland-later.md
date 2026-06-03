@@ -34,6 +34,12 @@ Capture format: `- [YYYY-MM-DD] item — why deferred / revisit-when — <wiki-l
 _When a Later item gets picked up, move it here with the date and where it went
 (node page, order, log entry), or delete it._
 
+## General items to remember
+
+Durable Wanderland notes worth keeping handy (not deferred tasks).
+
+- Last-minute FedEx discounts and system.
+
 ## Related
 
 - [[pursuits/wanderland]] — pursuit root
