@@ -15,9 +15,8 @@ Smaller-format Screenery variant. Deferred — not now.
 **Status:** active
 
 ## Notes
-- IKEA-style models: super thin, completely foldable.
-- Tee-pee / tent-like models.
-- Free-standing low items / set.
+- IKEA models (super thin, completely foldable), tee-pee-tent-like models
+- free-standing low items/set
 
 ## Parent
 - [[pursuits/wanderland/later]]

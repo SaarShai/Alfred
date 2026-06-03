@@ -1,5 +1,5 @@
 ---
-nid: n76l4kj
+nid: n8k4agv
 title: "General notes to remember"
 type: node
 status: active
@@ -15,11 +15,11 @@ Durable Wanderland notes worth keeping handy — not deferred tasks.
 **Status:** active
 
 ## Notes
-- Last-minute FedEx discounts and system.
-- Create a system to follow up with no-sale leads with reduced prices.
+- last minute fedex discounts and system
+- create a system to follow up with no-sale leads with reduced prices
 
 ## Parent
-- [[pursuits/wanderland]]
+- [[pursuits/wanderland/later]]
 
 
 <!-- pursuit-rollup:start -->

@@ -5,7 +5,7 @@ type: node
 status: active
 created: 2026-06-03
 updated: 2026-06-03
-children: [mini-screenery, portable-kids-clubs, markets]
+children: [mini-screenery, portable-kids-clubs, markets, general-notes]
 tags: [pursuit-tree]
 ---
 
@@ -21,6 +21,7 @@ directions deliberately deferred. Distinct from [[projects/wanderland/README]]
 - [[pursuits/wanderland/later/mini-screenery]]
 - [[pursuits/wanderland/later/portable-kids-clubs]]
 - [[pursuits/wanderland/later/markets]]
+- [[pursuits/wanderland/later/general-notes]]
 
 ## Parent
 - [[pursuits/wanderland]]

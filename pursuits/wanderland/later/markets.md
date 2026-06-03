@@ -15,7 +15,7 @@ Markets / segments to pursue.
 **Status:** active
 
 ## Notes
-- Nativity scenes.
+- nativity scenes
 
 ## Parent
 - [[pursuits/wanderland/later]]

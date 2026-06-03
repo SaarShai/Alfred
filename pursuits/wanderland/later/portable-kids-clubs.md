@@ -10,13 +10,11 @@ tags: [pursuit-tree]
 
 # Portable kids clubs
 
-A club in a 1-hour turnaround, with "3 kingdoms". A cheap, non-renovation,
-"foldable" alternative.
-
 **Status:** active
 
 ## Notes
-- Markets: seasonal for hotels; events (e.g. weddings).
+- a club in 1 hour turnaround, with '3 kingdoms'. a cheap non-renovation and 'foldable' alternative.
+- markets - seasonal for hotels, events (e.g weddings)
 
 ## Parent
 - [[pursuits/wanderland/later]]

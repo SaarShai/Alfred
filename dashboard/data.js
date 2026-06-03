@@ -140,13 +140,13 @@ window.TREES = [
             "name": "Markets",
             "id": "ny79956",
             "url": "../pursuits/wanderland/later/markets.md"
+          },
+          {
+            "name": "General notes to remember",
+            "id": "n8k4agv",
+            "url": "../pursuits/wanderland/later/general-notes.md"
           }
         ]
-      },
-      {
-        "name": "General notes to remember",
-        "id": "n76l4kj",
-        "url": "../pursuits/wanderland/general-notes.md"
       }
     ]
   },
