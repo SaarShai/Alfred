@@ -120,6 +120,33 @@ window.TREES = [
             "url": "../pursuits/wanderland/other/equiphotel.md"
           }
         ]
+      },
+      {
+        "name": "Later (deferred)",
+        "id": "nlzpjn4",
+        "url": "../pursuits/wanderland/later/index.md",
+        "children": [
+          {
+            "name": "Mini Screenery",
+            "id": "n8danhk",
+            "url": "../pursuits/wanderland/later/mini-screenery.md"
+          },
+          {
+            "name": "Portable kids clubs",
+            "id": "n6myj77",
+            "url": "../pursuits/wanderland/later/portable-kids-clubs.md"
+          },
+          {
+            "name": "Markets",
+            "id": "ny79956",
+            "url": "../pursuits/wanderland/later/markets.md"
+          }
+        ]
+      },
+      {
+        "name": "General notes to remember",
+        "id": "n76l4kj",
+        "url": "../pursuits/wanderland/general-notes.md"
       }
     ]
   },
