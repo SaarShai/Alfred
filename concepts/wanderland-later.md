@@ -31,6 +31,8 @@ Capture format: `- [YYYY-MM-DD] item — why deferred / revisit-when — <wiki-l
   - Free-standing low items / set.
 - [2026-06-03] **Portable kids clubs** — a club in a 1-hour turnaround, with "3 kingdoms"; a cheap, non-renovation, "foldable" alternative.
   - Markets: seasonal for hotels; events (e.g. weddings).
+- [2026-06-03] **Markets** — markets/segments to pursue.
+  - Nativity scenes.
 
 ## Promoted / done
 
