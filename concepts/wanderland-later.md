@@ -25,7 +25,9 @@ Capture format: `- [YYYY-MM-DD] item — why deferred / revisit-when — <wiki-l
 
 ## Later
 
-- _Nothing parked yet._
+- [2026-06-02] **Mini Screenery** — smaller-format Screenery variant; deferred, not now.
+  - IKEA-style models: super thin, completely foldable.
+  - Tee-pee / tent-like models.
 
 ## Promoted / done
 
