@@ -38,8 +38,8 @@ Compact pointers. Fetch details on demand.
 - L2_facts/user-principles-index (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-index.md`
 - L2_facts/user-principles-working (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-working.md`
 - L3_sops/capture-and-route (sop tags=capture,routing,memory,reminders,obligations,executive-assistant) -> `L3_sops/capture-and-route.md`
+- L3_sops/executive-coaching-method (sop tags=coaching,executive-coach,sop,method,alfred) -> `L3_sops/executive-coaching-method.md`
 - L3_sops/external-source-adoption (sop tags=source-adoption,research,wiki-write) -> `L3_sops/external-source-adoption.md`
 - L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
 - L3_sops/gstack-alfred-precedence (sop tags=gstack,precedence,governance,reconciliation,alfred,decision-gates,memory-authority) -> `L3_sops/gstack-alfred-precedence.md`
 - Principles/README (project tags=user-principles,principles,index,personal-knowledge,alfred) -> `Principles/README.md`
-- dashboard/README (page) -> `dashboard/README.md`

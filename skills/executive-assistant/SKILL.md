@@ -45,6 +45,7 @@ Fetch only the pages that change the answer. Default anchors:
 | First-run setup, tune yourself to me, or set it all up | `L3_sops/chief-of-staff-onboarding.md` and `templates/chief-of-staff-onboarding.template.md` |
 | Prompt generation | `L3_sops/generate-prompt-from-instruction.md`; use `./te prompt draft` when reusable templates/snippets fit; use `patterns/reasoning-and-planning-prompt-snippets.md` for step-by-step/planning phrases |
 | Idea shaping or prioritization | `patterns/executive-office-hours.md` |
+| Coach me, I'm stuck, talk it out, behavior change, a decision I must own | `skills/executive-coach/SKILL.md` (ask-not-tell mode); `L3_sops/executive-coaching-method.md` |
 | Plan or strategy review | `patterns/strategic-plan-review.md` |
 | Proactive idea suggestions | `patterns/proactive-idea-generation.md` |
 | Pushback, critique, or truth-first review | `patterns/incisive-expert-communication.md` |
