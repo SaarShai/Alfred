@@ -40,6 +40,7 @@ _When a Later item gets picked up, move it here with the date and where it went
 Durable Wanderland notes worth keeping handy (not deferred tasks).
 
 - Last-minute FedEx discounts and system.
+- Create a system to follow up with no-sale leads with reduced prices.
 
 ## Related
 
