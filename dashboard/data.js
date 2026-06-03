@@ -150,6 +150,11 @@ window.TREES = [
             "name": "Door hanger 'teasers'",
             "id": "n4wrhmr",
             "url": "../pursuits/wanderland/later/door-hanger-teasers.md"
+          },
+          {
+            "name": "update website",
+            "id": "ndfmq7v",
+            "url": "../pursuits/wanderland/later/update-website.md"
           }
         ]
       }
