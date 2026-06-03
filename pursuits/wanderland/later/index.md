@@ -5,7 +5,7 @@ type: node
 status: active
 created: 2026-06-03
 updated: 2026-06-03
-children: [mini-screenery, portable-kids-clubs, markets, general-notes]
+children: [mini-screenery, portable-kids-clubs, markets, general-notes, door-hanger-teasers]
 tags: [pursuit-tree]
 ---
 

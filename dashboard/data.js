@@ -145,6 +145,11 @@ window.TREES = [
             "name": "General notes to remember",
             "id": "n8k4agv",
             "url": "../pursuits/wanderland/later/general-notes.md"
+          },
+          {
+            "name": "Door hanger 'teasers'",
+            "id": "n4wrhmr",
+            "url": "../pursuits/wanderland/later/door-hanger-teasers.md"
           }
         ]
       }
