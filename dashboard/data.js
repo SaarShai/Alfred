@@ -122,7 +122,7 @@ window.TREES = [
         ]
       },
       {
-        "name": "Later (deferred)",
+        "name": "Later",
         "id": "nlzpjn4",
         "url": "../pursuits/wanderland/later/index.md",
         "children": [
