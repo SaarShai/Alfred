@@ -33,6 +33,37 @@ function frontmatter(file) {
 }
 function clean(s) { return s == null ? null : s.trim().replace(/^["']|["']$/g, ''); }
 
+// --- self-healing normalization -------------------------------------------
+// Keep a node doc's BODY consistent with its frontmatter/tree position, so a
+// title edit (frontmatter `title:`) made in the dashboard or by hand can't
+// leave a stale H1 / `## Children` list / `## Parent` link behind.
+// Conservative: frontmatter is the source of truth; only rewrites sections
+// that already exist; writes only when something actually changed.
+function selfWiki(file) {
+  return path.relative(ROOT, file).replace(/\\/g, '/').replace(/\/index\.md$/, '').replace(/\.md$/, '');
+}
+function replaceSection(txt, heading, bullets) {
+  const m = txt.match(new RegExp('^## ' + heading + '[ \\t]*$', 'm'));
+  if (!m) return txt;                                   // section absent -> leave structure alone
+  const bodyStart = txt.indexOf('\n', m.index) + 1;
+  const rest = txt.slice(bodyStart);
+  const rel = rest.search(/\n## |\n<!-- pursuit-rollup/);
+  const end = rel === -1 ? txt.length : bodyStart + rel;
+  const trail = (txt.slice(bodyStart, end).match(/\n*$/) || [''])[0]; // preserve trailing blank lines
+  return txt.slice(0, bodyStart) + bullets.join('\n') + trail + txt.slice(end);
+}
+function normalize(file, fm, parentWiki) {
+  let txt = fs.readFileSync(file, 'utf8');
+  const orig = txt;
+  if (fm.title) txt = txt.replace(/^#[ \t]+.+$/m, () => '# ' + fm.title);            // H1 mirrors title
+  if (fm.children.length) {                                                          // ## Children mirrors frontmatter
+    const base = selfWiki(file);
+    txt = replaceSection(txt, 'Children', fm.children.map(c => '- [[' + base + '/' + c + ']]'));
+  }
+  if (parentWiki) txt = replaceSection(txt, 'Parent', ['- [[' + parentWiki + ']]']);  // ## Parent mirrors tree
+  if (txt !== orig) fs.writeFileSync(file, txt);
+}
+
 // stable per-node id: persists across renames/leaf→branch conversions, so view-state (size, position) survives
 const usedIds = new Set();
 function genId() { let id; do { id = 'n' + Math.random().toString(36).slice(2, 8); } while (usedIds.has(id)); usedIds.add(id); return id; }
@@ -57,6 +88,7 @@ function build(baseDir, slug, trail) {
   const r = resolve(baseDir, slug);
   if (!r) { warnings.push('missing node: ' + path.join(baseDir, slug) + ' (referenced by ' + trail + ')'); return null; }
   const fm = frontmatter(r.file);
+  normalize(r.file, fm, path.relative(ROOT, baseDir).replace(/\\/g, '/'));
   nodeCount++;
   const node = {
     name: fm.title || slug,

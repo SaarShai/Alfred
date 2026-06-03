@@ -19,6 +19,7 @@ The Screenery product. (Inference, unconfirmed: a physical product built from gl
 - [[pursuits/wanderland/screenery/alicia-s-ownership]]
 - [[pursuits/wanderland/screenery/ai-designer]]
 - [[pursuits/wanderland/screenery/orders]]
+- [[pursuits/wanderland/screenery/factory-production]]
 
 ## Parent
 - [[pursuits/wanderland]]

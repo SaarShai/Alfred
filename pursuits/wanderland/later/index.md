@@ -9,7 +9,7 @@ children: [mini-screenery, portable-kids-clubs, markets, general-notes, door-han
 tags: [pursuit-tree]
 ---
 
-# Later (deferred)
+# Later
 
 Parking lot for Wanderland work that is **real but not now** — ideas and product
 directions deliberately deferred. Distinct from [[projects/wanderland/README]]
@@ -22,6 +22,8 @@ directions deliberately deferred. Distinct from [[projects/wanderland/README]]
 - [[pursuits/wanderland/later/portable-kids-clubs]]
 - [[pursuits/wanderland/later/markets]]
 - [[pursuits/wanderland/later/general-notes]]
+- [[pursuits/wanderland/later/door-hanger-teasers]]
+- [[pursuits/wanderland/later/update-website]]
 
 ## Parent
 - [[pursuits/wanderland]]
