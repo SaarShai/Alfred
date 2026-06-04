@@ -5,7 +5,7 @@ type: node
 status: active
 created: 2026-06-02
 updated: 2026-06-02
-children: [screenery, alicia-s-work, chinese-manufacturer-distributor-partnership, other, later]
+children: [screenery, alicia-s-work, chinese-manufacturer-distributor-partnership, other, later, batch-tasks]
 tags: [pursuit-tree]
 ---
 
@@ -21,6 +21,7 @@ Pursuit #1 (top priority). The company that makes the Screenery product. Fuller 
 - [[pursuits/wanderland/chinese-manufacturer-distributor-partnership]]
 - [[pursuits/wanderland/other]]
 - [[pursuits/wanderland/later]]
+- [[pursuits/wanderland/batch-tasks]]
 
 ## Parent
 - [[pursuits]]

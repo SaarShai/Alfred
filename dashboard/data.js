@@ -157,6 +157,11 @@ window.TREES = [
             "url": "../pursuits/wanderland/later/update-website.md"
           }
         ]
+      },
+      {
+        "name": "Batch tasks",
+        "id": "nrxjxyl",
+        "url": "../pursuits/wanderland/batch-tasks.md"
       }
     ]
   },
