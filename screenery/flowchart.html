@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Screenery — Operating Flow</title>
+<style>
+  :root{
+    --alicia:#0d9488; --saar:#4f46e5; --factory:#d97706; --alan:#475569;
+    --co:#e11d48; --jt:#4f46e5; --cat:#7c3aed; --fb:#059669; --stk:#b45309; --eml:#0284c7;
+    --ink:#0f172a; --muted:#64748b; --line:#94a3b8; --bg:#f5f7fa; --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{width:1560px; margin:0 auto; padding:36px 40px 28px;}
+  .title{font-size:30px; font-weight:800; letter-spacing:-0.02em;}
+  .subtitle{color:var(--muted); font-size:15px; margin-top:4px; font-weight:500;}
+  .title .tag{font-size:13px; font-weight:700; color:#fff; background:linear-gradient(90deg,#4f46e5,#0d9488); padding:3px 10px; border-radius:999px; vertical-align:middle; margin-left:10px;}
+
+  .board{
+    position:relative; width:1480px; margin:26px 0 0;
+    display:grid;
+    grid-template-columns:150px repeat(7,190px);
+    grid-template-rows:66px auto auto auto auto;
+    row-gap:0; column-gap:0;
+  }
+  /* step header */
+  .hcell{grid-row:1; display:flex; align-items:center; gap:9px; padding:0 8px 14px;}
+  .hnum{flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--ink); color:#fff;
+        font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+  .htext{font-size:13px; font-weight:700; line-height:1.15; color:var(--ink);}
+  .corner{grid-row:1; grid-column:1;}
+
+  /* lane bands */
+  .band{grid-column:1 / -1; border-radius:14px; z-index:0;}
+  .band.r2{grid-row:2; background:rgba(13,148,136,0.06);}
+  .band.r3{grid-row:3; background:rgba(79,70,229,0.06);}
+  .band.r4{grid-row:4; background:rgba(217,119,6,0.07);}
+  .band.r5{grid-row:5; background:rgba(71,85,105,0.06);}
+
+  /* lane labels */
+  .lane{grid-column:1; z-index:3; display:flex; align-items:center; padding:18px 10px;}
+  .lane .pill{display:flex; flex-direction:column; gap:2px;}
+  .lane .who{font-size:15px; font-weight:800;}
+  .lane .role{font-size:11px; color:var(--muted); font-weight:600; line-height:1.2;}
+  .lane.r2{grid-row:2;} .lane.r3{grid-row:3;} .lane.r4{grid-row:4;} .lane.r5{grid-row:5;}
+  .lane.r2 .who{color:var(--alicia);} .lane.r3 .who{color:var(--saar);}
+  .lane.r4 .who{color:var(--factory);} .lane.r5 .who{color:var(--alan);}
+  .lane .bar{width:5px; align-self:stretch; border-radius:3px; margin-right:10px;}
+  .lane.r2 .bar{background:var(--alicia);} .lane.r3 .bar{background:var(--saar);}
+  .lane.r4 .bar{background:var(--factory);} .lane.r5 .bar{background:var(--alan);}
+
+  /* cards */
+  .card{
+    position:relative; z-index:2; margin:14px 12px; background:var(--card);
+    border-radius:13px; padding:12px 13px 11px; border:1px solid #e7eaf0;
+    box-shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 16px rgba(15,23,42,.06);
+  }
+  .card::before{content:""; position:absolute; left:0; top:14px; bottom:14px; width:4px; border-radius:4px;}
+  .card.a::before{background:var(--alicia);} .card.s::before{background:var(--saar);}
+  .card.f::before{background:var(--factory);} .card.al::before{background:var(--alan);}
+  .card h4{margin:0 0 5px; font-size:13.5px; font-weight:800; padding-left:8px;}
+  .card p{margin:0 0 9px; font-size:11.5px; line-height:1.4; color:#334155; padding-left:8px;}
+  .card .note{margin:7px 0 2px; font-size:10.5px; color:var(--stk); font-weight:700; padding-left:8px; line-height:1.35;}
+  .badges{display:flex; flex-wrap:wrap; gap:5px; padding-left:8px;}
+  .badge{display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700;
+         background:#f1f5f9; color:#334155; padding:3px 8px 3px 7px; border-radius:999px; white-space:nowrap;}
+  .badge .dot{width:7px; height:7px; border-radius:50%;}
+  .d-co{background:var(--co);} .d-jt{background:var(--jt);} .d-cat{background:var(--cat);}
+  .d-fb{background:var(--fb);} .d-stk{background:var(--stk);} .d-eml{background:var(--eml);}
+
+  svg.layer{position:absolute; left:0; top:0; pointer-events:none; z-index:1; overflow:visible;}
+
+  /* legend */
+  .legend{display:flex; flex-wrap:wrap; gap:18px 26px; margin:30px 2px 0; padding:18px 20px;
+          background:#fff; border:1px solid #e7eaf0; border-radius:14px;}
+  .legend .grp{display:flex; flex-direction:column; gap:9px;}
+  .legend .gt{font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+  .legend .row{display:flex; gap:16px; flex-wrap:wrap;}
+  .legend .item{display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; color:#334155;}
+  .legend .sw{width:12px; height:12px; border-radius:4px;}
+  .legend .ln{width:26px; height:0; border-top:2.5px solid var(--line);}
+  .legend .ln.dash{border-top:2.5px dashed var(--eml);}
+  .foot{margin:16px 2px 0; color:var(--muted); font-size:11.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="title">Screenery — Operating Flow <span class="tag">one sheet · 4 actors · 7 steps</span></div>
+  <div class="subtitle">Each actor has one home tab they own. Order flows left → right; the line zig-zags into whoever acts next. Pills show the doc/email used.</div>
+
+  <div class="board" id="board">
+    <!-- lane bands -->
+    <div class="band r2"></div>
+    <div class="band r3"></div>
+    <div class="band r4"></div>
+    <div class="band r5"></div>
+
+    <!-- corner + step headers -->
+    <div class="corner"></div>
+    <div class="hcell" style="grid-column:2"><div class="hnum">1</div><div class="htext">Intake</div></div>
+    <div class="hcell" style="grid-column:3"><div class="hnum">2</div><div class="htext">Make files</div></div>
+    <div class="hcell" style="grid-column:4"><div class="hnum">3</div><div class="htext">Colour &amp; stock check</div></div>
+    <div class="hcell" style="grid-column:5"><div class="hnum">4</div><div class="htext">Hand to factory</div></div>
+    <div class="hcell" style="grid-column:6"><div class="hnum">5</div><div class="htext">Produce &amp; log</div></div>
+    <div class="hcell" style="grid-column:7"><div class="hnum">6</div><div class="htext">Reconcile stock</div></div>
+    <div class="hcell" style="grid-column:8"><div class="hnum">7</div><div class="htext">Ship &amp; close</div></div>
+
+    <!-- lane labels -->
+    <div class="lane r2"><div class="bar"></div><div class="pill"><span class="who">Alicia</span><span class="role">orders · clients · stock · shipping</span></div></div>
+    <div class="lane r3"><div class="bar"></div><div class="pill"><span class="who">Saar</span><span class="role">design &amp; production files</span></div></div>
+    <div class="lane r4"><div class="bar"></div><div class="pill"><span class="who">Factory</span><span class="role">production team</span></div></div>
+    <div class="lane r5"><div class="bar"></div><div class="pill"><span class="who">Alan</span><span class="role">factory admin · labels</span></div></div>
+
+    <!-- cards -->
+    <div class="card a" id="c1" style="grid-column:2; grid-row:2">
+      <h4>Log &amp; seed the job</h4>
+      <p>Add order to Confirmed Orders. Seed one Job Tracker row per unit: theme, model, std/bespoke, qty, target.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-co"></span>Confirmed Orders</span>
+        <span class="badge"><span class="dot d-jt"></span>Job Tracker</span>
+      </div>
+    </div>
+
+    <div class="card s" id="c2" style="grid-column:3; grid-row:3">
+      <h4>Make the files</h4>
+      <p>Standard → reuse from Catalog. New / bespoke → build production files + instructions + breakdown block.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-cat"></span>Catalog</span>
+        <span class="badge"><span class="dot d-fb"></span>Files breakdown</span>
+        <span class="badge"><span class="dot d-jt"></span>Job Tracker</span>
+      </div>
+    </div>
+
+    <div class="card a" id="c3" style="grid-column:4; grid-row:2">
+      <h4>Check colour vs stock</h4>
+      <p>Compare breakdown <em>Sheet</em> colours against Stock. In stock → tick Colour OK.</p>
+      <div class="note">↻ Missing → swap colour or order supply (UK fast / China bulk) &amp; pause.</div>
+      <div class="badges">
+        <span class="badge"><span class="dot d-fb"></span>Files breakdown</span>
+        <span class="badge"><span class="dot d-stk"></span>Stock</span>
+      </div>
+    </div>
+
+    <div class="card s" id="c4" style="grid-column:5; grid-row:3">
+      <h4>Hand to factory</h4>
+      <p>Breakdown is live in the sheet. Email "design ready"; set Factory Notified.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-eml"></span>Email ① ready</span>
+        <span class="badge"><span class="dot d-fb"></span>Files breakdown</span>
+      </div>
+    </div>
+
+    <div class="card f" id="c5" style="grid-column:6; grid-row:4">
+      <h4>Produce &amp; log</h4>
+      <p>Cut+Print → Glued → Boxed → Shipped. Log Stage, Date, Sheets&nbsp;Used in status cols. Email status each run.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-fb"></span>Breakdown · status cols</span>
+        <span class="badge"><span class="dot d-eml"></span>Email ② status</span>
+      </div>
+    </div>
+
+    <div class="card al" id="c5b" style="grid-column:6; grid-row:5">
+      <h4>Produce labels</h4>
+      <p>Generate labels from the breakdown.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-fb"></span>Files breakdown</span>
+      </div>
+    </div>
+
+    <div class="card a" id="c6" style="grid-column:7; grid-row:2">
+      <h4>Reconcile stock</h4>
+      <p>Subtract Sheets Used from Stock. Reorder at threshold — UK (fast) / China (bulk).</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-stk"></span>Stock</span>
+      </div>
+    </div>
+
+    <div class="card a" id="c7" style="grid-column:8; grid-row:2">
+      <h4>Ship &amp; close</h4>
+      <p>Book shipping, add tracking, notify client, move to Completed.</p>
+      <div class="badges">
+        <span class="badge"><span class="dot d-co"></span>Confirmed Orders</span>
+        <span class="badge"><span class="dot d-eml"></span>Email ③ client</span>
+      </div>
+    </div>
+
+    <svg class="layer" id="layer"></svg>
+  </div>
+
+  <!-- legend -->
+  <div class="legend">
+    <div class="grp">
+      <div class="gt">Tabs in the shared sheet</div>
+      <div class="row">
+        <span class="item"><span class="sw" style="background:var(--co)"></span>Confirmed Orders <span style="color:#94a3b8">— Alicia</span></span>
+        <span class="item"><span class="sw" style="background:var(--jt)"></span>Job Tracker <span style="color:#94a3b8">— Saar</span></span>
+        <span class="item"><span class="sw" style="background:var(--cat)"></span>Catalog <span style="color:#94a3b8">— Saar</span></span>
+        <span class="item"><span class="sw" style="background:var(--fb)"></span>Files breakdown <span style="color:#94a3b8">— Saar + Factory</span></span>
+        <span class="item"><span class="sw" style="background:var(--stk)"></span>Stock <span style="color:#94a3b8">— Alicia</span></span>
+      </div>
+    </div>
+    <div class="grp">
+      <div class="gt">Hand-offs</div>
+      <div class="row">
+        <span class="item"><span class="ln"></span>flow / next action</span>
+        <span class="item"><span class="ln dash"></span>email between actors</span>
+        <span class="item"><span class="sw" style="background:var(--eml)"></span>Email ① ready · ② status · ③ client</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Confirmed Orders &amp; the Files-breakdown columns stay untouched. Net-new: Catalog + Stock tabs, and status columns appended to the right of the breakdown. AI photo-stock slots into Stock later (phase 2).</div>
+</div>
+
+<script>
+  const board = document.getElementById('board');
+  const svg = document.getElementById('layer');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function draw(){
+    const b = board.getBoundingClientRect();
+    svg.setAttribute('width', b.width);
+    svg.setAttribute('height', b.height);
+    svg.innerHTML = '';
+
+    // arrowhead marker
+    const defs = document.createElementNS(NS,'defs');
+    defs.innerHTML =
+      '<marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">' +
+        '<path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>' +
+      '<marker id="ahe" markerWidth="9" markerHeight="9" refX="7.5" refY="4" orient="auto">' +
+        '<path d="M0,0 L8,4 L0,8 Z" fill="#0284c7"/></marker>';
+    svg.appendChild(defs);
+
+    const R = id => {
+      const r = document.getElementById(id).getBoundingClientRect();
+      return {l:r.left-b.left, t:r.top-b.top, r:r.right-b.left, bot:r.bottom-b.top, w:r.width, h:r.height,
+              cx:(r.left+r.right)/2-b.left, cy:(r.top+r.bottom)/2-b.top};
+    };
+
+    function path(d, color, dash){
+      const p = document.createElementNS(NS,'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill','none');
+      p.setAttribute('stroke', color);
+      p.setAttribute('stroke-width','2.2');
+      p.setAttribute('stroke-linecap','round');
+      p.setAttribute('stroke-linejoin','round');
+      if(dash) p.setAttribute('stroke-dasharray','6 5');
+      p.setAttribute('marker-end', color==='#0284c7' ? 'url(#ahe)' : 'url(#ah)');
+      svg.appendChild(p);
+      return p;
+    }
+
+    function label(x, y, text, color){
+      const g = document.createElementNS(NS,'g');
+      const t = document.createElementNS(NS,'text');
+      t.setAttribute('x', x); t.setAttribute('y', y);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('dominant-baseline','middle');
+      t.setAttribute('font-size','10.5');
+      t.setAttribute('font-weight','700');
+      t.setAttribute('font-family','-apple-system,Segoe UI,Inter,sans-serif');
+      t.setAttribute('fill', color);
+      t.textContent = text;
+      svg.appendChild(t);
+      const bb = t.getBBox();
+      const rect = document.createElementNS(NS,'rect');
+      rect.setAttribute('x', bb.x-6); rect.setAttribute('y', bb.y-3);
+      rect.setAttribute('width', bb.width+12); rect.setAttribute('height', bb.height+6);
+      rect.setAttribute('rx','7'); rect.setAttribute('fill','#ffffff');
+      rect.setAttribute('stroke', color); rect.setAttribute('stroke-width','1'); rect.setAttribute('stroke-opacity','0.35');
+      svg.insertBefore(rect, t);
+    }
+
+    // horizontal elbow: A right-center -> B left-center
+    function hconnect(aId, bId, text, color){
+      const a = R(aId), c = R(bId);
+      color = color || '#94a3b8';
+      const sx = a.r, sy = a.cy, ex = c.l - 9, ey = c.cy;
+      const midX = (a.r + c.l)/2;
+      path(`M ${sx} ${sy} H ${midX} V ${ey} H ${ex}`, color, color==='#0284c7');
+      if(text) label(midX, (sy+ey)/2, text, color);
+    }
+    // vertical: A bottom-center -> B top-center
+    function vconnect(aId, bId, text, color){
+      const a = R(aId), c = R(bId);
+      color = color || '#94a3b8';
+      const sx = a.cx, sy = a.bot, ex = c.cx, ey = c.t - 9;
+      const midY = (a.bot + c.t)/2;
+      path(`M ${sx} ${sy} V ${midY} H ${ex} V ${ey}`, color, false);
+      if(text) label((sx+ex)/2, midY, text, color);
+    }
+
+    hconnect('c1','c2','Job Tracker row');
+    hconnect('c2','c3','breakdown ready');
+    hconnect('c3','c4','colours OK');
+    hconnect('c4','c5','Email ① — design ready','#0284c7');
+    hconnect('c5','c6','Email ② — sheets used','#0284c7');
+    hconnect('c6','c7','ready to ship');
+    vconnect('c5','c5b','labels');
+  }
+
+  if(document.readyState === 'complete') draw();
+  else window.addEventListener('load', draw);
+  window.addEventListener('resize', draw);
+  // fonts settle
+  setTimeout(draw, 250);
+</script>
+</body>
+</html>
