@@ -14,7 +14,7 @@ const { execFile } = require('child_process');
 const DASH = __dirname;
 const ROOT = path.resolve(DASH, '..');
 const PURSUITS = path.join(ROOT, 'pursuits');
-const PORT = Number(process.argv[2]) || 8777;
+const PORT = Number(process.argv[2]) || Number(process.env.PORT) || 8777;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.md': 'text/plain' };
 const today = () => new Date().toISOString().slice(0, 10);
 const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');

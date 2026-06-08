@@ -5,7 +5,7 @@ type: node
 status: active
 created: 2026-06-02
 updated: 2026-06-02
-children: [joff-stir-hilton, equiphotel]
+children: [joff-stir-hilton, equiphotel, cafe-royal, catalog]
 tags: [pursuit-tree]
 ---
 
@@ -18,6 +18,8 @@ Miscellaneous Wanderland work streams.
 ## Children
 - [[pursuits/wanderland/other/joff-stir-hilton]]
 - [[pursuits/wanderland/other/equiphotel]]
+- [[pursuits/wanderland/other/cafe-royal]]
+- [[pursuits/wanderland/other/catalog]]
 
 ## Parent
 - [[pursuits/wanderland]]

@@ -36,6 +36,11 @@
   .node:active{cursor:grabbing}
   .node rect{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35));transition:filter .15s}
   .node:hover rect{filter:drop-shadow(0 8px 22px rgba(0,0,0,.55))}
+  /* highlighted node: colored glow halo (node color via --halo) */
+  .node.hl rect{filter:drop-shadow(0 6px 14px rgba(0,0,0,.4)) drop-shadow(0 0 5px var(--halo)) drop-shadow(0 0 13px var(--halo))}
+  .node.hl:hover rect{filter:drop-shadow(0 8px 22px rgba(0,0,0,.55)) drop-shadow(0 0 6px var(--halo)) drop-shadow(0 0 16px var(--halo))}
+  /* keep the action buttons legible against the now-colored fill */
+  .node.hl .docbtn circle,.node.hl .gearbtn circle,.node.hl .addbtn circle,.node.hl .badge circle{stroke:rgba(255,255,255,.9);stroke-width:1.4px}
   .node text.label{font-size:13px;font-weight:600;fill:var(--card-ink)}
   .node text.label.root{font-size:15px;font-weight:750;letter-spacing:.2px}
   .node .count{font-size:10px;font-weight:700;fill:#fff}
@@ -93,6 +98,9 @@
   .popover .pop-title span{color:var(--ink);font-weight:700}
   .popover .pop-row{display:flex;gap:8px}
   .popover .pop-row button{font-size:14px;line-height:1;padding:8px 12px;min-width:40px}
+  .popover .hl-btn{width:100%;margin-top:8px;font-size:12px}
+  .popover .hl-btn.on{color:#fff;background:var(--c3);border-color:transparent}
+  .popover .hl-btn.on:hover{background:var(--c3);filter:brightness(1.08)}
 
   /* top principles box (top-left) */
   #principles{position:fixed;top:64px;left:20px;z-index:9;width:248px;
@@ -180,6 +188,7 @@
     <button id="size-up" title="Bigger (this node + its children)">▲</button>
     <button id="size-down" title="Smaller (this node + its children)">▼</button>
   </div>
+  <button id="size-hl" class="hl-btn" title="Highlight this node — halo + fill with its color">Highlight</button>
 </div>
 
 <script src="./vendor/d3.min.js"></script>

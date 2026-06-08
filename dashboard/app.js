@@ -40,6 +40,10 @@
   let OFFSETS = {};
   try { OFFSETS = JSON.parse(localStorage.getItem('pursuits-offsets') || '{}'); } catch (e) {}
   function saveOffsets() { try { localStorage.setItem('pursuits-offsets', JSON.stringify(OFFSETS)); } catch (e) {} }
+  // per-node highlight flag (halo + fill with the node color instead of white), persisted by doc url
+  let HILITES = {};
+  try { HILITES = JSON.parse(localStorage.getItem('pursuits-hilites') || '{}'); } catch (e) {}
+  function saveHilites() { try { localStorage.setItem('pursuits-hilites', JSON.stringify(HILITES)); } catch (e) {} }
   // cumulative offset down the tree → render coords (hx,vy) = layout (y,x) + inherited offset
   function computePos(root) {
     root.eachBefore(d => {
@@ -53,7 +57,7 @@
   function buildStates(TREES) {
     canvas.selectAll('*').remove();
     states = []; uid = 0;
-    let dirtyS = false, dirtyO = false;
+    let dirtyS = false, dirtyO = false, dirtyH = false;
     TREES.forEach((data, ti) => {
       const root = d3.hierarchy(data);
       root.hx0 = 0; root.vy0 = 0;
@@ -68,6 +72,10 @@
         let of = OFFSETS[k];
         if (!of && k !== ou && OFFSETS[ou]) { of = OFFSETS[ou]; OFFSETS[k] = of; delete OFFSETS[ou]; dirtyO = true; }
         d.ox = of ? of.x : 0; d.oy = of ? of.y : 0;
+        // highlight flag — same migration
+        let hl = HILITES[k];
+        if (hl === undefined && k !== ou && HILITES[ou] !== undefined) { hl = HILITES[ou]; HILITES[k] = hl; delete HILITES[ou]; dirtyH = true; }
+        d.hl = !!hl;
         let a = d; while (a.depth > 1) a = a.parent;
         d.branch = a.depth === 0 ? -1 : a.parent.children.indexOf(a);
       });
@@ -77,6 +85,7 @@
     });
     if (dirtyS) saveScales();
     if (dirtyO) saveOffsets();
+    if (dirtyH) saveHilites();
   }
 
   function layout() {
@@ -188,6 +197,10 @@
     const merged = node.merge(nodeEnter);
     merged.select('.badge').style('display', d => collapsed(d) ? null : 'none');
     merged.select('.badge .count').text(d => collapsed(d) ? d._children.length : '');
+    // highlight: halo (CSS via .hl + --halo) + fill the rect with the node color, white label for contrast
+    merged.classed('hl', d => !!d.hl).style('--halo', d => d.hl ? colorOf(d) : null);
+    merged.select('rect').attr('fill', d => d.hl ? colorOf(d) : 'var(--card)');
+    merged.select('text.label').attr('fill', d => d.hl ? '#fff' : null);
     merged.transition(t)
       .attr('transform', d => 'translate(' + d.hx + ',' + d.vy + ') scale(' + (d.escale || 1) + ')')
       .attr('fill-opacity', 1).attr('stroke-opacity', 1);
@@ -310,11 +323,27 @@
     sizeNode = d;
     const pop = document.getElementById('sizepop');
     document.getElementById('size-val').textContent = Math.round((d.scale || 1) * 100) + '%';
-    pop.style.left = Math.min(window.innerWidth - 150, (e.clientX || window.innerWidth / 2) + 8) + 'px';
-    pop.style.top = Math.min(window.innerHeight - 96, (e.clientY || 80) + 8) + 'px';
+    updateHlBtn();
+    pop.style.left = Math.min(window.innerWidth - 170, (e.clientX || window.innerWidth / 2) + 8) + 'px';
+    pop.style.top = Math.min(window.innerHeight - 130, (e.clientY || 80) + 8) + 'px';
     pop.hidden = false;
   }
   function closeSizePop() { document.getElementById('sizepop').hidden = true; sizeNode = null; }
+  function updateHlBtn() {
+    const b = document.getElementById('size-hl');
+    if (!b || !sizeNode) return;
+    b.classList.toggle('on', !!sizeNode.hl);
+    b.textContent = sizeNode.hl ? '✓ Highlighted' : 'Highlight';
+  }
+  function toggleHilite() {
+    if (!sizeNode) return;
+    sizeNode.hl = !sizeNode.hl;
+    const k = keyOf(sizeNode);
+    if (sizeNode.hl) HILITES[k] = true; else delete HILITES[k];
+    saveHilites();
+    updateHlBtn();
+    refresh(sizeNode);
+  }
   function nudgeScale(dir) {
     if (!sizeNode) return;
     sizeNode.scale = Math.max(0.4, Math.min(2.5, (sizeNode.scale || 1) * (dir > 0 ? 1.15 : 1 / 1.15)));
@@ -335,6 +364,7 @@
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
   document.getElementById('size-up').onclick = () => nudgeScale(1);
   document.getElementById('size-down').onclick = () => nudgeScale(-1);
+  document.getElementById('size-hl').onclick = toggleHilite;
   document.addEventListener('click', e => { const pop = document.getElementById('sizepop'); if (!pop.hidden && !pop.contains(e.target)) closeSizePop(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeModal(); closeEditor(); closeSizePop(); }

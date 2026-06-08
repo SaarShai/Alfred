@@ -5,7 +5,7 @@ type: node
 status: active
 created: 2026-06-03
 updated: 2026-06-03
-children: [mini-screenery, portable-kids-clubs, markets, general-notes, door-hanger-teasers, update-website]
+children: [mini-screenery, portable-kids-clubs, markets, general-notes, door-hanger-teasers, update-website, design-patent]
 tags: [pursuit-tree]
 ---
 
@@ -24,6 +24,7 @@ directions deliberately deferred. Distinct from [[projects/wanderland/README]]
 - [[pursuits/wanderland/later/general-notes]]
 - [[pursuits/wanderland/later/door-hanger-teasers]]
 - [[pursuits/wanderland/later/update-website]]
+- [[pursuits/wanderland/later/design-patent]]
 
 ## Parent
 - [[pursuits/wanderland]]

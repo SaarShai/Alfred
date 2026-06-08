@@ -118,6 +118,16 @@ window.TREES = [
             "name": "EquipHotel",
             "id": "nuob8ad",
             "url": "../pursuits/wanderland/other/equiphotel.md"
+          },
+          {
+            "name": "Cafe Royal",
+            "id": "nsavmfn",
+            "url": "../pursuits/wanderland/other/cafe-royal.md"
+          },
+          {
+            "name": "Catalog",
+            "id": "nfdr1zx",
+            "url": "../pursuits/wanderland/other/catalog.md"
           }
         ]
       },
@@ -155,6 +165,11 @@ window.TREES = [
             "name": "update website",
             "id": "ndfmq7v",
             "url": "../pursuits/wanderland/later/update-website.md"
+          },
+          {
+            "name": "Design patent",
+            "id": "n2poqit",
+            "url": "../pursuits/wanderland/later/design-patent.md"
           }
         ]
       },
@@ -162,6 +177,11 @@ window.TREES = [
         "name": "Batch tasks",
         "id": "nrxjxyl",
         "url": "../pursuits/wanderland/batch-tasks.md"
+      },
+      {
+        "name": "Renderer",
+        "id": "nr21yg5",
+        "url": "../pursuits/wanderland/renderer.md"
       }
     ]
   },
@@ -174,6 +194,18 @@ window.TREES = [
         "name": "virtual pet project",
         "id": "n8116hh",
         "url": "../pursuits/animayte/virtual-pet-project.md"
+      },
+      {
+        "name": "RPG Projects",
+        "id": "nm84cg0",
+        "url": "../pursuits/animayte/rpg-projects/index.md",
+        "children": [
+          {
+            "name": "Tech/skills tree",
+            "id": "nqjp0pg",
+            "url": "../pursuits/animayte/rpg-projects/tech-skills-tree.md"
+          }
+        ]
       }
     ]
   },

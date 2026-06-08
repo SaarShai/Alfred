@@ -10,7 +10,8 @@ tags: [pursuit-tree, note]
 
 # update website
 
-_(empty note — edit me)_
+company website: transfer from wix
+
 
 
 <!-- pursuit-rollup:start -->
