@@ -79,7 +79,7 @@ Load only when triggered:
 | Need wiki memory (retrieve or write) | `skills/wiki-memory/SKILL.md` |
 | Before any durable write (gate) | `skills/write-gate/SKILL.md` |
 | Age/audit wiki confidence · `/decay` | `skills/memory-decay/SKILL.md` |
-| Context refresh/clear/`summ` · handoff | `.claude/skills/handoff/SKILL.md` |
+| Context refresh/clear/`summ` · handoff/relay | `skills/relay-sessions/SKILL.md` |
 | Need subagents | `skills/subagent-orchestrator/SKILL.md`; `prompts/subagents/lifecycle.prompt.md` |
 | Simplify/lean/prune | `skills/lean-execution/SKILL.md` |
 | GitHub repo maintenance | `prompts/subagents/repo-maintainer.prompt.md` |
