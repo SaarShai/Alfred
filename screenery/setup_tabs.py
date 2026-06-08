@@ -86,28 +86,28 @@ def note(gid, col, text):
 
 def build_job_tracker():
     title = "Job Tracker"
+    # Production Files / Instructions are NOT columns here — those live in Files Breakdown
+    # (File/Instructions/Folder cols) and, for standards, in Catalog. Job Tracker tracks STATUS.
     headers = ["Order ID", "Hotel / Client", "Theme", "Model", "Type", "Qty", "Target",
-               "Files Ready?", "Production Files", "Instructions", "Breakdown Ready?",
-               "Colour OK?", "Planned Start", "Planned Ship",
+               "Files Ready?", "Breakdown Ready?", "Colour OK?", "Planned Start", "Planned Ship",
                "Stage", "Stage Date", "Sheets Used", "Production Feedback", "Notes"]
     gid = add_sheet(title, len(headers))
     set_values(f"'{title}'!A1", [headers])
     reqs = [
-        hdr_bg(gid, 0, 7, GRAY), hdr_bg(gid, 7, 11, INDIGO), hdr_bg(gid, 11, 12, TEAL),
-        hdr_bg(gid, 12, 14, SLATE), hdr_bg(gid, 14, 18, AMBER), hdr_bg(gid, 18, 19, GRAY),
+        hdr_bg(gid, 0, 7, GRAY), hdr_bg(gid, 7, 9, INDIGO), hdr_bg(gid, 9, 10, TEAL),
+        hdr_bg(gid, 10, 12, SLATE), hdr_bg(gid, 12, 16, AMBER), hdr_bg(gid, 16, 17, GRAY),
         dropdown(gid, 4, ["Standard", "Bespoke"]),
-        dropdown(gid, 14, ["Cut+Print", "Glued", "Boxed", "Shipped"]),
-        checkbox(gid, 7), checkbox(gid, 10), checkbox(gid, 11),
-        datefmt(gid, 6), datefmt(gid, 12), datefmt(gid, 13), datefmt(gid, 15),
-        colwidth(gid, 1, 150), colwidth(gid, 8, 170), colwidth(gid, 9, 150),
-        colwidth(gid, 17, 240), colwidth(gid, 18, 200),
+        dropdown(gid, 12, ["Cut+Print", "Glued", "Boxed", "Shipped"]),
+        checkbox(gid, 7), checkbox(gid, 8), checkbox(gid, 9),
+        datefmt(gid, 6), datefmt(gid, 10), datefmt(gid, 11), datefmt(gid, 13),
+        colwidth(gid, 1, 150), colwidth(gid, 15, 240), colwidth(gid, 16, 200),
         note(gid, 4, "Standard = reuse from Catalog. Bespoke = Saar builds. Any variant/modifier -> Bespoke."),
-        note(gid, 7, "Saar: tick when production files are ready (or reused from Catalog)."),
-        note(gid, 11, "Alicia: tick after checking breakdown colours vs the Stock tab."),
-        note(gid, 12, "Alan: planned start from real factory capacity."),
-        note(gid, 14, "Factory: update after each stage (Cut+Print -> Glued -> Boxed -> Shipped)."),
-        note(gid, 16, "Factory: actual sheets used incl. extras/mistakes/tests."),
-        note(gid, 17, "Factory: errors, issues, things to fix in the design next time."),
+        note(gid, 7, "Saar: tick when files are ready (built, or reused from Catalog). Files live in Files Breakdown / Catalog."),
+        note(gid, 9, "Alicia: tick after checking breakdown colours vs the Stock tab."),
+        note(gid, 10, "Alan: planned start from real factory capacity."),
+        note(gid, 12, "Factory: update after each stage (Cut+Print -> Glued -> Boxed -> Shipped)."),
+        note(gid, 14, "Factory: actual sheets used incl. extras/mistakes/tests."),
+        note(gid, 15, "Factory: errors, issues, things to fix in the design next time."),
     ]
     batch(reqs)
     return gid
