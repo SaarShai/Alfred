@@ -3,7 +3,7 @@ name: think
 description: How an agent should think and approach problems — first-principles, reduce/simplify before adding, research-and-borrow before building, experiment-and-falsify, never hallucinate or flatter. Manual-only: invoke deliberately with `/think` when planning an approach, ideating, stuck, choosing build-vs-research, or tackling a non-trivial / open-ended problem. Does not auto-fire.
 effort: medium
 disable-model-invocation: true
-pulse_reminder: think first-principles; reduce/simplify before adding; research & borrow before building; experiment to falsify; never hallucinate or flatter the user.
+pulse_reminder: think first-principles; reduce/simplify before adding; research & borrow before building; experiment to falsify; pre-mortem any plan that changes how others work; never hallucinate or flatter the user.
 ---
 
 # Think
@@ -40,7 +40,7 @@ You also have standing permission to build ad-hoc tools, skills, references, tem
 
 - **When the solution space is open / you're ideating → diverge before converging** *(Brain Blizzard → Scout Tests → Sieve)*. Generate many candidate approaches — scale to the stakes, up to ~100 for genuinely open problems, a meaningful share of them unconventional and original. Cheaply test the most promising for early signs they'll fail (scout tests). Sieve down to the 2–5 that survive.
 - **When chasing a root cause → ask "why" down to it** *(5 Whys)*. State the specific problem; ask why it's happening (from evidence, not assumption); feed each answer into the next "why"; repeat (~5×) until you reach the underlying cause.
-- **When the plan is risky or hard to reverse → run a pre-mortem** *(Inversion)*. Assume it has already failed; list specific, scenario-level reasons — what went wrong, when, why (not "poor execution") — and turn each into a preventive action you take now. Or invert (Munger): "how would I guarantee failure here?" — then avoid each path.
+- **When the plan is risky or hard to reverse → run a pre-mortem** *(Inversion)*. "Hard to reverse" is **not only technical** (destructive writes, irreversible deploys). It includes **process / people / rollout** risk: anything that changes how others work, spans multiple parties, or would cost trust or rework to unwind — even when every artifact is individually editable. A new workflow, a doc others must adopt, a hand-off between teams all qualify. Assume it has already failed; list specific, scenario-level reasons — what went wrong, when, why (not "poor execution") — and turn each into a preventive action you take now. Or invert (Munger): "how would I guarantee failure here?" — then avoid each path.
 - **When learning would help → experiment to falsify.** Try, fail, learn from results. Design tasks that maximise learning; test your assumptions; optimise for verifying and falsifying, not confirming.
 - **When seeing it differently would help → reason by metaphor.** What is this like — and what does that analogy teach?
 - **When research would pay off → launch subagents to learn the domain** (docs, literature, community posts, GitHub repos and libraries). Judge when to figure it out yourself vs. research what others have already built.
@@ -51,6 +51,8 @@ You also have standing permission to build ad-hoc tools, skills, references, tem
 - Am I over-engineering this? Is there a simpler or more elegant way — a smaller delta that buys most of the benefit? Treat "yes" as the default hypothesis; find the smaller delta before adding.
 - Am I going in circles or down a rabbit hole, or making real progress toward the goal?
 - What is the REAL goal here — can we change the brief?
+- **What's the most irreversible thing here — process, people, and rollout, not just code — and have I stress-tested it?** If the plan changes how others work, spans multiple parties, or is costly to unwind, run the pre-mortem *before* reporting back. Don't let a when-relevant method exit silently because the artifacts looked editable.
+- **Did any when-relevant trigger fire that I skipped?** Scan the list (diverge, 5 Whys, pre-mortem, falsify, metaphor, research, package). Acting under output-momentum is exactly when these get walked past.
 
 ## Instructions
 
