@@ -117,20 +117,16 @@ def build_catalog():
     # Each design now has its OWN breakdown tab (e.g. "Castle (24mm)", "Birthday (24mm)").
     # That tab holds the final-files folder link + the sheet/panel breakdown, so Catalog
     # needs only ONE link column to it (no separate Final Files / Breakdown Ref).
-    headers = ["Theme", "Model", "Breakdown tab",
-               "Default Colours / Sheets", "Delivered to factory?", "Notes / known issues"]
+    headers = ["Theme", "Model", "Breakdown tab", "Default Colours / Sheets"]
     gid = add_sheet(title, len(headers))
     set_values(f"'{title}'!A1", [headers])
-    seed = [[t, "Standard", "", "", False, ""] for t in
+    seed = [[t, "Standard", "", ""] for t in
             ["Castle", "Marine", "Space", "Birthday", "Princess", "Festive", "Cafe", "Gingerbread"]]
     set_values(f"'{title}'!A2", seed)
     reqs = [
-        hdr_bg(gid, 0, 6, INDIGO),
-        checkbox(gid, 4),
-        colwidth(gid, 2, 200), colwidth(gid, 3, 200), colwidth(gid, 5, 260),
+        hdr_bg(gid, 0, 4, INDIGO),
+        colwidth(gid, 2, 200), colwidth(gid, 3, 200),
         note(gid, 2, "HYPERLINK to this design's own breakdown tab (final-files folder link + sheet/panel breakdown)."),
-        note(gid, 4, "Tick once the final files are delivered to the factory."),
-        note(gid, 5, "Recurring design lessons / fixes for next time (Saar curates)."),
     ]
     batch(reqs)
     return gid
