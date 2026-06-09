@@ -89,15 +89,16 @@ def build_job_tracker():
     # Production Files / Instructions are NOT columns here — those live in Files Breakdown
     # (File/Instructions/Folder cols) and, for standards, in Catalog. Job Tracker tracks STATUS.
     # "Files Breakdown" (col 7) = HYPERLINK to the design's own breakdown tab.
-    headers = ["Order ID", "Hotel / Client", "Theme", "Model", "Type", "Qty", "Target",
-               "Files Breakdown", "Files Ready?", "Breakdown Ready?", "Colour OK?",
+    # Planned Start rightward all belong to the factory -> amber.
+    headers = ["Order ID", "Hotel / Client", "Theme", "Model", "Type", "Qty", "Delivery Target",
+               "Files Breakdown", "Files Ready?", "Breakdown Ready?", "Stock",
                "Planned Start", "Planned Ship",
                "Stage", "Stage Date", "Sheets Used", "Production Feedback", "Notes"]
     gid = add_sheet(title, len(headers))
     set_values(f"'{title}'!A1", [headers])
     reqs = [
         hdr_bg(gid, 0, 7, GRAY), hdr_bg(gid, 7, 10, INDIGO), hdr_bg(gid, 10, 11, TEAL),
-        hdr_bg(gid, 11, 13, SLATE), hdr_bg(gid, 13, 17, AMBER), hdr_bg(gid, 17, 18, GRAY),
+        hdr_bg(gid, 11, 18, AMBER),
         dropdown(gid, 4, ["Standard", "Bespoke"]),
         dropdown(gid, 13, ["Cut+Print", "Glued", "Boxed", "Shipped"]),
         checkbox(gid, 8), checkbox(gid, 9), checkbox(gid, 10),
@@ -106,7 +107,7 @@ def build_job_tracker():
         note(gid, 4, "Standard = reuse from Catalog. Bespoke = Saar builds. Any variant/modifier -> Bespoke."),
         note(gid, 7, "HYPERLINK to this design's breakdown tab (e.g. 'Castle (24mm)')."),
         note(gid, 8, "Saar: tick when files are ready (built, or reused from Catalog)."),
-        note(gid, 10, "Alicia: tick after checking breakdown colours vs the Stock tab."),
+        note(gid, 10, "Alicia: stock / colour check vs the Stock tab."),
         note(gid, 11, "Alan: planned start from real factory capacity."),
         note(gid, 13, "Factory: update after each stage (Cut+Print -> Glued -> Boxed -> Shipped)."),
         note(gid, 15, "Factory: actual sheets used incl. extras/mistakes/tests."),
