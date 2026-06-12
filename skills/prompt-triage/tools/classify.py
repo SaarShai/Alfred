@@ -7,8 +7,8 @@ Two-tier classifier:
 
 Output (stdout, JSON one-line):
   {"tier": "simple|medium|hard|unknown",
-   "agent": "wiki-note|quick-fix|research-lite|local-ollama|triage|none",
-   "model": "haiku|sonnet|opus|local:<model>",
+   "agent": "wiki-note|quick-fix|research-lite|general-purpose|none",
+   "model": "haiku|sonnet|opus",
    "confidence": 0.0-1.0,
    "reason": "<short>",
    "lean_context": ["paths or globs to load"]}
@@ -76,6 +76,22 @@ def _extract_json_obj(text: str) -> dict | None:
                     start = -1  # keep scanning for a later balanced block
     return None
 
+# Normalization before any regex: unicode dashes/spaces fold to ASCII so
+# `multi‑file` (U+2011) can't slip past the complex-hint guard, and quoted /
+# code-fenced text is stripped so 'explain why "fix the typo" works' doesn't
+# hit the quick-fix rule on QUOTED words (codex review 2026-06-12).
+_UNICODE_FOLD = str.maketrans({
+    "‐": "-", "‑": "-", "‒": "-", "–": "-", "—": "-",
+    " ": " ", "‘": "'", "’": "'", "“": '"', "”": '"',
+})
+_QUOTED_RE = re.compile(r'"[^"\n]{0,200}"|\'[^\'\n]{0,200}\'|```[\s\S]*?```|`[^`\n]+`')
+
+
+def _match_text(prompt: str) -> str:
+    """The text regex rules and complex-hints run against."""
+    return _QUOTED_RE.sub(" ", prompt.translate(_UNICODE_FOLD))
+
+
 # Regex fast-path rules. Order matters — first match wins.
 # Each rule: (pattern, tier, agent, model, confidence, reason, context_globs)
 RULES = [
@@ -93,30 +109,30 @@ RULES = [
     # Short factual question (no filesystem)
     (r"^\s*(?:what is|who is|when (?:was|is|did)|where (?:is|was)|define|meaning of)\b",
      "simple", "research-lite", "haiku", 0.85, "factual lookup", []),
-    # Summarize this file / path / log / etc.
-    # M2 fix: was `local:gemma4:26b` — gemma4 is not a published Ollama tag and
-    # `ollama show gemma4:26b` returns "model not found" on our setup. qwen3:8b
-    # is the project's default small local model (used by `local-ollama` rule
-    # below) and handles summarization fine. If a future op wants gemma3, they
-    # should explicitly pin a real published tag (e.g., `gemma3:27b`).
-    (r"\b(?:summari[sz]e|tldr|abstract|condense|rewrite)\b",
-     "simple", "local-ollama", "local:qwen3:8b", 0.8, "summarization -- local model fine",
-     []),
-    # Research: find repos, survey literature
+    # Research BEFORE summarize (first-match-wins): "summarize and research
+    # the literature" must route research-lite/medium, not local-ollama/simple
+    # (codex review 2026-06-12 — the summarize rule was shadowing this one).
     (r"\b(?:research|survey|find repos?|investigate|literature)\b",
      "medium", "research-lite", "sonnet", 0.8, "research-lite task", []),
-    # Install / setup / configure
+    # Summarize this file / path / log / etc. Routes to haiku (2026-06-12
+    # policy: triage only routes to smaller IN-PLATFORM models — haiku/sonnet
+    # in Claude Code — never out-of-platform local models; those are for
+    # explicit manual dispatch only).
+    (r"\b(?:summari[sz]e|tldr|abstract|condense|rewrite)\b",
+     "simple", "general-purpose", "haiku", 0.8, "summarization -- haiku fine",
+     []),
+    # Install / setup / configure. Conf 0.6 (was 0.75): "configure the auth
+    # system" is routinely complex — transcript mining (2026-06-12) found
+    # 340-turn sessions triaged "simple setup". 0.6 forces the LLM fallback;
+    # with no LLM available the directive gate (<0.7) keeps it silent.
     (r"\b(?:install|setup|configure|add\s+hook|register\s+mcp)\b",
-     "simple", "quick-fix", "haiku", 0.75, "setup task", []),
+     "simple", "quick-fix", "haiku", 0.6, "setup task", []),
     # Complex signals — multi-file refactor, architecture, design
     (r"\b(?:refactor|architect|design|redesign|implement.{0,20}system|multi[-\s]?file|across)\b",
      "hard", "none", "opus", 0.9, "complex task -- opus appropriate", []),
     # Commit/push — mechanical
     (r"^\s*(?:commit|push|git (?:add|commit|push|stash))\b",
      "simple", "quick-fix", "haiku", 0.9, "git mechanical", []),
-    # Explicit local/free/cheap hint
-    (r"\b(?:cheap|local|free|no api|ollama)\b",
-     "simple", "local-ollama", "local:qwen3:8b", 0.8, "explicit local hint", []),
     # Long-context local hint (no dedicated subagent yet; fall through to opus,
     # which the user can manually route to a local long-context model if needed).
     # Previous rule emitted agent="turboquant-local" but no such agent ships;
@@ -129,8 +145,9 @@ RULES = [
 
 
 def regex_classify(prompt: str) -> dict | None:
+    text = _match_text(prompt)
     for pat, tier, agent, model, conf, reason, ctx in RULES:
-        if re.search(pat, prompt, re.IGNORECASE):
+        if re.search(pat, text, re.IGNORECASE):
             return {
                 "tier": tier, "agent": agent, "model": model,
                 "confidence": conf, "reason": reason,
@@ -151,12 +168,43 @@ COMPLEX_HINTS = re.compile(
 )
 
 
+# Prompts that lean on the CURRENT conversation/session state can never be
+# cheaply dispatched — a fresh subagent has no access to the chat history, so
+# any directive forces the main model to evaluate-and-override (worse than
+# silence; live incident 2026-06-12: "summarize what this current suite does"
+# routed to a context-blind local model). Silence is the only safe verdict.
+# Scope note: "this repo/branch/codebase" deliberately NOT matched — a
+# subagent CAN read the filesystem, so those stay routable ("commit and push
+# this branch" must keep its cheap route; codex round-3). Only references to
+# the *conversation* — which no subagent can see — trigger the guard.
+CONTEXT_HINTS = re.compile(
+    r"\b(?:this (?:session|conversation|chat|thread)|"
+    r"current (?:session|suite|state)|"
+    r"our (?:previous|earlier|last) (?:conversation|session|chat|discussion)|"
+    r"we(?:'ve| have| were| just)? (?:built|made|did|done|changed|"
+    r"discuss(?:ed|ing)|decided|been (?:doing|working))|"
+    r"you(?:'ve| have| were| just)? (?:said|did|done|made|created|wrote|"
+    r"written|changed|suggested)|"
+    r"your (?:last|previous|earlier)|as discussed|earlier today|"
+    r"so far|this session'?s)\b",
+    re.I,
+)
+
+
+def _needs_session_context(prompt: str) -> bool:
+    return bool(CONTEXT_HINTS.search(prompt.translate(_UNICODE_FOLD)))
+
+
 def _looks_complex(prompt: str) -> bool:
     """Heuristic guard: long prompts or prompts containing complex-work phrases
     should never be regex-routed to the cheapest tier."""
     if len(prompt) > 800:
         return True
-    if COMPLEX_HINTS.search(prompt):
+    # Unicode-fold only — do NOT quote-strip here. Stripping quotes guards the
+    # cheap-route rules against quoted bait (safe direction); stripping them
+    # from the complex guard would REMOVE protection for quoted complex asks
+    # (unsafe direction). The two matchers are deliberately asymmetric.
+    if COMPLEX_HINTS.search(prompt.translate(_UNICODE_FOLD)):
         return True
     return False
 
@@ -173,14 +221,52 @@ def _smart_truncate(prompt: str, budget: int = 2000) -> str:
 
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
+
+# Fallback-model resolution. Hardcoding one tag rots silently when machines
+# change (the shipped `qwen3:8b` default was absent on the dev machine for
+# weeks — every LLM fallback failed silently and complex prompts fell through
+# to the regex-low-conf path; caught 2026-06-12 when a misroute hit production).
+# Resolution order:
+#   1. AGENTS_TRIAGE_OLLAMA_MODEL env (explicit pin)
+#   2. first PREFERRED_MODELS entry present in `ollama /api/tags` (exact, then
+#      family-prefix match so qwen2.5:7b-instruct matches a qwen2.5:* tag)
+#   3. None — caller falls back to fail-closed handling, never a random model
+#      (a stray 30B+ reasoning model would blow the timeout AND page 19GB in).
+PREFERRED_MODELS = [
+    "qwen3:8b", "qwen2.5:7b-instruct", "llama3.1:8b", "gemma2:9b", "phi4:14b",
+]
+
+
+def _resolve_ollama_model(timeout: float = 1) -> str | None:
+    env = os.environ.get("AGENTS_TRIAGE_OLLAMA_MODEL")
+    if env:
+        return env
+    try:
+        with urllib.request.urlopen(OLLAMA_TAGS_URL, timeout=timeout) as r:
+            names = [m.get("name", "") for m in json.loads(r.read()).get("models", [])]
+    except Exception:
+        return None
+    name_set = set(names)
+    for pref in PREFERRED_MODELS:
+        if pref in name_set:
+            return pref
+    for pref in PREFERRED_MODELS:
+        family = pref.split(":")[0]
+        for n in names:
+            if n.split(":")[0] == family:
+                return n
+    return None
 
 LLM_PROMPT = """Classify this user task for an LLM agent. Output ONLY one-line JSON:
-{"tier":"simple|medium|hard","agent":"wiki-note|quick-fix|research-lite|local-ollama|none","model":"haiku|sonnet|opus|local:qwen3:8b","confidence":0-1,"reason":"<15 words"}
+{"tier":"simple|medium|hard","agent":"wiki-note|quick-fix|research-lite|general-purpose|none","model":"haiku|sonnet|opus","confidence":0-1,"reason":"<15 words"}
 
 Rules:
 - simple = single file edit, add note, one-line fix, factual question, summarize
+- If the task references the current conversation/session ("what we did", "this suite") output agent="none" — subagents cannot see chat history
 - medium = multi-step but bounded (research a topic, refactor one file, write one script)
 - hard = multi-file, architecture, design, novel reasoning
+- A task bundling 3+ distinct objectives (e.g. review AND research AND implement AND test) is hard
 - agent="none" means fall through to main model (opus)
 - Prefer lowest capable tier. Haiku ~$0.25/M-tok input; sonnet ~$3; opus ~$15.
 - If task mentions "simple", "quick", "tiny" — bias simple.
@@ -190,7 +276,18 @@ TASK: {task}
 JSON:"""
 
 
-def ollama_classify(prompt: str, model: str = "qwen3:8b", timeout: int = 2) -> dict | None:
+def ollama_classify(prompt: str, model: str | None = None, timeout: float = 2) -> dict | None:
+    """`timeout` is the TOTAL budget. Tag resolution and generation previously
+    stacked their own timeouts (1s + 2s = 3s worst case on a hook path billed
+    as 2s; codex round-3) — now resolution spends at most 0.5s and generation
+    gets whatever remains of the single deadline."""
+    import time as _time
+    deadline = _time.monotonic() + timeout
+    if model is None:
+        model = _resolve_ollama_model(timeout=min(0.5, timeout / 4))
+    if model is None:
+        return None
+    timeout = max(0.1, deadline - _time.monotonic())
     # Head + tail (was: head only at 800) — long stack-trace prompts ended
     # with the actual imperative; we used to drop it. 2000 chars ≈ 500 tokens.
     full = LLM_PROMPT.replace("{task}", _smart_truncate(prompt, 2000))
@@ -198,6 +295,10 @@ def ollama_classify(prompt: str, model: str = "qwen3:8b", timeout: int = 2) -> d
         full += " /no_think"
     data = json.dumps({
         "model": model, "prompt": full, "stream": False, "think": False,
+        # keep_alive 2h: a cold 5GB model load blows the 2s timeout, so the
+        # first fallback of a session may fail-closed (safe); keeping the
+        # model resident makes every subsequent fallback hit the warm path.
+        "keep_alive": "2h",
         "options": {"num_predict": 80, "temperature": 0.0, "seed": 42},
     }).encode()
     req = urllib.request.Request(OLLAMA_URL, data=data,
@@ -210,12 +311,72 @@ def ollama_classify(prompt: str, model: str = "qwen3:8b", timeout: int = 2) -> d
     obj = _extract_json_obj(resp)
     if obj is None:
         return None
-    obj.setdefault("lean_context", [])
+    return _validate_llm_result(obj)
+
+
+_VALID_TIERS = {"simple", "medium", "hard"}
+_VALID_AGENTS = {"wiki-note", "quick-fix", "research-lite", "general-purpose", "none"}
+_VALID_MODELS = {"haiku", "sonnet", "opus"}
+
+
+def _validate_llm_result(obj: dict) -> dict | None:
+    """Reject wrong-but-parseable LLM output (codex review 2026-06-12): a
+    schema echo like {"tier":"simple|medium|hard"} parses as JSON but must
+    never reach emit_context. Enum-check tier/agent, coerce confidence."""
+    tier = obj.get("tier")
+    agent = obj.get("agent")
+    if tier not in _VALID_TIERS or agent not in _VALID_AGENTS:
+        return None
+    try:
+        conf = float(obj.get("confidence", 0))
+    except (TypeError, ValueError):
+        return None
+    if not (0.0 <= conf <= 1.0):
+        return None
+    obj["confidence"] = conf
+    # Model must be in-platform (codex round-3: a valid-agent response with
+    # "model":"local:foo" slipped through). Out-of-enum → clamp to the
+    # tier-appropriate platform default, never pass through verbatim.
+    if obj.get("model") not in _VALID_MODELS:
+        obj["model"] = {"simple": "haiku", "medium": "sonnet"}.get(tier, "opus")
+    obj.setdefault("reason", "llm")
+    obj["lean_context"] = obj.get("lean_context") or []
     return obj
 
 
+# Above this many chars, no cheap-route directive is ever emitted — not even
+# on an LLM verdict. A 7B classifier rated a 4k-char multi-objective
+# orchestration prompt "medium/research-lite" (2026-06-12); the cost asymmetry
+# (cheap-routing complex work vs. main-model handling something simple) makes
+# the hard gate the right default. Pin with AGENTS_TRIAGE_LENGTH_GATE.
+try:
+    LENGTH_GATE_CHARS = int(os.environ.get("AGENTS_TRIAGE_LENGTH_GATE", "1500"))
+except ValueError:  # bad env value must degrade to the default, never crash the hook
+    LENGTH_GATE_CHARS = 1500
+
+
 def classify(prompt: str, use_ollama_fallback: bool = True) -> dict:
+    # Session-context guard runs FIRST: no classifier (regex or LLM) can know
+    # what's in the conversation, so any verdict on these prompts is noise the
+    # main model must spend tokens overriding.
+    if _needs_session_context(prompt):
+        return {"tier": "hard", "agent": "none", "model": "opus",
+                "confidence": 1.0,
+                "reason": "references current session context; subagents cannot see it",
+                "lean_context": [], "source": "context-guard"}
+    if len(prompt) > LENGTH_GATE_CHARS:
+        return {"tier": "hard", "agent": "none", "model": "opus",
+                "confidence": 1.0,
+                "reason": f"prompt >{LENGTH_GATE_CHARS} chars; main model handles long briefs",
+                "lean_context": [], "source": "length-gate"}
     fast = regex_classify(prompt)
+    # "commit and push" earns 0.9 only when that's the WHOLE ask. A long
+    # close-out prompt starting with "commit everything and push. check
+    # there is nothing left running..." (replay audit 2026-06-12) bundles
+    # work beyond quick-fix; downgrade below the directive gate.
+    if fast and fast["reason"] == "git mechanical" and len(prompt) > 120:
+        fast["confidence"] = 0.6
+        fast["reason"] += " (downgraded: long multi-clause prompt)"
     # If the prompt contains complex-work hints (audit / refactor / architect /
     # comprehensive / etc), force LLM classification regardless of regex hit.
     # Cheap regex routing on complex prompts was sending high-stakes work to haiku.
@@ -230,7 +391,26 @@ def classify(prompt: str, use_ollama_fallback: bool = True) -> dict:
         if llm:
             llm["source"] = "ollama"
             llm.setdefault("lean_context", [])
+            # Hint veto (codex review 2026-06-12): a 7B "simple" verdict does
+            # not overrule complex-work hints — the LLM may still route medium,
+            # but the cheapest tier on a hint-flagged prompt is exactly the
+            # asymmetric mistake this skill must never make.
+            if llm.get("tier") == "simple" and _looks_complex(prompt):
+                return {"tier": "hard", "agent": "none", "model": "opus",
+                        "confidence": 0.0,
+                        "reason": "LLM said simple but complex-work hints present; defer to main model",
+                        "lean_context": [], "source": "hint-veto"}
             return llm
+    # Fail CLOSED on complex prompts: if the prompt carries complex-work hints
+    # and no LLM was available to overrule the regex, never emit the (cheap)
+    # regex route — defer to the main model. The old fail-open path shipped a
+    # "Strong recommendation: dispatch to <cheap agent>" for a multi-objective
+    # orchestration prompt (2026-06-12 incident).
+    if fast and _looks_complex(prompt):
+        return {"tier": "hard", "agent": "none", "model": "opus",
+                "confidence": 0.0,
+                "reason": "complex-work hints + LLM fallback unavailable; defer to main model",
+                "lean_context": [], "source": "fail-closed"}
     if fast:
         fast["source"] = "regex-low-conf"
         return fast
@@ -263,8 +443,10 @@ def is_bypass(prompt: str) -> bool:
 def _read_prompt_from_stdin() -> str:
     """Parse the CC UserPromptSubmit hook stdin payload. Tolerant of empty /
     malformed input — the hook must not crash on a weird payload."""
-    raw = sys.stdin.read()
-    if not raw:
+    # 1MB cap: hook payloads are small; an adversarially huge stdin should
+    # cost bounded memory and fail closed, not stall the prompt.
+    raw = sys.stdin.read(1_000_000)
+    if not raw or len(raw) >= 1_000_000:
         return ""
     try:
         d = json.loads(raw)
@@ -272,7 +454,11 @@ def _read_prompt_from_stdin() -> str:
         return ""
     if not isinstance(d, dict):
         return ""
-    return d.get("prompt") or d.get("user_prompt") or ""
+    prompt = d.get("prompt") or d.get("user_prompt") or ""
+    # Hosts may send non-string prompts ({"prompt": 123}); regex calls on a
+    # non-str crash the classifier (silently, behind hook.sh's stderr
+    # suppression) — coerce, never trust the payload shape.
+    return prompt if isinstance(prompt, str) else str(prompt)
 
 
 def emit_context(prompt: str, use_ollama_fallback: bool = True) -> str:
@@ -291,19 +477,25 @@ def emit_context(prompt: str, use_ollama_fallback: bool = True) -> str:
     # the prior hook.sh behavior of early-exiting on these classifications.
     if result.get("tier") == "hard" or result.get("agent") == "none":
         return ""
+    # A "Strong recommendation" below 0.7 confidence is miscalibrated language;
+    # silence lets the main model proceed normally (the safe direction).
+    try:
+        if float(result.get("confidence", 0)) < 0.7:
+            return ""
+    except (TypeError, ValueError):
+        return ""
+    # Drop empty lean_context from the wire — pure noise when [].
+    if not result.get("lean_context"):
+        result.pop("lean_context", None)
     cls_json = json.dumps(result)
-    # Keep this block byte-for-byte compatible with the prior hook.sh heredoc
-    # so downstream prompts / training data don't drift.
+    # Directive trimmed 122→~70 tokens (2026-06-12 self-audit): the directive
+    # is injected on EVERY routed prompt, so its own size is part of the
+    # skill's cost. One imperative line beats three paragraphs of rationale.
     return (
         "⚡ [agents-triage] Task classified:\n"
         f"{cls_json}\n"
-        "\n"
-        "**Strong recommendation:** dispatch this task via the `Task` tool "
-        "using the suggested subagent + model, then return its result. Do NOT "
-        "engage deep-thinking or load full context yourself. The subagent will "
-        "load only what it needs.\n"
-        "\n"
-        "If classification seems wrong, user can re-send with \"NO TRIAGE\" to bypass."
+        "Dispatch via the Task tool to this subagent+model and return its "
+        "result — skip deep thinking. Wrong call? User can resend with \"NO TRIAGE\"."
     )
 
 

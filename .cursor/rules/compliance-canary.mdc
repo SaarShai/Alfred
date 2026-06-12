@@ -1,0 +1,7 @@
+---
+description: Use when long sessions show drift symptoms — filler creep, word-count growth, done-claims without evidence, repeated tool errors. UserPromptSubmit hook scanning recent messages + tool results against per-skill drift_probes.json; injects targeted correctives. Complement to skill-pulse (pulse re-anchors unconditionally; canary fires only on symptoms).
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/compliance-canary/SKILL.md

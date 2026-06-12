@@ -1,6 +1,6 @@
 ---
 name: executive-assistant
-description: Repo-local chief-of-staff workflow for office hours, strategic review, daily/weekly briefing, work-preference memory, approved-source intake, routing, prompt generation, cross-project coordination, and bounded subagent dispatch.
+description: Use when acting as chief-of-staff — office hours, strategic review, briefings. Repo-local workflow for office hours, strategic review, daily/weekly briefing, work-preference memory, approved-source intake, routing, prompt generation, cross-project coordination, and bounded subagent dispatch.
 ---
 
 # Executive Assistant

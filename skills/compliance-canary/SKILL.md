@@ -1,6 +1,6 @@
 ---
 name: compliance-canary
-description: UserPromptSubmit hook that scans recent assistant messages for per-skill drift signals (filler phrases, word-count creep, "done"-without-verification, custom regex). Injects a targeted corrective <system-reminder> when a probe fires. Complement to skill-pulse — pulse re-anchors unconditionally; canary intervenes only when symptoms appear.
+description: Use when long sessions show drift symptoms — filler creep, word-count growth, done-claims without evidence, repeated tool errors. UserPromptSubmit hook scanning recent messages + tool results against per-skill drift_probes.json; injects targeted correctives. Complement to skill-pulse (pulse re-anchors unconditionally; canary fires only on symptoms).
 model: haiku
 effort: low
 tools: [Bash, Read, Write]
@@ -15,12 +15,6 @@ pulse_reminder: drift detectors are watching — your recent reply is scanned ea
 Every UserPromptSubmit, reads the last few assistant messages and recent tool calls from the session transcript, then runs **per-skill drift probes** against them. When a probe fires, injects a targeted corrective `<system-reminder>` naming the violated rule and quoting the specific evidence.
 
 Probes are declared by each skill in `<.claude/skills>/<skill>/drift_probes.json`. The canary discovers them on every run — no central registry.
-
-## Why it exists
-
-`skill-pulse` re-anchors active skill rules unconditionally every N turns. That's good for slow attention decay but spends tokens on turns where the model is actually compliant. `compliance-canary` is the **symptomatic complement**: it stays silent until measurable drift shows up in the assistant's output, then pinpoints which rule was broken and how.
-
-Together: pulse for prevention, canary for detection.
 
 ## Probe kinds (v1)
 
@@ -73,6 +67,37 @@ Looks for claim words in the last assistant message AND checks that a verificati
 ```
 
 Use for: verify-before-completion drift (claiming success without running a check).
+
+### `repeated_tool_error` *(v1.7)*
+
+Scans recent `is_error` tool_results (user-type events — invisible to the message detectors) for a recurring error signature. Added after transcript mining found one signature ("File has not been read yet") was 15 of 18 tool errors across 5 sessions.
+
+```json
+{
+  "kind": "repeated_tool_error",
+  "id": "edit-without-read",
+  "pattern": "File has not been read yet",
+  "min_count": 2,
+  "severity": "warn"
+}
+```
+
+Use for: any tool error the agent keeps re-triggering after the native error message failed to break the habit.
+
+### `user_correction` *(v1.7)*
+
+Matches the user's CURRENT prompt (not the transcript) against correction patterns ("no, use X", "that's wrong", "I said …"). Fires the harvest reflex at the exact turn the correction lands — corrections are the highest-value learning source (exp1: feedback lift +0.667) but the prose-only reflex under-fires. Lineage: BayramAnnakov/claude-reflect; ships in `wiki-memory/drift_probes.json`.
+
+```json
+{
+  "kind": "user_correction",
+  "id": "user-correction",
+  "pattern": "(?i)(?:^\\s*no[,. ]|don'?t use\\b|i said\\b|that'?s wrong)",
+  "severity": "warn"
+}
+```
+
+Use for: routing corrections into write-gate → wiki-memory instead of losing them to the session.
 
 ## Install
 
@@ -147,13 +172,6 @@ tools/
 ## Compatibility
 
 **Claude Code only** — `UserPromptSubmit` is a Claude-Code-specific event. The top-level `./install.sh` symlinks the folder into all four host dirs for description visibility; only Claude Code wires the hook.
-
-## Lineage
-
-- [delta-hq/cc-canary](https://github.com/delta-hq/cc-canary) (65★) — direct forerunner. Forensic JSONL drift detector with no in-loop intervention. `compliance-canary` is essentially "cc-canary's probes, but in-loop and per-skill-declared."
-- [`skill-pulse`](../skill-pulse/SKILL.md) — sibling skill, same hook event, complementary pattern.
-- arXiv [2512.10172 — Offscript](https://arxiv.org/abs/2512.10172) — auditor LLM identifies adherence failures in 86.4% of conversations. Validates that drift is widespread and worth detecting.
-- [Michaelliv/pi-system-reminders](https://github.com/Michaelliv/pi-system-reminders) — reactive system-reminders SDK; same intervention shape as this hook's output.
 
 ## Known gaps (v1)
 

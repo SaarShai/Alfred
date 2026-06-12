@@ -1,0 +1,7 @@
+---
+description: Apply time-based confidence decay to wiki pages weekly/monthly or before a wiki audit. Triggers on "/decay", "audit the wiki", "are these facts stale?". Old unverified facts should not retrieve with the same weight as fresh ones. Errors / lessons / SOPs / high-evidence pages bypass decay (protection class). Dry-run by default; apply only with --apply.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/memory-decay/SKILL.md

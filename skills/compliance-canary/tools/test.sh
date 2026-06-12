@@ -309,6 +309,91 @@ out=$(call cc19 sk19 "$TX" s19)
 count=$(echo "$out" | grep -c '^- ' || true)
 if [ "$count" -le 4 ]; then ok "probe count capped at 4 (got $count)"; else no "probe cap" "got $count"; fi
 
+echo "[24] repeated_tool_error: 2+ matching tool errors fire"
+PROBES='[{"id":"ewr","kind":"repeated_tool_error","pattern":"File has not been read yet","min_count":2,"message":"read before edit"}]'
+make_skill_with_probes sk24 cv "$PROBES"
+user_tool_error() {
+  python3 -c "
+import json,sys
+print(json.dumps({'type':'user',
+                  'message':{'role':'user','content':[{'type':'tool_result','is_error':True,'content':sys.argv[1]}]}}))
+" "$1"
+}
+TX="$TRANSCRIPT_DIR/t24.jsonl"
+write_transcript "$TX" \
+  "$(assistant_text 'editing now' u1)" \
+  "$(user_tool_error '<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>')" \
+  "$(assistant_text 'retrying' u2)" \
+  "$(user_tool_error '<tool_use_error>File has not been read yet. Read it first before writing to it.</tool_use_error>')"
+out=$(call cc24 sk24 "$TX" s24)
+if emitted "$out" && echo "$out" | grep -q 'repeated_tool_error'; then ok "repeated tool error fires at min_count=2"; else no "repeated tool error fires" "got: $(echo "$out" | head -c120)"; fi
+
+echo "[25] repeated_tool_error: single occurrence stays silent"
+TX="$TRANSCRIPT_DIR/t25.jsonl"
+write_transcript "$TX" \
+  "$(assistant_text 'editing now' u1)" \
+  "$(user_tool_error '<tool_use_error>File has not been read yet.</tool_use_error>')" \
+  "$(assistant_text 'recovered, read then edited' u2)"
+out=$(call cc25 sk24 "$TX" s25)
+if [ -z "$out" ]; then ok "single error → silent"; else no "single error → silent" "got: $(echo "$out" | head -c100)"; fi
+
+echo "[26] repeated_tool_error: list-of-blocks content shape also detected"
+user_tool_error_blocks() {
+  python3 -c "
+import json,sys
+print(json.dumps({'type':'user',
+                  'message':{'role':'user','content':[{'type':'tool_result','is_error':True,
+                    'content':[{'type':'text','text':sys.argv[1]}]}]}}))
+" "$1"
+}
+TX="$TRANSCRIPT_DIR/t26.jsonl"
+write_transcript "$TX" \
+  "$(assistant_text 'editing now' u1)" \
+  "$(user_tool_error_blocks '<tool_use_error>File has not been read yet.</tool_use_error>')" \
+  "$(assistant_text 'retrying' u2)" \
+  "$(user_tool_error '<tool_use_error>File has not been read yet.</tool_use_error>')"
+out=$(call cc26 sk24 "$TX" s26)
+if emitted "$out" && echo "$out" | grep -q 'repeated_tool_error'; then ok "mixed string+blocks content detected"; else no "mixed string+blocks content detected" "got: $(echo "$out" | head -c120)"; fi
+
+echo "[27] user_correction: correction in current prompt fires"
+PROBES='[{"id":"uc","kind":"user_correction","pattern":"(?i)(?:^\\s*no[,. ]|don.?t use\\b|i said\\b)","message":"harvest the correction"}]'
+make_skill_with_probes sk27 cv "$PROBES"
+TX="$TRANSCRIPT_DIR/t27.jsonl"
+write_transcript "$TX" "$(assistant_text 'I used tabs for indentation.' u1)"
+payload=$(python3 -c "
+import json,sys
+print(json.dumps({'session_id':'s27','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'no, I said use spaces not tabs'}))
+" "$TX")
+out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc27" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk27" $HOOK)
+if emitted "$out" && echo "$out" | grep -q 'user_correction'; then ok "correction prompt fires"; else no "correction prompt fires" "got: $(echo "$out" | head -c120)"; fi
+
+echo "[28] user_correction: ordinary prompt stays silent"
+payload=$(python3 -c "
+import json,sys
+print(json.dumps({'session_id':'s28','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'now add a unit test for the parser'}))
+" "$TX")
+out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc28" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk27" $HOOK)
+if [ -z "$out" ]; then ok "ordinary prompt silent"; else no "ordinary prompt silent" "got: $(echo "$out" | head -c100)"; fi
+
+echo "[29] malformed transcript events: detection still WORKS with garbage lines present"
+# Exit-code-only assertion is vacuous here — hook.sh swallows crashes with
+# '|| true' (mutation test 2026-06-12: deleting the normalization survived).
+# Real contract: a probe must still FIRE on a transcript laced with
+# parseable-but-malformed lines, proving hook.py processed past them.
+PROBES='[{"id":"m29","kind":"forbidden_regex","pattern":"(?i)\\bdefinitely-drifted\\b","message":"caught"}]'
+make_skill_with_probes sk29 m29skill "$PROBES"
+TX="$TRANSCRIPT_DIR/t29.jsonl"
+write_transcript "$TX" "$(assistant_text 'normal message' u1)"
+# parseable-but-malformed: bare scalar, list, message-as-string (codex round-3)
+printf '123\n["a","b"]\n{"type":"assistant","message":"bad"}\n{"type":"user","message":42}\n' >> "$TX"
+assistant_text 'this reply is definitely-drifted content' u2 >> "$TX"
+out=$(call cc29 sk29 "$TX" s29)
+if emitted "$out" && echo "$out" | grep -q 'm29'; then
+  ok "probe fires past malformed events"
+else
+  no "probe fires past malformed events" "got: $(echo "$out" | head -c120)"
+fi
+
 # ----------------------------------------------------------------------
 echo
 if [ $FAIL -eq 0 ]; then

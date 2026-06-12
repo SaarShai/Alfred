@@ -39,3 +39,61 @@ Raw: [`eval/results/prompt-triage.json`](../../eval/results/prompt-triage.json)
 ## Failure modes
 
 To be filled in after analysis of result outputs (see raw JSON for individual trial outputs).
+
+## Moved from SKILL.md (2026-06-12 SkillReducer-criteria audit)
+
+_Provenance/rationale below is maintainer context, not runtime instruction — relocated so the lazy-loaded body stays actionable._
+
+## Cost math (informal)
+
+- Without triage: opus reads prompt → thinks → acts → writes → verifies. ~3-8K tokens.
+- With triage: hook (0 tokens) → opus reads directive + prompt → emits Task (~200 tokens) → haiku subagent does work (~500-2000 tokens).
+- Net: ~70-90% token cost reduction on simple tasks (informal estimate; see EVAL.md for measured numbers).
+
+## Lineage
+
+- OpenRouter / Not Diamond routing layer.
+- RouteLLM (ICLR 2025).
+- Anthropic SDK Task tool + subagent_type.
+- Orchestrator-worker multi-agent papers 2024-2026.
+
+## 2026-06-12 self-audit (post fail-closed rebuild)
+
+Measured on this machine (M3, python3.12, ollama qwen2.5:7b-instruct warm):
+
+| Metric | Value |
+|---|---|
+| Hook latency (regex path, avg of 5) | ~113ms (python cold-start dominated) |
+| Directive size when emitted | **76 tokens** (was 122 — boilerplate trimmed, empty `lean_context` dropped) |
+| Hook cost when silent (hard/none/bypass/<0.7 conf) | 0 tokens |
+| exp3 corpus N=48, deterministic (no LLM) | routing 100% on complex-protection: **0/18 complex → cheap**; tier 96.8% (1 conservative miss → opus) |
+| exp3 corpus N=48, live ollama | routing 94.9%, tier 96.8%, split regex 22 / ollama 21 — **first live-LLM corpus run ever** (fallback was silently dead until 2026-06-12) |
+| Cross-model misroute corpus (10 prompts, 5 complex) | qwen2.5 local 0/10 · gemma2:9b on M2 0/10 |
+| Fuzz (empty/garbage/null/int/50KB/unicode payloads) | all exit 0, no partial directive output |
+| Regression suite | `test_classify.py` 13 tests, offline, in `run_all_tests.sh`/CI |
+
+Enforcement note: the directive is advisory by design — the main model can
+(and sometimes should) override it; failure mode 3 documents this. Mining
+showed overrides are usually correct on context-heavy prompts, so no
+mechanical enforcement is added.
+
+## 2026-06-12 live incidents #2/#3 — context-blind routing
+
+Two same-day production misroutes after the hardening pass:
+1. "summarize … what this current suite of skills does" → `local-ollama` directive. A context-blind subagent can't answer a question about the session; main model had to evaluate-and-override (directive was net-negative tokens).
+2. LLM fallback routed a triage-policy question to `local-ollama/haiku`.
+
+Fixes (locked by `test_session_context_prompts_stay_silent`, `test_no_local_models_in_routing_surface`):
+- **context-guard**: prompts referencing the current session/conversation short-circuit to hard/none before any classifier runs.
+- **platform-models-only policy**: `local-ollama` and `local:*` removed from RULES, the LLM schema, and `_VALID_AGENTS`. Triage routes only to in-platform small models (haiku/sonnet). Local models remain available for explicit manual dispatch.
+- LLM prompt gained a context-reference → `agent="none"` rule.
+
+Design lesson: a directive the main model must override costs MORE than no directive — every guard errs toward silence.
+
+## 2026-06-12 round-3 stress/bench + codex adversarial pass
+
+Benchmarks (this device): hook regex/guard path p50 67ms; LLM fallback warm 655–928ms under a single 2s TOTAL deadline (was 1s tags + 2s generate = 3s worst case). Fuzz 2×5,000 garbage/adversarial prompts: 0 crashes, 0 local-model leaks, 0 sub-0.7 directives, 0 length-gate bypasses.
+
+Historical replay (`scripts/replay_triage.py`, now suite check #34): of 25 prompts that ever received a directive, 21 now correctly silent, 4 still routed (all short git-mechanical), 0 violations. New downgrade: `^commit...` rule drops to 0.6 when prompt >120 chars (multi-clause close-outs bundle non-mechanical work).
+
+Codex round-3 fixes: `_validate_llm_result` clamps out-of-platform `model` values to tier defaults (haiku/sonnet/opus only); CONTEXT_HINTS gained contractions/modifiers ("we've built", "you just changed", "this thread", "our previous conversation") and DROPPED "this repo/branch/codebase" (filesystem state is subagent-readable — "commit and push this branch" keeps its cheap route); confidence-gate test made non-vacuous.
