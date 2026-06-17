@@ -44,6 +44,7 @@ notice when context matches one (e.g. `wiki-memory` for "have we done X").
 - `plan-first-execute` — Plan before executing non-trivial tasks
 - `prompt-triage` — Use on every UserPromptSubmit (pre-model hook) to classify the prompt and emit a directive telling the main model which subagent/model should handle it
 - `relay-sessions` — Use when the user asks to relay, hand off, summarize, continue in a fresh Codex session, or let a new session ask an old/older session targeted follow-up questions.
+- `requirements-ledger` — Use whenever the user states anything carrying intent — an ask, a question, a constraint, a preference, a compound "do X, Y, and Z" (one row per conjunct), or an implicit ask embedded in prose
 - `semantic-diff` — AST-node-level diff for file re-reads
 - `subagent-orchestrator` — Use when dispatching work to subagents — route to cheaper or specialist subagents while keeping final synthesis local.
 - `task-retrospective` — Use at the end of any non-trivial task (after the work is verified, before the final report); ALSO fire mid-task the moment the user corrects you — says you were wrong, that you skipped a step or claimed something without actually running it, calls out a mistake you have made before ("again", "second time", "you keep", "I told you", "stop doing that"), or pushes back on your approach; or when the user types /retro
