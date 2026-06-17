@@ -1,0 +1,7 @@
+---
+description: Decide whether a candidate fact deserves persistent memory. Use before writing to wiki-memory, CLAUDE.md, AGENTS.md, or any cross-session store. Scores content on signal (decisions / errors / architecture / code) and rejects reasonless decisions (must embed because… / so that… / to avoid…). Prevents memory pollution at source.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/write-gate/SKILL.md

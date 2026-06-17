@@ -35,6 +35,8 @@ graphify query "<page subject>"   # OR Grep — confirm where the code lives NOW
 
 **`protected: true` pages** (type ∈ error/lesson/sop/procedure, or `L3_sops/`) report drift but are not auto-actioned — a lesson stays protective even when its example code is gone. Surface, never auto-delete.
 
+**Epistemic lenses (periodic, report-only — heuristic aids, never gates).** Three further `wiki.py` verbs (defined in [`wiki-memory`](../wiki-memory/SKILL.md)) feed refresh decisions: `maturity` → `demotion_candidates` route into the contradiction pass below, `promotion_candidates` into Update/Consolidate; `synth-candidates` → cluster groups into Consolidate; `claim-audit` → thin-evidence pages into Replace/Delete review; `gaps` → recurring missing concepts (write the canonical page or fix the stale link). Per-claim typing is noisy (measured) — read aggregates, treat outputs as candidates to confirm, not verdicts.
+
 ## Scope
 
 Default: all material pages (`L2_facts/`, `concepts/`, `patterns/`, `projects/`, `queries/`). Exclude `raw/` (immutable), index/log/schema/L0/L1, and support dirs. A scope hint (module, dir, tag, filename) narrows via `wiki.py search` first.
@@ -72,7 +74,15 @@ Implementation-gone ≠ domain-gone: if `auth_token.rb` is deleted but the app s
 
 ## Emit contradiction edges
 
-When investigation finds a page that conflicts with current reality **or** with another page — and you cannot immediately resolve it (Replace evidence insufficient, or both pages partly right) — do **not** silently drop it. Record a typed edge so retrieval flags it instead of serving both as truth:
+**Detect first (don't rely on eyeballing).** Brainer stores/validates declared `contradicts:` edges but historically had no *detection*. Run the candidate scan, then confirm each before declaring:
+
+```bash
+python3 skills/wiki-memory/tools/wiki.py --root wiki contradict-scan
+```
+
+It surfaces same-subject page pairs whose numbers diverge on a shared key (minus already-declared edges). Candidates are **structural signals, not confirmed conflicts** — read both pages and confirm a real disagreement before writing the edge (this is the judge step OKF's `absence_of_contradictions` metric formalizes). For prose that may describe still-present code *wrongly* (the Update-vs-Replace tell), run `claim-ground <id>` to flag claims whose cited artifact is gone.
+
+When investigation (scan-surfaced or otherwise) finds a page that conflicts with current reality **or** with another page — and you cannot immediately resolve it (Replace evidence insufficient, or both pages partly right) — do **not** silently drop it. Record a typed edge so retrieval flags it instead of serving both as truth:
 
 1. In the stale page's frontmatter, add the target to `contradicts: [[other-page]]` (or `[[<canonical>]]`).
 2. Add the reverse edge on the other page (`lint --strict` emits `contradiction_missing_reverse` if you forget).

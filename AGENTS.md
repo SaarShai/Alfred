@@ -29,22 +29,24 @@ notice when context matches one (e.g. `wiki-memory` for "have we done X").
 
 - `cache-lint` — Audit a Claude Code project for prompt-cache hygiene against Anthropic's six cache rules (ordering, dynamic-content injection, tool stability, model switching, breakpoint sizing, fork safety)
 - `caveman-ultra` — Terse output style
-- `compliance-canary` — Use when long sessions show drift symptoms — filler creep, word-count growth, done-claims without evidence, repeated tool errors
+- `compliance-canary` — Use when a long session drifts — the single always-on drift watcher: one UserPromptSubmit hook combining a periodic skill-rule re-anchor (every N turns) with symptomatic per-skill drift probes (filler creep, word-count growth, unverified done-claims, looping tool errors, rule fade)
 - `context-keeper` — PreCompact hook that extracts structured state (files, commands, errors, numbers, decisions, failures) from the transcript before compaction
 - `context-refresh` — DEPRECATED — use the handoff skill (+ context-keeper for compaction)
-- `executive-assistant` — Repo-local chief-of-staff workflow for office hours, strategic review, daily/weekly briefing, work-preference memory, approved-source intake, routing, prompt generation, cross-project coordination, and bounded subagent dispatch.
-- `executive-coach` — Repo-local executive-coaching mode for Alfred
+- `eval-gate` — Score AI output against a written rubric before it ships — an LLM-as-judge quality gate for content output (drafts, posts, answers) and product output (an agent's reply, an extraction, a generated payload)
+- `executive-assistant` — Use when acting as chief-of-staff — office hours, strategic review, briefings
+- `executive-coach` — Use when the user asks for coaching (not advice) on decisions, patterns, motivation, leadership
 - `index-first` — Prefer pre-built indexes over chains of grep/read/scan
 - `lean-execution` — Prune plans, process, context, and delegation to the smallest safe path
+- `loop-engineering` — Use BEFORE building any multi-step agentic loop, generator→verifier pipeline, fan-out/fleet, or iterate-until-correct/retry loop — INCLUDING an automated / unattended / scheduled / nightly process that regenerates, revises, or rebuilds artifacts and keeps retrying each until it passes a check, any self-correcting or "keep going until it's good enough" automation, and any build-and-verify or generate-and-grade pipeline
 - `memory-decay` — Apply time-based confidence decay to wiki pages weekly/monthly or before a wiki audit
 - `output-filter` — Use when terminal output is noisy with ANSI / progress bars / duplicate lines and you want to keep the agent's eyes on signal
-- `personal-assistant` — 
+- `personal-assistant` — Use for prompts prefixed /pa or /btw — route small or context-light requests away from the expensive main model.
 - `plan-first-execute` — Plan before executing non-trivial tasks
 - `prompt-triage` — Use on every UserPromptSubmit (pre-model hook) to classify the prompt and emit a directive telling the main model which subagent/model should handle it
 - `relay-sessions` — Use when the user asks to relay, hand off, summarize, continue in a fresh Codex session, or let a new session ask an old/older session targeted follow-up questions.
 - `semantic-diff` — AST-node-level diff for file re-reads
-- `skill-pulse` — UserPromptSubmit hook that periodically re-injects active skill rules to fight instruction drift
-- `subagent-orchestrator` — Route work to cheaper or specialist subagents while keeping final synthesis local.
+- `subagent-orchestrator` — Use when dispatching work to subagents — route to cheaper or specialist subagents while keeping final synthesis local.
+- `task-retrospective` — Use at the end of any non-trivial task (after the work is verified, before the final report); ALSO fire mid-task the moment the user corrects you — says you were wrong, that you skipped a step or claimed something without actually running it, calls out a mistake you have made before ("again", "second time", "you keep", "I told you", "stop doing that"), or pushes back on your approach; or when the user types /retro
 - `verification-before-completion` — Use before claiming work is done, fixed, passing, committed, or ready.
 - `verify-before-completion` — Use before claiming work is done, fixed, passing, committed, or ready
 - `wiki-memory` — Repo-local markdown wiki with progressive retrieval (search → timeline → fetch) and gated writes (verified facts only)

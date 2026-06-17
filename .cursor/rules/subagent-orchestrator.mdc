@@ -1,0 +1,7 @@
+---
+description: Use when dispatching work to subagents — route to cheaper or specialist subagents while keeping final synthesis local.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/subagent-orchestrator/SKILL.md

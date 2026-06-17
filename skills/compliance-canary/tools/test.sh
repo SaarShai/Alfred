@@ -3,7 +3,7 @@
 set -uo pipefail
 
 TOOLS_DIR="$(cd "$(dirname "$0")" && pwd)"
-HOOK="bash $TOOLS_DIR/hook.sh"
+HOOK=(bash "$TOOLS_DIR/hook.sh")
 STATE_ROOT="$(mktemp -d -t cc-test-XXXX)"
 SKILLS_ROOT="$(mktemp -d -t cc-skills-XXXX)"
 TRANSCRIPT_DIR="$(mktemp -d -t cc-tx-XXXX)"
@@ -65,9 +65,9 @@ print(json.dumps({'session_id':sys.argv[1],'transcript_path':sys.argv[2],'hook_e
   local env_args=(COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/$state_sub"
                   COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/$skills_sub")
   if [ "$#" -gt 0 ]; then
-    printf '%s' "$payload" | env "${env_args[@]}" "$@" $HOOK
+    printf '%s' "$payload" | env "${env_args[@]}" "$@" "${HOOK[@]}"
   else
-    printf '%s' "$payload" | env "${env_args[@]}" $HOOK
+    printf '%s' "$payload" | env "${env_args[@]}" "${HOOK[@]}"
   fi
 }
 
@@ -188,9 +188,9 @@ out=$(call cc14 sk1 "$TRANSCRIPT_DIR/does-not-exist.jsonl" s14)
 if [ -z "$out" ]; then ok "missing transcript → silent"; else no "missing transcript → silent"; fi
 
 echo "[15] Empty / malformed stdin → exit 0"
-out=$(printf '' | $HOOK); ec=$?
+out=$(printf '' | "${HOOK[@]}"); ec=$?
 if [ $ec -eq 0 ]; then ok "empty stdin exit 0"; else no "empty stdin exit 0"; fi
-out=$(printf 'garbage' | $HOOK 2>/dev/null); ec=$?
+out=$(printf 'garbage' | "${HOOK[@]}" 2>/dev/null); ec=$?
 if [ $ec -eq 0 ]; then ok "malformed stdin exit 0"; else no "malformed stdin exit 0"; fi
 
 echo "[16] Two sessions: independent probe_history"
@@ -219,7 +219,7 @@ import json,sys
 print(json.dumps({'session_id':'cc-concur','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'x'}))
 " "$TX")
 for _ in 1 2 3 4 5 6 7 8 9 10; do
-  printf '%s' "$PAYLOAD" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc17" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk17" $HOOK > /dev/null &
+  printf '%s' "$PAYLOAD" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc17" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk17" "${HOOK[@]}" > /dev/null &
 done
 wait
 # hook.py names state files by SHA-256(session_id)[:16].json, not the raw id
@@ -364,7 +364,7 @@ payload=$(python3 -c "
 import json,sys
 print(json.dumps({'session_id':'s27','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'no, I said use spaces not tabs'}))
 " "$TX")
-out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc27" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk27" $HOOK)
+out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc27" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk27" "${HOOK[@]}")
 if emitted "$out" && echo "$out" | grep -q 'user_correction'; then ok "correction prompt fires"; else no "correction prompt fires" "got: $(echo "$out" | head -c120)"; fi
 
 echo "[28] user_correction: ordinary prompt stays silent"
@@ -372,7 +372,7 @@ payload=$(python3 -c "
 import json,sys
 print(json.dumps({'session_id':'s28','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'now add a unit test for the parser'}))
 " "$TX")
-out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc28" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk27" $HOOK)
+out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc28" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk27" "${HOOK[@]}")
 if [ -z "$out" ]; then ok "ordinary prompt silent"; else no "ordinary prompt silent" "got: $(echo "$out" | head -c100)"; fi
 
 echo "[29] malformed transcript events: detection still WORKS with garbage lines present"
@@ -456,7 +456,7 @@ payload=$(python3 -c "
 import json,sys
 print(json.dumps({'session_id':'s34','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'no, I said use spaces'}))
 " "$TX")
-out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc34" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk34" $HOOK)
+out=$(printf '%s' "$payload" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc34" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk34" "${HOOK[@]}")
 if emitted "$out" && echo "$out" | grep -q 'user_correction'; then ok "user_correction fires with no assistant prose"; else no "user_correction fires with no assistant prose" "got: $(echo "$out" | head -c150)"; fi
 
 echo "[35] claim_without_evidence: incidental substring ('cat' inside 'category') does NOT count as verification"
@@ -546,7 +546,7 @@ pay39=$(python3 -c "
 import json,sys
 print(json.dumps({'session_id':'s39','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'explain how this works in depth'}))
 " "$TXW")
-out=$(printf '%s' "$pay39" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc39" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk39" $HOOK)
+out=$(printf '%s' "$pay39" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc39" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk39" "${HOOK[@]}")
 if [ -z "$out" ]; then ok "warranted (detail) prompt → creep suppressed"; else no "warranted prompt → suppressed" "got: $(echo "$out" | head -c150)"; fi
 
 echo "[40] word_count warrant: trivial prompt still fires"
@@ -554,8 +554,140 @@ pay40=$(python3 -c "
 import json,sys
 print(json.dumps({'session_id':'s40','transcript_path':sys.argv[1],'hook_event_name':'UserPromptSubmit','prompt':'fix the typo'}))
 " "$TXW")
-out=$(printf '%s' "$pay40" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc40" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk39" $HOOK)
+out=$(printf '%s' "$pay40" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc40" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk39" "${HOOK[@]}")
 if emitted "$out" && echo "$out" | grep -q 'word_count_per_message'; then ok "unwarranted (trivial) prompt → creep fires"; else no "trivial prompt → fires" "got: $(echo "$out" | head -c150)"; fi
+
+# ======================================================================
+# Periodic re-anchor (absorbed skill-pulse, merged 2026-06-16). The second
+# mechanism: every Nth turn, re-state active skills' `pulse_reminder:` rules.
+# ======================================================================
+
+make_skill_with_pulse() {
+  # make_skill_with_pulse <skills_subdir> <dir_name> <yaml_name> <pulse_reminder> [extra_frontmatter_line]
+  local sk_root="$SKILLS_ROOT/$1"; local dir="$2"; local nm="$3"; local pr="$4"; local extra="${5:-}"
+  mkdir -p "$sk_root/$dir"
+  {
+    echo "---"
+    echo "name: $nm"
+    echo "description: Test skill $nm. Second sentence here."
+    [ -n "$pr" ] && echo "pulse_reminder: $pr"
+    [ -n "$extra" ] && echo "$extra"
+    echo "---"
+    echo "body"
+  } > "$sk_root/$dir/SKILL.md"
+}
+
+EMPTYTX="$TRANSCRIPT_DIR/empty.jsonl"; : > "$EMPTYTX"
+
+echo "[41] re-anchor: silent below cadence, fires on cadence turn (PULSE_EVERY=2)"
+make_skill_with_pulse skp1 caveman caveman-ultra "terse — drop filler"
+o1=$(call ccp1 skp1 "$EMPTYTX" sp1 COMPLIANCE_CANARY_PULSE_EVERY=2)
+o2=$(call ccp1 skp1 "$EMPTYTX" sp1 COMPLIANCE_CANARY_PULSE_EVERY=2)
+if [ -z "$o1" ] && emitted "$o2" && echo "$o2" | grep -q 're-anchor (turn 2)' && echo "$o2" | grep -q 'caveman-ultra: terse'; then
+  ok "re-anchor fires on cadence turn, silent before"; else no "re-anchor cadence" "t1=[$o1] t2=[$(echo "$o2"|head -c80)]"; fi
+
+echo "[42] re-anchor: repeats on turn 4, silent on turn 3 (off-cadence)"
+o3=$(call ccp1 skp1 "$EMPTYTX" sp1 COMPLIANCE_CANARY_PULSE_EVERY=2)   # turn3
+o4=$(call ccp1 skp1 "$EMPTYTX" sp1 COMPLIANCE_CANARY_PULSE_EVERY=2)   # turn4
+if [ -z "$o3" ] && echo "$o4" | grep -q 're-anchor (turn 4)'; then ok "re-anchor repeats on cadence, silent between"; else no "re-anchor repeat" "t3=[$o3] t4=[$(echo "$o4"|head -c80)]"; fi
+
+echo "[43] re-anchor: skill WITHOUT pulse_reminder is excluded"
+make_skill_with_pulse skp2 withpr has-pr "rule A"
+make_skill_with_pulse skp2 nopr no-pr ""        # no pulse_reminder line
+call ccp2 skp2 "$EMPTYTX" sp2 COMPLIANCE_CANARY_PULSE_EVERY=2 >/dev/null
+o=$(call ccp2 skp2 "$EMPTYTX" sp2 COMPLIANCE_CANARY_PULSE_EVERY=2)
+if echo "$o" | grep -q 'has-pr: rule A' && ! echo "$o" | grep -q 'no-pr'; then ok "no-pulse_reminder skill excluded"; else no "pulse exclusion" "got: $(echo "$o"|head -c120)"; fi
+
+echo "[44] re-anchor YIELDS to a fired probe on a shared cadence turn (no double-nag)"
+# Skill carries BOTH a pulse_reminder AND a filler probe; transcript has filler.
+make_skill_with_pulse skp3 caveman caveman-ultra "terse — drop filler"
+cat > "$SKILLS_ROOT/skp3/caveman/drift_probes.json" <<'EOF'
+[{"id":"filler","kind":"forbidden_regex","pattern":"(?i)\\bcertainly\\b","message":"no certainly"}]
+EOF
+TXF="$TRANSCRIPT_DIR/t44.jsonl"
+write_transcript "$TXF" "$(assistant_text 'Certainly! Proceeding now.' u1)"
+# turn1 CLEAN (no fire, no cooldown set); turn2 = cadence AND fresh filler →
+# probe fires, re-anchor must yield. (If turn1 had filler too, cooldown would
+# suppress the turn2 fire — a separate, already-tested behavior.)
+call ccp3 skp3 "$EMPTYTX" sp3 COMPLIANCE_CANARY_PULSE_EVERY=2 >/dev/null   # turn1 clean
+o=$(call ccp3 skp3 "$TXF" sp3 COMPLIANCE_CANARY_PULSE_EVERY=2)            # turn2 cadence + filler
+if echo "$o" | grep -q 'forbidden_regex' && ! echo "$o" | grep -q 're-anchor'; then ok "probe fires; re-anchor yields"; else no "yield-on-shared-turn" "got: $(echo "$o"|head -c160)"; fi
+
+echo "[45] SKILL_PULSE_DISABLED=1: re-anchor off, but probe STILL fires (fresh session, turn 1)"
+o=$(call ccp3b skp3 "$TXF" sp3b COMPLIANCE_CANARY_PULSE_EVERY=2 SKILL_PULSE_DISABLED=1)
+if echo "$o" | grep -q 'forbidden_regex' && ! echo "$o" | grep -q 're-anchor'; then ok "pulse-disable ≠ probe-disable"; else no "SKILL_PULSE_DISABLED scope" "got: $(echo "$o"|head -c120)"; fi
+
+echo "[46] COMPLIANCE_CANARY_PULSE_EVERY=0 disables re-anchor (clean transcript → silent)"
+call ccp4 skp1 "$EMPTYTX" sp4 COMPLIANCE_CANARY_PULSE_EVERY=0 >/dev/null
+o=$(call ccp4 skp1 "$EMPTYTX" sp4 COMPLIANCE_CANARY_PULSE_EVERY=0)
+if [ -z "$o" ]; then ok "PULSE_EVERY=0 → re-anchor disabled"; else no "PULSE_EVERY=0" "got: $(echo "$o"|head -c120)"; fi
+
+echo "[47] cadence floor: PULSE_EVERY=1 clamps to 2 (silent on turn 1)"
+o1=$(call ccp5 skp1 "$EMPTYTX" sp5 COMPLIANCE_CANARY_PULSE_EVERY=1)   # turn1: if floored to 2, silent
+o2=$(call ccp5 skp1 "$EMPTYTX" sp5 COMPLIANCE_CANARY_PULSE_EVERY=1)   # turn2: fires
+if [ -z "$o1" ] && echo "$o2" | grep -q 're-anchor (turn 2)'; then ok "cadence floors to 2"; else no "cadence floor" "t1=[$o1] t2=[$(echo "$o2"|head -c80)]"; fi
+
+echo "[48] SKILL_PULSE_EVERY back-compat alias drives cadence"
+call ccp6 skp1 "$EMPTYTX" sp6 SKILL_PULSE_EVERY=2 >/dev/null
+o=$(call ccp6 skp1 "$EMPTYTX" sp6 SKILL_PULSE_EVERY=2)
+if echo "$o" | grep -q 're-anchor (turn 2)'; then ok "SKILL_PULSE_EVERY alias honored"; else no "alias cadence" "got: $(echo "$o"|head -c120)"; fi
+
+echo "[49] BOM-prefixed SKILL.md frontmatter still parses (skill not dropped)"
+mkdir -p "$SKILLS_ROOT/skp7/bomskill"
+printf '\xef\xbb\xbf---\nname: bom-skill\ndescription: x. y.\npulse_reminder: bom rule\n---\nbody\n' > "$SKILLS_ROOT/skp7/bomskill/SKILL.md"
+call ccp7 skp7 "$EMPTYTX" sp7 COMPLIANCE_CANARY_PULSE_EVERY=2 >/dev/null
+o=$(call ccp7 skp7 "$EMPTYTX" sp7 COMPLIANCE_CANARY_PULSE_EVERY=2)
+if echo "$o" | grep -q 'bom-skill: bom rule'; then ok "BOM frontmatter parsed"; else no "BOM tolerance" "got: $(echo "$o"|head -c120)"; fi
+
+echo "[50] allowlist forces inclusion w/ description first-sentence fallback"
+make_skill_with_pulse skp8 nopr no-pr ""    # no pulse_reminder; desc = "Test skill no-pr. Second sentence here."
+call ccp8 skp8 "$EMPTYTX" sp8 COMPLIANCE_CANARY_PULSE_EVERY=2 COMPLIANCE_CANARY_PULSE_SKILLS=no-pr >/dev/null
+o=$(call ccp8 skp8 "$EMPTYTX" sp8 COMPLIANCE_CANARY_PULSE_EVERY=2 COMPLIANCE_CANARY_PULSE_SKILLS=no-pr)
+if echo "$o" | grep -q 'no-pr: Test skill no-pr'; then ok "allowlist + description fallback"; else no "allowlist fallback" "got: $(echo "$o"|head -c120)"; fi
+
+# ======================================================================
+# Robustness hardening (adversarial fuzz, 2026-06-16). Always-exit-0 must
+# hold against malformed payloads and a catastrophic author regex.
+# ======================================================================
+
+echo "[51] non-object JSON payload (42 / \"x\" / [..] / null / true) → exit 0, silent"
+bad51=0
+for p in '42' '"x"' '[1,2,3]' 'null' 'true'; do
+  out=$(printf '%s' "$p" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc51" "${HOOK[@]}" 2>/dev/null); ec=$?
+  { [ "$ec" -ne 0 ] || [ -n "$out" ]; } && { bad51=1; break; }
+done
+if [ "$bad51" -eq 0 ]; then ok "non-object payloads handled (exit 0, silent)"; else no "non-object payload" "payload=$p exit=$ec out=[$out]"; fi
+
+echo "[52] non-string session_id (7 / 9.9 / [1,2]) → exit 0 (no .encode crash)"
+bad52=0
+for sid in '7' '9.9' '[1,2]'; do
+  out=$(printf '{"session_id":%s,"transcript_path":"x","prompt":"hi"}' "$sid" | env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc52" "${HOOK[@]}" 2>/dev/null); ec=$?
+  [ "$ec" -ne 0 ] && { bad52=1; break; }
+done
+if [ "$bad52" -eq 0 ]; then ok "non-string session_id coerced (exit 0)"; else no "non-string session_id" "sid=$sid exit=$ec"; fi
+
+echo "[53] ReDoS probe regex → time-bounded, exit 0, silent (no prompt wedge)"
+REDOS='[{"id":"redos","kind":"forbidden_regex","pattern":"(a+)+$","message":"x"}]'
+make_skill_with_probes sk53 red "$REDOS"
+TXR="$TRANSCRIPT_DIR/t53.jsonl"
+write_transcript "$TXR" "$(assistant_text 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!' u1)"
+pay53='{"session_id":"s53","transcript_path":"'"$TXR"'","prompt":"next"}'
+t0=$(python3 -c 'import time;print(time.time())')
+out=$(printf '%s' "$pay53" | timeout 6 env COMPLIANCE_CANARY_STATE_DIR="$STATE_ROOT/cc53" COMPLIANCE_CANARY_SKILLS_ROOT="$SKILLS_ROOT/sk53" "${HOOK[@]}" 2>/dev/null); ec=$?
+t1=$(python3 -c 'import time;print(time.time())')
+elapsed=$(python3 -c "print($t1-$t0)")
+# exit 0, no output, and well under the 6s timeout wall (budget is 1.5s)
+if [ "$ec" -eq 0 ] && [ -z "$out" ] && python3 -c "import sys;sys.exit(0 if $elapsed < 4 else 1)"; then
+  ok "ReDoS regex time-bounded (${elapsed%.*}s, exit 0, silent)"; else no "ReDoS guard" "exit=$ec elapsed=$elapsed out=[$out]"; fi
+
+echo "[54] runaway pulse_reminder is length-capped in the re-anchor"
+LONG=$(python3 -c "print('x'*600)")
+make_skill_with_pulse sk54 big big-skill "$LONG"
+call cc54 sk54 "$EMPTYTX" s54 COMPLIANCE_CANARY_PULSE_EVERY=2 >/dev/null
+o=$(call cc54 sk54 "$EMPTYTX" s54 COMPLIANCE_CANARY_PULSE_EVERY=2)
+line=$(echo "$o" | grep 'big-skill:')
+linelen=${#line}
+if echo "$line" | grep -q '…' && [ "$linelen" -lt 320 ]; then ok "pulse_reminder capped (line=$linelen chars, ellipsized)"; else no "pulse_reminder cap" "len=$linelen line=$(echo "$line"|head -c80)"; fi
 
 # ----------------------------------------------------------------------
 echo

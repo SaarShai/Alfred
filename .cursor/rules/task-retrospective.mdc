@@ -1,0 +1,7 @@
+---
+description: Use at the end of any non-trivial task (after the work is verified, before the final report); ALSO fire mid-task the moment the user corrects you — says you were wrong, that you skipped a step or claimed something without actually running it, calls out a mistake you have made before ("again", "second time", "you keep", "I told you", "stop doing that"), or pushes back on your approach; or when the user types /retro. Runs a fixed agent self-audit (incl. 5-whys root-cause), shows the user the evidence, asks at most 3 closed feedback questions, then routes each banked lesson through write-gate to the NARROWEST home — escalating a REPEATED failure to a mechanical gate (a compliance-canary drift probe) instead of more prose. For high-stakes or contested results it dispatches a separate, preferably cross-vendor, verifier agent (Claude ↔ GPT-via-Codex ↔ Gemini) for independent review + root-cause.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/task-retrospective/SKILL.md

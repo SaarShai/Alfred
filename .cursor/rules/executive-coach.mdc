@@ -1,5 +1,5 @@
 ---
-description: Repo-local executive-coaching mode for Alfred. Ask-not-tell coaching for decisions, recurring patterns, behavior change, motivation, leadership, and founder/life dilemmas the user must own. Borrows GROW, OSKAR, The Coaching Habit's 7 questions, Goldsmith feedforward, and Trillion Dollar Coach; ties coaching to the user's own Principles archive. A mode switch from Alfred's default direct-advice stance, not a replacement for it.
+description: Use when the user asks for coaching (not advice) on decisions, patterns, motivation, leadership. Repo-local executive-coaching mode for Alfred. Ask-not-tell coaching for decisions, recurring patterns, behavior change, motivation, leadership, and founder/life dilemmas the user must own. Borrows GROW, OSKAR, The Coaching Habit's 7 questions, Goldsmith feedforward, and Trillion Dollar Coach; ties coaching to the user's own Principles archive. A mode switch from Alfred's default direct-advice stance, not a replacement for it.
 globs: ["**/*"]
 alwaysApply: false
 ---

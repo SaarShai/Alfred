@@ -1,5 +1,5 @@
 ---
-description: Use when long sessions show drift symptoms — filler creep, word-count growth, done-claims without evidence, repeated tool errors. UserPromptSubmit hook scanning recent messages + tool results against per-skill drift_probes.json; injects targeted correctives. Complement to skill-pulse (pulse re-anchors unconditionally; canary fires only on symptoms).
+description: Use when a long session drifts — the single always-on drift watcher: one UserPromptSubmit hook combining a periodic skill-rule re-anchor (every N turns) with symptomatic per-skill drift probes (filler creep, word-count growth, unverified done-claims, looping tool errors, rule fade). Absorbs the former skill-pulse; the re-anchor yields to a fired probe so the two never double-nag. Tune/disable via COMPLIANCE_CANARY_* env vars (SKILL_PULSE_* honored as aliases).
 globs: ["**/*"]
 alwaysApply: false
 ---

@@ -5,8 +5,8 @@
 | field | tokens / size |
 |---|---|
 | description (always resident) | **70 tokens** (347 chars) |
-| body (loaded on trigger)      | **308 tokens** (1294 chars) |
-| tools/ payload                 | 15.8 KB |
+| body (loaded on trigger)      | **393 tokens** (1636 chars) |
+| tools/ payload                 | 44.5 KB |
 | model pin                      | `any` |
 | effort pin                     | `low` |
 
@@ -37,3 +37,7 @@ Raw: [`eval/results/output-filter.json`](../../eval/results/output-filter.json)
 ## Failure modes
 
 To be filled in after analysis of result outputs (see raw JSON for individual trial outputs).
+
+## Measured gain (2026-06-13, `eval/gains.py`)
+
+**83.6% fewer tokens** on a realistic noisy build/test stream (redrawing progress bar + ANSI + cycling compile logs), with the `ERROR`/`FAILED` signal lines preserved verbatim (0% signal loss). Perf is locked by `eval/sims/hotpath_perf.py` (ANSI+dedupe on 10k hostile lines under a hard time budget).

@@ -1,0 +1,7 @@
+---
+description: Use for prompts prefixed /pa or /btw — route small or context-light requests away from the expensive main model.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/personal-assistant/SKILL.md
