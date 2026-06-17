@@ -1,0 +1,47 @@
+0000000000000000000000000000000000000000 cc1362ee900ec644baad17aef39c785f9ecdcf83 za <za@zas-MacBook-Pro.local> 1778855199 -0700
+cc1362ee900ec644baad17aef39c785f9ecdcf83 3dfd9cf5405272938a7891be23a4e6c226fc1de4 za <za@zas-MacBook-Pro.local> 1778857859 -0700	commit: Rebrand to Alfred personal CEO on the gstack engine
+3dfd9cf5405272938a7891be23a4e6c226fc1de4 17028e1d0d193912764b744623188b699f155866 za <za@zas-MacBook-Pro.local> 1778858769 -0700	commit: Adopt Obsidian as human view layer; fix wiki indexer vendor crawl
+17028e1d0d193912764b744623188b699f155866 9bebb4152084a76c44436a9533c9cee45fdad42f za <za@zas-MacBook-Pro.local> 1778859182 -0700	commit: Resolve gstack-Alfred contradictions: Alfred governs, gstack drives
+9bebb4152084a76c44436a9533c9cee45fdad42f f4dd2ae47d2a1c5326d17b370028b47ac65cf9f3 za <za@zas-MacBook-Pro.local> 1778859862 -0700	commit: chore: wip checkpoint 2026-05-15T15:44:22Z
+f4dd2ae47d2a1c5326d17b370028b47ac65cf9f3 b7afc5d74fd35af50968b75305b3a36de7cae9b2 za <za@zas-MacBook-Pro.local> 1778859927 -0700	commit: Add Stop-hook WIP auto-commit safety net
+b7afc5d74fd35af50968b75305b3a36de7cae9b2 6aa686206c6848e215bca37fe713682d0b1be1ae za <za@zas-MacBook-Pro.local> 1778861420 -0700	commit: Merge user lists + principles archive into Alfred branch
+6aa686206c6848e215bca37fe713682d0b1be1ae 5c489437065ae0b418a5c4d46cdc0956a0bca692 za <za@zas-MacBook-Pro.local> 1778861601 -0700	commit: Fix structural flaws around user lists
+5c489437065ae0b418a5c4d46cdc0956a0bca692 8b7ded2763e9bda53c92642164a79f29afa33882 za <za@zas-MacBook-Pro.local> 1778863019 -0700	commit: chore: wip checkpoint 2026-05-15T16:36:59Z
+8b7ded2763e9bda53c92642164a79f29afa33882 386d4b0cb206b1f0e568ef259a7f394147694817 za <za@zas-MacBook-Pro.local> 1778863356 -0700	commit: chore: wip checkpoint 2026-05-15T16:42:36Z
+386d4b0cb206b1f0e568ef259a7f394147694817 c2ca68342729c11603d1df7b6019fbf88cce55ff za <za@zas-MacBook-Pro.local> 1778863562 -0700	commit: chore: wip checkpoint 2026-05-15T16:46:02Z
+c2ca68342729c11603d1df7b6019fbf88cce55ff 4740b8e584581b8fc722ee2ebb3eaf73098e36ef za <za@zas-MacBook-Pro.local> 1778863701 -0700	commit: chore: wip checkpoint 2026-05-15T16:48:21Z
+4740b8e584581b8fc722ee2ebb3eaf73098e36ef 13955c09c362db1f2cd6636d512c8eae7228ec66 za <za@zas-MacBook-Pro.local> 1778863752 -0700	commit: chore: wip checkpoint 2026-05-15T16:49:12Z
+13955c09c362db1f2cd6636d512c8eae7228ec66 849f8caa0ab0e4f0dc27ba09468703b946794d45 za <za@zas-MacBook-Pro.local> 1778863870 -0700	commit: chore: wip checkpoint 2026-05-15T16:51:09Z
+849f8caa0ab0e4f0dc27ba09468703b946794d45 99cae3fb12e4c4bb22a35e7fa6e5323fd46f332c za <za@zas-MacBook-Pro.local> 1778864037 -0700	commit: chore: wip checkpoint 2026-05-15T16:53:57Z
+99cae3fb12e4c4bb22a35e7fa6e5323fd46f332c 2e1604100ccaef7f880f33b0affc00449a04bea2 za <za@zas-MacBook-Pro.local> 1778864171 -0700	commit: chore: wip checkpoint 2026-05-15T16:56:11Z
+2e1604100ccaef7f880f33b0affc00449a04bea2 5eeb4beb5e8440e133709e8d0fecd8ccf4e1d7ed za <za@zas-MacBook-Pro.local> 1778864561 -0700	commit: chore: wip checkpoint 2026-05-15T17:02:41Z
+5eeb4beb5e8440e133709e8d0fecd8ccf4e1d7ed c6f71df66bd65332902ca82dbadd4df303fd1622 za <za@zas-MacBook-Pro.local> 1778864712 -0700	commit: chore: wip checkpoint 2026-05-15T17:05:12Z
+c6f71df66bd65332902ca82dbadd4df303fd1622 9ab010d1cfde4f019032013dec57bac583457ef6 za <za@zas-MacBook-Pro.local> 1778864762 -0700	commit: chore: wip checkpoint 2026-05-15T17:06:02Z
+9ab010d1cfde4f019032013dec57bac583457ef6 d8b411a0db0e82fe0e2b8c47955d31d1a58ea833 za <za@zas-MacBook-Pro.local> 1778864947 -0700	commit: chore: wip checkpoint 2026-05-15T17:09:07Z
+d8b411a0db0e82fe0e2b8c47955d31d1a58ea833 a2b367253f9e763030ae4129ce34f3b2526be61b za <za@zas-MacBook-Pro.local> 1778865058 -0700	commit: chore: wip checkpoint 2026-05-15T17:10:58Z
+a2b367253f9e763030ae4129ce34f3b2526be61b f313297548309bf254581ff2dec96950890a2e3c za <za@zas-MacBook-Pro.local> 1778865103 -0700	commit: chore: wip checkpoint 2026-05-15T17:11:43Z
+f313297548309bf254581ff2dec96950890a2e3c e0f94230a13618221c3ac7fd147b7a4dbc369553 za <za@zas-MacBook-Pro.local> 1778865216 -0700	commit: chore: wip checkpoint 2026-05-15T17:13:36Z
+e0f94230a13618221c3ac7fd147b7a4dbc369553 657c0b4bd5c176fc785f7989cc161f9759905ef9 za <za@zas-MacBook-Pro.local> 1778865289 -0700	commit: chore: wip checkpoint 2026-05-15T17:14:49Z
+657c0b4bd5c176fc785f7989cc161f9759905ef9 84721e1b34a3338e03c1cb1bbb1edb2da2d253bb za <za@zas-MacBook-Pro.local> 1778869679 -0700	commit: chore: wip checkpoint 2026-05-15T18:27:59Z
+84721e1b34a3338e03c1cb1bbb1edb2da2d253bb f9d1c60a011489ea877fbd2665b193442535b59f za <za@zas-MacBook-Pro.local> 1778869800 -0700	commit: chore: wip checkpoint 2026-05-15T18:30:00Z
+f9d1c60a011489ea877fbd2665b193442535b59f a3b7ef66f45172c732322cd4d1ddba5cbf39aa0e za <za@zas-MacBook-Pro.local> 1778869886 -0700	commit: chore: wip checkpoint 2026-05-15T18:31:26Z
+a3b7ef66f45172c732322cd4d1ddba5cbf39aa0e 78b4203ebdebeb4aa1596a416a15dd96f50a28a3 za <za@zas-MacBook-Pro.local> 1778870006 -0700	commit: chore: wip checkpoint 2026-05-15T18:33:26Z
+78b4203ebdebeb4aa1596a416a15dd96f50a28a3 cd1e725045c344d8c73cb9fc6356e08746a47ef4 za <za@zas-MacBook-Pro.local> 1778870090 -0700	commit: chore: wip checkpoint 2026-05-15T18:34:50Z
+cd1e725045c344d8c73cb9fc6356e08746a47ef4 9d1afe9ec1bd7116d8fa0ad75e6b8c037423408c za <za@zas-MacBook-Pro.local> 1778870304 -0700	commit: chore: wip checkpoint 2026-05-15T18:38:24Z
+9d1afe9ec1bd7116d8fa0ad75e6b8c037423408c ad8fd3f11f797b93034521579a28c0573d6894ef za <za@zas-MacBook-Pro.local> 1778870487 -0700	commit: chore: wip checkpoint 2026-05-15T18:41:27Z
+ad8fd3f11f797b93034521579a28c0573d6894ef 88dbcac4eed629070f06dd7440dff063f8ffa363 za <za@zas-MacBook-Pro.local> 1778870568 -0700	commit: chore: wip checkpoint 2026-05-15T18:42:48Z
+88dbcac4eed629070f06dd7440dff063f8ffa363 a28f59442d5d73db7d74df11d7732cc2e9b974d3 za <za@zas-MacBook-Pro.local> 1778870698 -0700	commit: chore: wip checkpoint 2026-05-15T18:44:58Z
+a28f59442d5d73db7d74df11d7732cc2e9b974d3 421e2e1519e569a94bf21cfa53de588622630219 za <za@zas-MacBook-Pro.local> 1778870756 -0700	commit: chore: wip checkpoint 2026-05-15T18:45:56Z
+421e2e1519e569a94bf21cfa53de588622630219 dc99b1c9000484171177bbc6081e6bdd22d58bc4 za <za@zas-MacBook-Pro.local> 1778870888 -0700	commit: chore: wip checkpoint 2026-05-15T18:48:08Z
+dc99b1c9000484171177bbc6081e6bdd22d58bc4 39f30b40f31251b6ea56c3ac13e1d15705163fa2 za <za@zas-MacBook-Pro.local> 1778870953 -0700	commit: chore: wip checkpoint 2026-05-15T18:49:13Z
+39f30b40f31251b6ea56c3ac13e1d15705163fa2 9c3972ef9b91b6f71b79c22ea7edac37dcc34b44 za <za@zas-MacBook-Pro.local> 1778871091 -0700	commit: chore: wip checkpoint 2026-05-15T18:51:31Z
+9c3972ef9b91b6f71b79c22ea7edac37dcc34b44 722e907b28a4997956ce486c3a09c6164f2a4a29 za <za@zas-MacBook-Pro.local> 1778871322 -0700	commit: chore: wip checkpoint 2026-05-15T18:55:22Z
+722e907b28a4997956ce486c3a09c6164f2a4a29 6cc6bdc87f62acbd194543bec114c9a2caf6800a za <za@zas-MacBook-Pro.local> 1778871452 -0700	commit: chore: wip checkpoint 2026-05-15T18:57:32Z
+6cc6bdc87f62acbd194543bec114c9a2caf6800a 3bbf531ed5a666430838bcd305690bf4f6ab1e52 za <za@zas-MacBook-Pro.local> 1778871848 -0700	commit: chore: wip checkpoint 2026-05-15T19:04:08Z
+3bbf531ed5a666430838bcd305690bf4f6ab1e52 3d8b98d11075155e9ddeb483308ab605b8f10b50 za <za@zas-MacBook-Pro.local> 1778919646 -0700	commit: Capture principles archive: working version + full decode
+3d8b98d11075155e9ddeb483308ab605b8f10b50 9b32d36115f463cf62ec439b634d32d13beb228a za <za@zas-MacBook-Pro.local> 1778919880 -0700	commit: Add consolidation map to principles working version
+9b32d36115f463cf62ec439b634d32d13beb228a cffc73d49d8d34a27e999886e8333a9b8a55e04d za <za@zas-MacBook-Pro.local> 1778920036 -0700	commit: Add network map to principles working version
+cffc73d49d8d34a27e999886e8333a9b8a55e04d 611497c2bb4af500e737a8707a4a4a14dbbf7e89 za <za@zas-MacBook-Pro.local> 1778920162 -0700	commit: chore: wip checkpoint 2026-05-16T08:29:22Z
+611497c2bb4af500e737a8707a4a4a14dbbf7e89 e79606b7614463dcbb0be7c7df6a40e5b0e39190 za <za@zas-MacBook-Pro.local> 1778920275 -0700	commit: Add principle 60 'First 3 miles' (top-bunch #2)
+e79606b7614463dcbb0be7c7df6a40e5b0e39190 4daead3cc2c813834f7840c18dda49332cdb8cbd za <za@zas-MacBook-Pro.local> 1778920385 -0700	commit: Add top-bunch deep analysis
+4daead3cc2c813834f7840c18dda49332cdb8cbd 4c755320459b2f282dbe602718e72c34eb844ca0 za <za@zas-MacBook-Pro.local> 1778922222 -0700	commit: Distribute principles into interlinked Principles/ folder

@@ -1,6 +1,6 @@
-# Token Economy Usage Index
+# Alfred Usage Index
 
-Catalog for a target project that uses Token Economy locally. Load only matched pages.
+Catalog for a target project that uses Alfred locally. Load only matched pages.
 
 ## Startup
 - [[start]] — universal agent entrypoint: operating rules, retrieval, context refresh, delegation
@@ -35,12 +35,22 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - `queries/` — durable Q&A
 - `L4_archive/` — cold history kept only when useful
 
+## Pursuits tree + dashboard
+- [[pursuits/index]] - forest root: 4 pursuit trees as wiki node docs (Wanderland, Animayte, Improving my use of AI, Collecting & documenting wisdom); one doc per node, parent lists children
+- `dashboard/index.html` - visual D3 view generated from `pursuits/`; nodes open their doc. System docs: `dashboard/README.md`. Regenerate: `node dashboard/build.js`
+
+## Active Project - Wanderland (pursuit #1)
+- [[projects/wanderland/README]] - company + Screenery; node tree at [[pursuits/wanderland]] (work streams: Screenery → Alicia's ownership/AI designer/Orders; Alicia's work; China mfg/distributor partnership; Other → Joff/Stir/Hilton, EquipHotel)
+
 ## Active Project - Executive Assistant
 - [[projects/executive-assistant/README]] - repo-local chief-of-staff workspace: role, scope, boundaries, operating model
 - [[concepts/executive-assistant-operating-model]] - intake, decision, execution, and memory loops
 - [[concepts/user-sovereignty-and-decision-gates]] - when the assistant must ask before changing direction or risk
 - [[concepts/memory-scoping-and-context-hierarchy]] - scoped, auditable memory layers mapped onto repo-local wiki pages
 - [[L2_facts/user-operating-profile]] - confirmed work preferences, communication style, decision preferences, and recurring constraints
+- [[L2_facts/user-lists]] - personal-taste lists: comedians, reading, watching (subscriptions split out)
+- [[L2_facts/subscriptions-tracker]] - recurring paid services across personal/Wanderland/Screenery; cost/renewal tracking
+- [[Principles/README]] - the user's life-principles archive, distributed: one interlinked page per principle + network/top-bunch/decodings/consolidation/sections (supersedes the old user-principles-* pages)
 - [[L2_facts/approved-information-sources]] - registry for external folders/docs the assistant may inspect
 - [[L2_facts/source-intake-queue]] - candidate folders/docs/accounts waiting for intake and verification
 - [[patterns/executive-office-hours]] - idea shaping, prioritization, weekly planning, and forcing questions
@@ -61,6 +71,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[L3_sops/approved-source-intake]] - safe workflow for adding named external folders/docs to the source registry
 - [[L3_sops/gogcli-workspace-access]] - installed gog CLI status, safe defaults, and Google Workspace auth procedure
 - [[L3_sops/subagent-dispatch-for-chief-of-staff]] - bounded subagent prompt packets and result contract
+- [[L3_sops/gstack-alfred-precedence]] - Alfred-over-gstack precedence, scope-vs-execution, memory authority, and per-skill DRIVE/GATE/DENY table
 - `tools/gog-agent-readonly` - repo-local wrapper for guarded Google Workspace read commands after auth
 - [[templates/daily-weekly-briefing.template]] - briefing output template
 - [[templates/structured-check-in.template]] - check-in output template
@@ -83,7 +94,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 
 ## Prompt Workflows
 - [[prompts/complete-migrate-export]] — export an old project into `complete_migrate_export dot md`
-- [[prompts/complete-migrate-import]] — import `complete_migrate_export dot md` into a new Token Economy-enabled target folder
+- [[prompts/complete-migrate-import]] — import `complete_migrate_export dot md` into a new Alfred-enabled target folder
 - [[prompts/summ]] — context refresh workflow
 - [[prompts/summarize-for-handoff]] — handoff packet template
 
@@ -91,6 +102,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[queries/2026-05-11-chief-of-staff-readiness-dry-run]] - first readiness briefing for the chief-of-staff system and pending Google Workspace auth
 - [[queries/2026-05-11-onboarding-pass-1]] - first onboarding answers: Wanderland/Screenery priority, clear pushback, reversible-only boundary, and prompt system priority
 - [[queries/2026-05-11-incisive-expert-style-prompt]] - directness, counterargument-first, verification, confidence, no flattery, and proactive idea preference
+- [[queries/2026-05-15-obsidian-as-human-view-layer]] - Obsidian adopted as additive human cockpit; CLI+schema+lint stays the agent/governance authority
 
 ## Extension Points
 - [[adapters/README]] — project-local agent adapters
@@ -102,6 +114,7 @@ Catalog for a target project that uses Token Economy locally. Load only matched 
 - [[raw/2026-05-11-additional-chief-of-staff-research]] - additional memory, guardrail, MCP, and evaluation research
 - [[raw/2026-05-11-reasoning-prompting-research]] - primary-source summary for step-by-step, plan-then-solve, self-consistency, ReAct, and reasoning-model prompting
 - [[raw/2026-05-11-enumerative-prompt-wording-research]] - source summary on when broad synonym/category lists help or hurt prompts
+- [[raw/2026-05-12-gemini-spark-google-doc]] - source summary and local exports for the Gemini Spark Google Doc principles archive
 - [[L3_sops/external-source-adoption]] - safe workflow for reviewing and adapting external sources
 - `prompts/subagents/chief-of-staff-*.prompt.md` - prompt packets for briefing extraction, source inventory, research, review, and wiki documentation
 - [[templates/page.template]] — wiki page template

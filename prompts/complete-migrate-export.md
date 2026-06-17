@@ -2,7 +2,7 @@
 
 complete-migrate-export
 
-Goal: create one complete local migration export at `[project-name]_complete_migrate_export.md` so a new Token Economy-enabled target working folder can import, adapt, and continue this project without carrying over context rot or depending operationally on the old folder.
+Goal: create one complete local migration export at `[project-name]_complete_migrate_export.md` so a new Alfred-enabled target working folder can import, adapt, and continue this project without carrying over context rot or depending operationally on the old folder.
 
 Think carefully, step by step, and devise a plan for the following, then execute the plan.
 
@@ -36,8 +36,8 @@ Inventory thoroughly:
 - `.env*`, local config files, provider/model settings, API usage patterns, service credentials, and integration wiring.
 - Git remotes, current branch, recent commits, tags if relevant, uncommitted work, ignored files that matter, and active branches.
 - Obsidian/wiki pages, indexes, project notes, SOPs, decisions, source summaries, stale/conflicting notes, and backlinks that explain current behavior.
-- For every original wiki item, capture: page/path, title, one-line summary, backlinks/outlinks when useful, current/stale status, target Token Economy category, and whether it should be adapted, archived, or discarded.
-- Capture wiki naming conventions, folder conventions, aliases, recurring tags, project-specific rules, and any external/home-directory rules the old project depended on so the importer can replace them with repo-local Token Economy pages.
+- For every original wiki item, capture: page/path, title, one-line summary, backlinks/outlinks when useful, current/stale status, target Alfred category, and whether it should be adapted, archived, or discarded.
+- Capture wiki naming conventions, folder conventions, aliases, recurring tags, project-specific rules, and any external/home-directory rules the old project depended on so the importer can replace them with repo-local Alfred pages.
 - Local runbooks, working commands, recurring failures, best practices, architectural decisions, constraints, active tasks, open questions, and known dead ends.
 
 Keep:
@@ -89,14 +89,14 @@ For every important source item, record:
 
 Allowed `Action` values:
 - `copy`: copy the file/directory into the new working folder.
-- `adapt`: rewrite into Token Economy wiki/docs/config or adjust paths/settings for the new folder.
+- `adapt`: rewrite into Alfred wiki/docs/config or adjust paths/settings for the new folder.
 - `regenerate`: recreate from commands, templates, package managers, or build steps.
 - `reference-only`: use as evidence during import but do not carry forward operationally.
 - `secret-local`: recreate locally outside wiki/committed guidance with raw value recorded only in `Secrets`.
 - `archive`: keep only as cold history/warning.
 - `discard`: intentionally omit as stale/noisy/duplicative.
 
-Include a complete original-wiki coverage map: each original wiki page/path -> target Token Economy page type/path -> import status (`adapted`, `archived`, or `discarded`) -> rationale.
+Include a complete original-wiki coverage map: each original wiki page/path -> target Alfred page type/path -> import status (`adapted`, `archived`, or `discarded`) -> rationale.
 
 ## 4. Architecture + Code Inventory
 - Important files/directories and why they matter.
@@ -107,7 +107,7 @@ Include a complete original-wiki coverage map: each original wiki page/path -> t
 ## 5. Wiki + Knowledge Inventory
 - Obsidian/wiki structure.
 - Complete page inventory, including indexes, project pages, facts, SOPs/runbooks, decisions, source summaries, queries/answers, stale/conflicting notes, and hidden or home-directory agent rules that influenced behavior.
-- Pages to preserve and their target Token Economy page types/paths.
+- Pages to preserve and their target Alfred page types/paths.
 - Pages to archive/discard and why.
 - Important backlinks, outlinks, aliases, tags, indexes, folder conventions, and naming conventions to translate.
 - Information that must be rewritten so the new working folder is self-contained and does not refer agents back to the source wiki.

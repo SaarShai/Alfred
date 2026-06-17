@@ -1,6 +1,6 @@
 ---
 name: subagent-orchestrator
-description: Route work to cheaper or specialist subagents while keeping final synthesis local.
+description: Use when dispatching work to subagents — route to cheaper or specialist subagents while keeping final synthesis local.
 ---
 
 # Subagent Orchestrator

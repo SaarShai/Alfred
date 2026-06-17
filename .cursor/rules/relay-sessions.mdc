@@ -1,0 +1,7 @@
+---
+description: Use when the user asks to relay, hand off, summarize, continue in a fresh Codex session, or let a new session ask an old/older session targeted follow-up questions.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/relay-sessions/SKILL.md

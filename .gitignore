@@ -14,11 +14,17 @@ projects/compound-compression-pipeline/eval_v*_run.out
 # semdiff session cache
 .cache/semdiff/
 
-# Token Economy runtime state
+# Alfred runtime state
 .token-economy/
 .token-economy-profile
 .claude/
 .mcp.json
+
+# gstack engine — vendored, reproducible via tools/bootstrap-gstack.sh
+vendor/
+
+# Obsidian human view layer — per-user vault UI state, not shared
+.obsidian/
 
 # OS
 .DS_Store
@@ -28,3 +34,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+.venv/
+venv/
+node_modules/
+.brainer/

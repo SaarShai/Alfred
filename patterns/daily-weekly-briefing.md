@@ -24,10 +24,11 @@ Use when the user asks for a daily briefing, weekly planning, "what needs my att
 
 1. Current workspace and repo-local wiki.
 2. [[L2_facts/user-operating-profile]].
-3. [[L2_facts/approved-information-sources]].
-4. User-provided notes in the current prompt.
-5. Subagent results from [[L3_sops/subagent-dispatch-for-chief-of-staff]] when the task justifies delegation.
-6. Source candidates in [[L2_facts/source-intake-queue]] only as missing-source notes, not as readable sources.
+3. [[L2_facts/obligations]] — due/overdue reminders, deadlines, and recurring tasks.
+4. [[L2_facts/approved-information-sources]].
+5. User-provided notes in the current prompt.
+6. Subagent results from [[L3_sops/subagent-dispatch-for-chief-of-staff]] when the task justifies delegation.
+7. Source candidates in [[L2_facts/source-intake-queue]] only as missing-source notes, not as readable sources.
 
 Do not read unapproved external folders or connect accounts.
 
@@ -43,6 +44,7 @@ Do not read unapproved external folders or connect accounts.
 ## Briefing Sections
 
 - Situation.
+- Due and recurring (from [[L2_facts/obligations]]: overdue, due today/this period, upcoming).
 - Top priorities.
 - Decisions needed.
 - Blockers and risks.

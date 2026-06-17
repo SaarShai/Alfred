@@ -1,21 +1,13 @@
 ---
 name: wiki-retrieve
-description: Retrieve all and only relevant LLM wiki information.
+description: DEPRECATED — merged into wiki-memory. Do not use.
+deprecated: true
 ---
 
-# Wiki Retrieve
+# wiki-retrieve (retired)
 
-Use when task references past work, decisions, docs, memory, "have we done X", or project facts.
+Superseded by **[`wiki-memory`](../wiki-memory/SKILL.md)** (unified retrieve + gated write, native `./te wiki`).
 
-Protocol:
-1. Read `L1_index.md`.
-2. Run `./te wiki search "<query>"`.
-3. For relevant hits, run `./te wiki timeline "<id>"`.
-4. Fetch at most 3 pages first with `./te wiki fetch "<id>"`.
-5. If insufficient, fetch <=2 more pages.
-6. Cite page paths/IDs.
+Retrieval protocol now lives there: read `L1_index.md` → `./te wiki search` → `timeline` → `fetch` (≤3 first). For a whole pursuit, read its `pursuits/<slug>/index.md` rollup.
 
-Never:
-- load the whole wiki
-- fetch raw archive speculatively
-- cite superseded page without noting newer page
+Folder kept only to preserve history; no longer loaded by `start.md`.

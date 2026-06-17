@@ -3,6 +3,7 @@ schema_version: 2
 title: "{{title}}"
 type: decision
 domain: "{{domain}}"
+pursuit: "{{pursuit}}"
 tier: episodic
 confidence: 0.7
 created: "{{date}}"

@@ -1,6 +1,6 @@
 # Agent Prompt
 
-Set up the Token Economy runtime in this folder, then use it for the user's target project. Canonical source: `https://github.com/SaarShai/token-economy.git`. Retrieve only downstream runtime/framework files via sparse checkout.
+Set up the Alfred runtime in this folder, then use it for the user's target project. Canonical source: `https://github.com/SaarShai/token-economy.git`. Retrieve only downstream runtime/framework files via sparse checkout.
 
 Start in plan mode. Write a short step-by-step plan in chat (no scratch files), then execute.
 

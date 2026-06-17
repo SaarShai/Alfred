@@ -2,7 +2,7 @@
 
 Use during `summ`, checkpoint, or manual refresh.
 
-Token Economy uses one universal refresh protocol and host-specific execution profiles. The universal part is: summarize current work, document durable memory with a lightweight/cheap wiki-documenter, write a lean handoff, clear or bypass the old context, then continue fresh from only `start.md` plus that handoff. The host-specific part is how the fresh/compact context is actually created.
+Alfred uses one universal refresh protocol and host-specific execution profiles. The universal part is: summarize current work, document durable memory with a lightweight/cheap wiki-documenter, write a lean handoff, clear or bypass the old context, then continue fresh from only `start.md` plus that handoff. The host-specific part is how the fresh/compact context is actually created.
 
 Do not assume every model/platform can clear context the same way. The agent must pick the right profile with `./te context host-controls --agent auto`.
 
@@ -40,7 +40,7 @@ If an older project-local `te` does not have `host-controls`, `fresh-command`, o
 
 Best practical workaround for hosts without callable clear: launch a fresh successor session with only `start.md` and the handoff file. This does not clear the current transcript; it bypasses it.
 
-For older Codex installs where the Token Economy wrapper is not present but `codex app-server` exists, a fresh successor can be created directly by starting the thread first and then sending the first `turn/start` with the handoff instruction and target model. This is a clean-continuation workaround, not an in-place context clear.
+For older Codex installs where the Alfred wrapper is not present but `codex app-server` exists, a fresh successor can be created directly by starting the thread first and then sending the first `turn/start` with the handoff instruction and target model. This is a clean-continuation workaround, not an in-place context clear.
 
 Examples:
 
@@ -51,7 +51,7 @@ claude --add-dir "$PWD" "Read $PWD/start.md and <handoff-file> only. Continue fr
 gemini --prompt-interactive "Read $PWD/start.md and <handoff-file> only. Continue from that handoff. Start in plan mode."
 ```
 
-For Codex hosts with App Server support, Token Economy can start a persistent fresh successor thread directly. This is clean continuation, not clearing the old visible thread:
+For Codex hosts with App Server support, Alfred can start a persistent fresh successor thread directly. This is clean continuation, not clearing the old visible thread:
 
 ```bash
 ./te context codex-fresh-thread --handoff <handoff-file> --execute

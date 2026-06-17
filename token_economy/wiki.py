@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 
-WIKI_DIRS = ("raw", "concepts", "patterns", "projects", "people", "queries", "L2_facts", "L3_sops", "L4_archive")
-SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache"}
+WIKI_DIRS = ("raw", "concepts", "patterns", "projects", "people", "queries", "L2_facts", "L3_sops", "L4_archive", "pursuits")
+SKIP_PARTS = {".git", ".token-economy", "__pycache__", ".pytest_cache", "vendor", ".claude"}
 WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
 RAW_CONTEXT_RE = re.compile(r"\b(raw|archive|transcript|full)\b|\bsource(?:s)?\s+(?:note|notes|summary|summaries)\b", re.IGNORECASE)
 PROMPT_CONTEXT_RE = re.compile(r"\b(prompt|prompts|prompter|template|templates|snippet|snippets|llm)\b", re.IGNORECASE)
@@ -220,8 +220,19 @@ class WikiStore:
 
     def iter_markdown(self) -> list[Path]:
         files = []
+        root_resolved = self.root.resolve()
         for path in self.root.rglob("*.md"):
-            if any(part in SKIP_PARTS for part in path.parts):
+            try:
+                rel_parts = path.relative_to(self.root).parts
+            except ValueError:
+                rel_parts = path.parts
+            # Resolve symlinks (e.g. .claude/skills/* -> vendor/gstack/*) so
+            # links into skipped trees are excluded by their real location.
+            try:
+                real_parts = path.resolve().relative_to(root_resolved).parts
+            except ValueError:
+                real_parts = ()
+            if any(p in SKIP_PARTS for p in rel_parts) or any(p in SKIP_PARTS for p in real_parts):
                 continue
             files.append(path)
         return sorted(files)
@@ -409,6 +420,8 @@ class WikiStore:
                 continue
             if page.id.startswith("extensions/") and page.id != "extensions/README":
                 continue
+            if page.id.startswith("Principles/") and page.id != "Principles/README":
+                continue
             if page.id.startswith("raw/") and page.id not in l1_always_include:
                 continue
             if page.id in {"external-adapters"}:
@@ -531,6 +544,8 @@ class WikiStore:
             return 0.5
         if page.id.startswith(("skills/", "prompts/")):
             return 0.35
+        if page.id.startswith("pursuits/"):
+            return 0.3  # navigational section/landing nodes — must not outrank substantive facts
         if page.id.startswith("raw/"):
             return -0.5
         return 0.0
@@ -544,6 +559,9 @@ class WikiStore:
                 target = link.removesuffix(".md")
                 if target in ids:
                     incoming[target] += 1
+                elif f"{target}/index" in ids:
+                    # dir-style wikilink: [[pursuits/wanderland]] -> .../index.md
+                    incoming[f"{target}/index"] += 1
                 elif Path(target).name in stems:
                     incoming[stems[Path(target).name]] += 1
         return incoming
@@ -728,7 +746,7 @@ class WikiStore:
                 link_id = link.removesuffix(".md")
                 if link_id in incoming:
                     incoming[link_id] += 1
-                elif link_id not in ids and Path(link_id).name not in stems:
+                elif link_id not in ids and f"{link_id}/index" not in ids and Path(link_id).name not in stems:
                     broken.append({"from": p.id, "to": link})
                     if strict and is_v2_page(p.frontmatter):
                         errors.append({"code": "broken_link", "page": p.id, "target": link})
@@ -790,7 +808,7 @@ class WikiStore:
             value = fm.get(key, "")
             for target in re.findall(r"\[\[([^\]]+)\]\]", value):
                 target_id = target.removesuffix(".md")
-                if target_id not in ids and Path(target_id).name not in stems:
+                if target_id not in ids and f"{target_id}/index" not in ids and Path(target_id).name not in stems:
                     errors.append({"code": "broken_supersession", "page": page.id, "target": target})
 
     def import_audit(self, manifest: str | Path) -> dict[str, Any]:
@@ -942,7 +960,7 @@ class WikiStore:
         except ValueError:
             return False
 
-    def new_page(self, template: str, title: str, domain: str = "framework", slug: str | None = None) -> dict[str, Any]:
+    def new_page(self, template: str, title: str, domain: str = "framework", slug: str | None = None, pursuit: str = "none") -> dict[str, Any]:
         self.init()
         template_map = {
             "page": ("templates/page.template.md", "concepts"),
@@ -969,6 +987,7 @@ class WikiStore:
                 "title": title,
                 "domain": domain,
                 "date": today,
+                "pursuit": pursuit,
             },
         )
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -1003,6 +1022,7 @@ class WikiStore:
             f"title: \"{safe_title}\"\n"
             "type: raw\n"
             "domain: external-source\n"
+            "pursuit: none\n"
             "tier: episodic\n"
             "confidence: 0.6\n"
             f"created: {today}\n"

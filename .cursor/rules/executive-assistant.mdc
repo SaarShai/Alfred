@@ -1,0 +1,7 @@
+---
+description: Use when acting as chief-of-staff — office hours, strategic review, briefings. Repo-local workflow for office hours, strategic review, daily/weekly briefing, work-preference memory, approved-source intake, routing, prompt generation, cross-project coordination, and bounded subagent dispatch.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/executive-assistant/SKILL.md

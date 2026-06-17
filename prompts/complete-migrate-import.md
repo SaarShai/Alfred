@@ -1,6 +1,6 @@
 # Complete migrate import
 
-/plan think carefully, step by step, to create a plan to import a complete-migrate export into a new target working folder that will use Token Economy as local scaffolding. Treat this folder as the active workspace, not the Token Economy source repository.
+/plan think carefully, step by step, to create a plan to import a complete-migrate export into a new target working folder that will use Alfred as local scaffolding. Treat this folder as the active workspace, not the Alfred source repository.
 
 Import a complete-migrate export into the current new working folder. The result must be self-contained: after import, all operational project files, local wiki pages, instructions, skills/adapters, config templates, and runbooks needed to continue the project must live in this folder, except external tools/services/models/APIs that intentionally remain outside the project folder.
 
@@ -14,7 +14,7 @@ Working rules:
 - Clone, copy, recreate, or adapt any file or information from referenced or linked folders that is needed to make the working folder self-sufficient.
 - Exclude anything that is not relevant to continuing the project.
 - After importing, operational instructions must not require the old folder or old wiki.
-- Actively learn from the uploaded file and adapt the information to the Token Economy setup in this working folder.
+- Actively learn from the uploaded file and adapt the information to the Alfred setup in this working folder.
 - Understand the processes and systems described or implied in the uploaded file, then create a similar system for yourself that is adapted to the way you work.
 
 ## Subagent orchestration
@@ -23,7 +23,7 @@ Use smaller/lightweight subagents for bounded admin and simple procedures when t
 
 Spawn or route compact workers for:
 - Framework bootstrap verification: check install/doctor outputs and report exact failures.
-- Safe file copying: copy only `copy` items from the `Transfer Manifest`, preserve relative paths where safe, and do not overwrite Token Economy framework paths.
+- Safe file copying: copy only `copy` items from the `Transfer Manifest`, preserve relative paths where safe, and do not overwrite Alfred framework paths.
 - Simple wiki page drafting: draft focused pages from export sections for review by the main agent.
 - Old-path reference search: run `rg` checks for old root/source-wiki paths and classify remaining hits.
 - Manifest coverage checks: compare imported files/wiki pages against the `Transfer Manifest` and import manifest.
@@ -38,7 +38,7 @@ Each worker must return a compact result packet with:
 
 Use `prompts/subagents/lifecycle.prompt.md` when supervising workers. Close a subagent only after its result packet has been read, useful results have been merged into the import, and durable gaps/follow-ups have been captured. Do not delegate final synthesis.
 
-## Bootstrap Token Economy runtime files in the current folder
+## Bootstrap Alfred runtime files in the current folder
 
 1. Clear only the current folder, including hidden files and `.git`.
    `find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +`
@@ -88,14 +88,14 @@ Use the uploaded file as the migration source of truth. It may contain raw secre
 
 Use the export's `Transfer Manifest`:
 - `copy`: copy the source item into the new working folder.
-- `adapt`: rewrite the source item into Token Economy wiki/docs/config or adjust paths/settings for the new folder.
+- `adapt`: rewrite the source item into Alfred wiki/docs/config or adjust paths/settings for the new folder.
 - `regenerate`: recreate it from commands, templates, package managers, or build steps.
 - `reference-only`: use it as evidence during import but do not carry it forward operationally.
 - `secret-local`: recreate it locally outside wiki/committed guidance with raw value handled only in local secret/config files.
 - `archive`: keep only as cold history/warning under `L4_archive/` when useful.
 - `discard`: omit it and record why in the import manifest.
 
-Preserve relative paths where safe. Do not overwrite Token Economy framework paths such as `start.md`, `te`, `token_economy/`, framework `prompts/`, framework `skills/`, `templates/`, `schema.md`, `L0_rules.md`, `L1_index.md`, `index.md`, or wiki scaffolding. If a source-project file conflicts with framework paths, adapt it into local project docs/wiki pages or place sealed source evidence under `raw/imported-source/`.
+Preserve relative paths where safe. Do not overwrite Alfred framework paths such as `start.md`, `te`, `token_economy/`, framework `prompts/`, framework `skills/`, `templates/`, `schema.md`, `L0_rules.md`, `L1_index.md`, `index.md`, or wiki scaffolding. If a source-project file conflicts with framework paths, adapt it into local project docs/wiki pages or place sealed source evidence under `raw/imported-source/`.
 
 Rewrite operational references from old absolute paths to the new working folder. Old project paths and old wiki paths may appear only as sealed provenance in `raw/` source notes or the import manifest, not as operational instructions.
 
@@ -117,10 +117,10 @@ This is a wiki transplant, not a pointer back to the source wiki:
 - Create or update `README.md` for the imported target project from the uploaded summary.
 - Update `index.md`, `L1_index.md`, and `log.md`.
 
-## Adapt the source wiki to Token Economy
+## Adapt the source wiki to Alfred
 
 - Convert existing wiki links/naming into repo-local markdown wikilinks such as `[[projects/example/README]]`.
-- Rewrite source-wiki information into better organized Token Economy pages instead of copying a flat dump.
+- Rewrite source-wiki information into better organized Alfred pages instead of copying a flat dump.
 - Preserve provenance from the complete-migrate export in every material page.
 - Split large notes into focused pages when that improves retrieval and combine tiny duplicates when that improves access.
 - Keep startup context lean; do not move broad target-project details into `start.md`, `L0_rules.md`, or `L1_index.md`.

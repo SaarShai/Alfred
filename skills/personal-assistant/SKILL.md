@@ -1,3 +1,8 @@
+---
+name: personal-assistant
+description: Use for prompts prefixed /pa or /btw — route small or context-light requests away from the expensive main model.
+---
+
 # Personal Assistant Router
 
 Use for prompts prefixed `/pa` or `/btw`: route small or context-light requests away from the expensive main model.

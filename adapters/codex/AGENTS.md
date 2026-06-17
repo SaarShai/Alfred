@@ -1,3 +1,3 @@
-# Token Economy Adapter
+# Alfred Adapter
 
 Read `start.md` first. Keep this file tiny.

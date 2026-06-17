@@ -31,6 +31,8 @@ Route each request to the smallest workflow that can complete it safely.
 | Existing plan needs review | [[patterns/strategic-plan-review]] |
 | Daily briefing, weekly planning, or what needs attention | [[patterns/daily-weekly-briefing]] |
 | Dry-run daily/weekly/attention briefing | [[patterns/first-briefing-dry-run]] |
+| Tell me something durable (remember / note / FYI / from now on) | [[L3_sops/capture-and-route]] — classify, draft-then-ask, route to one home |
+| Reminder, deadline, or recurring task | [[L3_sops/capture-and-route]] time lane → log to [[L2_facts/obligations]]; `/schedule` firing only on request |
 | Remember a work preference or capture a decision | [[patterns/structured-check-ins]], then update [[L2_facts/user-operating-profile]] only after confirmation |
 | Add a folder/source or tap into docs | [[L3_sops/approved-source-intake]], update [[L2_facts/source-intake-queue]] if pending, then update [[L2_facts/approved-information-sources]] after verification |
 | Connect Google Workspace through gog | [[L3_sops/gogcli-workspace-access]] |

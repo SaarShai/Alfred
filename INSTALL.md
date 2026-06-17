@@ -1,4 +1,4 @@
-# Install Token Economy Framework
+# Install Alfred
 
 Project-local install:
 
@@ -52,3 +52,13 @@ command -v claude >/dev/null && ./stable/INSTALL.sh   # registers ComCom + semdi
 This permission applies only to the current target folder named by the user. Do not delete parent folders or files elsewhere.
 
 The framework does not install global agent settings.
+
+## gstack Engine
+
+Alfred's execution engine (gstack) is vendored under `vendor/gstack` and gitignored (not committed — keeps the repo lean, upgrades stay churn-free). After install, bootstrap it project-locally:
+
+```bash
+./tools/bootstrap-gstack.sh
+```
+
+Idempotent: clones `garrytan/gstack` (shallow) if missing and registers all skills into `.claude/skills/`. It does **not** run gstack's global `./setup` or build the `bun` browser binary — those write outside the repo. Update later with the `/gstack-upgrade` skill.

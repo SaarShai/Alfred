@@ -1,0 +1,7 @@
+---
+description: DEPRECATED — merged into wiki-memory (+ write-gate). Do not use.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/wiki-write/SKILL.md
