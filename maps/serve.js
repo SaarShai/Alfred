@@ -1,6 +1,6 @@
 // Local app server for the process-maps dashboard.
 // Source of truth = maps-data/ (markdown). build.js regenerates maps/data.js after each write.
-// API: ping, events(SSE), doc, save, add, rename, archive, pos, edge(add/del), map-add, link.
+// API: ping, events(SSE), doc, export, save, add, rename, archive, pos, edge(add/del), map-add, link.
 // Run: node maps/serve.js [port]
 'use strict';
 const http = require('http');
@@ -202,7 +202,78 @@ function setNodeStyle(rel, d) {
   if (d.scale !== undefined) txt = (d.scale && d.scale !== 1 ? setField(txt, 'scale', d.scale) : removeField(txt, 'scale'));
   if (d.hl !== undefined) txt = (d.hl ? setField(txt, 'hl', 'true') : removeField(txt, 'hl'));
   if (d.color !== undefined) txt = (d.color === null || d.color === '' ? removeField(txt, 'color') : setField(txt, 'color', d.color));
+  if (d.gate !== undefined) txt = (d.gate && String(d.gate).trim() ? setField(txt, 'gate', JSON.stringify(String(d.gate).trim())) : removeField(txt, 'gate'));
   fs.writeFileSync(abs, txt);
+}
+
+// ---- workflow export: a map → a loop-engineering loop spec + agent-followable Markdown ----
+// A map is a directed graph of stages. We topologically order it, derive the loop
+// spec (gate/stop/budget/generator≠verifier), and flag graph problems the agent
+// must fix (no terminal, a stage with no gate, a cycle that needs a real budget).
+function readMaps() {
+  const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
+  return JSON.parse(raw);
+}
+function nodeBody(url) {                       // the stage's prose (file body, minus frontmatter + H1)
+  try {
+    const abs = path.resolve(DASH, url);
+    if (!abs.startsWith(SRC)) return '';
+    let t = fs.readFileSync(abs, 'utf8').replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^#\s+.*\n?/, '').trim();
+    return t.length > 360 ? t.slice(0, 360) + '…' : t;
+  } catch (_) { return ''; }
+}
+function buildWorkflow(slug) {
+  const M = readMaps(); const map = M.maps[slug];
+  if (!map) throw new Error('unknown map');
+  const nodes = map.nodes || [], edges = (map.edges || []).filter(e => e.from !== e.to);
+  const byId = {}; nodes.forEach(n => byId[n.id] = n);
+  const out = {}, indeg = {}; nodes.forEach(n => { out[n.id] = []; indeg[n.id] = 0; });
+  edges.forEach(e => { if (byId[e.from] && byId[e.to]) { out[e.from].push(e); indeg[e.to]++; } });
+  const starts = nodes.filter(n => indeg[n.id] === 0);
+  const terminals = nodes.filter(n => out[n.id].length === 0);
+  // Kahn topological order; leftover nodes ⇒ a cycle
+  const deg = {}; nodes.forEach(n => deg[n.id] = indeg[n.id]);
+  const q = starts.map(n => n.id), order = [];
+  while (q.length) { const id = q.shift(); order.push(id); out[id].forEach(e => { if (--deg[e.to] === 0) q.push(e.to); }); }
+  const cyclic = order.length !== nodes.length;
+  const reachable = new Set(order);
+  const ordered = cyclic ? nodes : order.map(id => byId[id]);
+
+  const issues = [];
+  if (!nodes.length) issues.push('map has no stages');
+  if (nodes.length && starts.length === 0) issues.push('no start stage — every node has an incoming edge (a cycle at the entry)');
+  if (starts.length > 1) issues.push('multiple start stages (' + starts.map(n => n.name).join(', ') + ') — a workflow should have one entry');
+  if (nodes.length && terminals.length === 0) issues.push('no terminal stage — nothing ends the workflow (every node has an outgoing edge)');
+  if (cyclic) issues.push('cycle detected — this is a LOOP, not a once-through pipeline: set a real iteration budget and a convergence gate (see loop-engineering)');
+  nodes.forEach(n => { if (!cyclic && !reachable.has(n.id)) issues.push('unreachable stage: ' + n.name); });
+  nodes.filter(n => out[n.id].length > 0 && !(n.gate && n.gate.trim())).forEach(n => issues.push('stage "' + n.name + '" has no gate — add a pass/fail check before the next stage (right-click → Gate)'));
+
+  const gateCmds = ordered.filter(n => n.gate && n.gate.trim()).map(n => n.gate.trim());
+  const spec = [
+    'name: ' + slug + '-workflow',
+    'topology: closed · inner · single',
+    'generator: agent runs each stage in topological order, one stage at a time',
+    "verifier: each stage's gate, run after the stage by a separate check (not the stage's producer)",
+    'gate: ' + (gateCmds.length ? gateCmds.join(' && ') : '(no stage gates defined — add a gate to each stage)'),
+    'stop: reach terminal stage' + (terminals.length === 1 ? '' : 's') + ': ' + (terminals.map(n => n.name).join(', ') || '(none defined)'),
+    'budget: ' + (cyclic ? 'max_iterations=20' : 'max_iterations=1'),
+  ].join('\n');
+
+  const md = ['# Workflow: ' + map.title, '',
+    'Auto-generated from the "' + map.title + '" process map. Follow the stages in order; each stage must pass its **gate** before the next begins.', ''];
+  ordered.forEach((n, i) => {
+    md.push('## ' + (i + 1) + '. ' + n.name);
+    const b = nodeBody(n.url); if (b) md.push(b);
+    md.push('');
+    md.push('- **Gate:** ' + (n.gate && n.gate.trim() ? '`' + n.gate.trim() + '`' : '⚠ none defined — add one before running'));
+    if (n.link_map) md.push('- **Sub-workflow:** drill into map `' + n.link_map + '`');
+    const o = out[n.id];
+    if (o.length) o.forEach(e => md.push('- **Then:** ' + (e.label ? 'if _' + e.label + '_ → ' : '→ ') + ((byId[e.to] || {}).name || e.to)));
+    else md.push('- **End of workflow.**');
+    md.push('');
+  });
+  md.push('---', '', 'Loop spec (validate with `loop_lint.py`):', '', '```loop', spec, '```', '');
+  return { spec, markdown: md.join('\n'), issues };
 }
 // ---- edge ops (slugs, in the map index). d = {from,to,label?,bend?,color?,remove?} ----
 function editEdge(mapSlug, d) {
@@ -279,6 +350,17 @@ http.createServer((req, res) => {
     if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
     const content = fs.readFileSync(abs, 'utf8');
     return json(res, { ok: true, content, title: titleOf(content) });
+  }
+  if (p === '/api/export') {                     // map → loop spec + agent Markdown, validated by loop_lint.py
+    let wf; try { wf = buildWorkflow(u.searchParams.get('map')); } catch (e) { return json(res, { ok: false, error: String(e.message || e) }, 400); }
+    const lintPath = path.join(ROOT, 'skills', 'loop-engineering', 'tools', 'loop_lint.py');
+    if (!fs.existsSync(lintPath)) return json(res, { ok: true, spec: wf.spec, markdown: wf.markdown, issues: wf.issues, lint: { code: null, output: 'loop_lint.py not found (install Brainer skills)' } });
+    const child = execFile('python3', [lintPath, '-'], { cwd: ROOT }, (err, stdout, stderr) => {
+      const code = err ? (typeof err.code === 'number' ? err.code : null) : 0;
+      json(res, { ok: true, map: u.searchParams.get('map'), spec: wf.spec, markdown: wf.markdown, issues: wf.issues, lint: { code, output: (stdout || '') + (stderr || '') || (err && err.message) || '' } });
+    });
+    try { child.stdin.write('```loop\n' + wf.spec + '\n```\n'); child.stdin.end(); } catch (_) {}
+    return;
   }
 
   const POST = (route, fn) => { if (p === route && req.method === 'POST') { body(req, d => { if (!d) return json(res, { ok: false, error: 'bad json' }, 400); try { fn(d); } catch (e) { json(res, { ok: false, error: String(e.message || e) }, 400); } }); return true; } return false; };

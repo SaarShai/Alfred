@@ -5,7 +5,7 @@ type: map
 nodes: [order-intake, job-tracker, shipping]
 edges:
   - {from: order-intake, to: job-tracker, label: "log job"}
-  - {from: job-tracker, to: shipping, label: "completed"}
+  - {from: job-tracker, to: shipping, label: "completed", bend: 3}
 ---
 # Orders Operations
 

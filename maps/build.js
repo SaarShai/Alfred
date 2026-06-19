@@ -72,6 +72,7 @@ function readNode(mapSlug, nodeSlug) {
     y: Number.isFinite(y) ? y : null,
     lane: field(fm, 'lane') || null,
     link_map: field(fm, 'link_map') || null,
+    gate: field(fm, 'gate') || null,            // per-stage pass/fail check (for the loop-spec export)
     scale: Number.isFinite(scale) && scale > 0 ? scale : 1,
     hl: field(fm, 'hl') === 'true',
     color: color != null && color !== '' ? +color : null,   // palette-index override of lane/type accent

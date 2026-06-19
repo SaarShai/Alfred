@@ -332,6 +332,7 @@
     document.getElementById('ctx-hl').classList.toggle('on', !!d.hl);
     fillSwatches(d);
     fillLinkSelect(); document.getElementById('ctx-linkmap').value = d.link_map || '';
+    document.getElementById('ctx-gate').value = d.gate || '';
     const m = document.getElementById('ctx');
     m.style.left = Math.min(window.innerWidth - 214, e.clientX) + 'px';
     m.style.top = Math.min(window.innerHeight - 300, e.clientY) + 'px';
@@ -415,6 +416,7 @@
     });
   }
   async function openEditor(d) {
+    document.getElementById('exportpanel').hidden = true;
     edPath = repoRel(d.url); edNode = d;
     document.getElementById('ed-title').textContent = d.name; document.getElementById('ed-path').textContent = edPath;
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; document.getElementById('editor').hidden = false;
@@ -435,6 +437,34 @@
   async function addMapPrompt() { if (!SERVER) return; const t = prompt('New map name:'); if (t === null) return; const title = t.trim(); if (!title) return; const j = await api('/api/map-add', { title }); if (!j.ok) { alert('Map: ' + j.error); return; } trail = []; cur = j.slug; applyMaps(j.maps); setHash(j.slug); }
   function setConnect(on) { connect.on = on; if (!on) connect.from = null; document.getElementById('addedge').classList.toggle('on', on); document.getElementById('connbar').hidden = !on; }
 
+  // ---- workflow export (map → loop spec + agent Markdown, validated by loop_lint.py) ----
+  async function openExport() {
+    if (!SERVER || !cur) return;
+    closeEditor(); closeCtx();
+    const $ = id => document.getElementById(id);
+    $('ex-map').textContent = (map() || {}).title || cur;
+    const v = $('ex-verdict'); v.className = 'ex-verdict'; v.textContent = 'Generating…';
+    $('ex-issues').innerHTML = ''; $('ex-spec').textContent = ''; $('ex-md').textContent = ''; $('ex-msg').textContent = '';
+    $('exportpanel').hidden = false;
+    try {
+      const r = await fetch('/api/export?map=' + encodeURIComponent(cur)); const j = await r.json();
+      if (!j.ok) { v.className = 'ex-verdict fail'; v.textContent = 'Error: ' + j.error; return; }
+      $('ex-spec').textContent = j.spec; $('ex-md').textContent = j.markdown;
+      const code = j.lint && j.lint.code;
+      if (code === 0) { v.className = 'ex-verdict pass'; v.textContent = '✓ loop_lint: valid workflow — gate · stop · budget · separate verifier'; }
+      else if (code === 1) { v.className = 'ex-verdict warn'; v.textContent = '⚠ loop_lint: valid, with warnings'; }
+      else if (code === 2) { v.className = 'ex-verdict fail'; v.textContent = '✗ loop_lint: not a runnable workflow yet — fix the issues below'; }
+      else { v.className = 'ex-verdict warn'; v.textContent = 'Spec generated — loop_lint did not run'; }
+      const ul = $('ex-issues');
+      (j.issues || []).forEach(s => { const li = document.createElement('li'); li.textContent = s; ul.appendChild(li); });
+      if (code && j.lint && j.lint.output) {
+        const detail = j.lint.output.split('\n').filter(l => /\[(FAIL|WARN)\]/.test(l)).slice(0, 5).join(' · ');
+        if (detail) { const li = document.createElement('li'); li.textContent = 'loop_lint → ' + detail; ul.appendChild(li); }
+      }
+    } catch (e) { v.className = 'ex-verdict fail'; v.textContent = 'Error: ' + e.message; }
+  }
+  async function copyText(t, what) { try { await navigator.clipboard.writeText(t); document.getElementById('ex-msg').textContent = 'Copied ' + what + ' ✓'; } catch (_) { document.getElementById('ex-msg').textContent = 'Copy failed — select the text manually'; } }
+
   // ---- wire UI ----
   document.getElementById('mapsel').onchange = e => jumpMap(e.target.value);
   document.getElementById('fit').onclick = fit;
@@ -444,6 +474,13 @@
   document.getElementById('addedge').onclick = () => setConnect(!connect.on);
   document.getElementById('lanes').onclick = () => { showLanes = !showLanes; document.getElementById('lanes').classList.toggle('on', showLanes); render(); };
   document.getElementById('undo').onclick = doUndo;
+  document.getElementById('export').onclick = openExport;
+  document.getElementById('ex-close').onclick = () => document.getElementById('exportpanel').hidden = true;
+  document.getElementById('ex-copyspec').onclick = () => copyText(document.getElementById('ex-spec').textContent, 'spec');
+  document.getElementById('ex-copymd').onclick = () => copyText(document.getElementById('ex-md').textContent, 'workflow');
+  { const cg = document.getElementById('ctx-gate');
+    cg.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); cg.blur(); } };
+    cg.onblur = () => { if (ctxNode) nodeStyle({ gate: cg.value.trim() }); }; }
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
@@ -458,7 +495,7 @@
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   document.addEventListener('click', e => { const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeEditor(); closeCtx(); if (connect.on) setConnect(false); }
+    if (e.key === 'Escape') { closeEditor(); closeCtx(); document.getElementById('exportpanel').hidden = true; if (connect.on) setConnect(false); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);

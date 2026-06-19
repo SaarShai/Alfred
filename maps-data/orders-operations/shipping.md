@@ -2,8 +2,8 @@
 nid: n-shp01
 title: "Shipping & close"
 type: step
-x: 720
-y: 140
+x: 845
+y: 64
 ---
 # Shipping & close
 

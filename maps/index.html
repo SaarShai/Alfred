@@ -167,6 +167,21 @@
     background:#0b1220;border:1px solid var(--step);border-radius:8px;padding:6px 9px;width:160px}
   .inlabel[hidden]{display:none}
   #edge-label-input{width:130px;font-size:11px;border-color:var(--edge)}
+  .ctx input.full{width:100%;margin-top:6px;font:inherit;font-size:12px;color:var(--ink);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.25);padding:7px 9px;border-radius:9px}
+  .ctx input.full:focus{outline:none;border-color:var(--step)}
+
+  /* workflow export panel (reuses .drawer) */
+  #exportpanel{width:min(720px,96vw)}
+  .ex-body{flex:1;overflow:auto;padding:6px 18px}
+  .ex-verdict{font-size:13px;font-weight:700;padding:9px 11px;border-radius:9px;margin:10px 0}
+  .ex-verdict.pass{background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.5);color:#a7f3d0}
+  .ex-verdict.warn{background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.5);color:#fde68a}
+  .ex-verdict.fail{background:rgba(248,113,113,.14);border:1px solid rgba(248,113,113,.5);color:#fecaca}
+  .ex-issues{margin:0 0 10px;padding-left:18px;color:#fde68a;font-size:12px;line-height:1.5}
+  .ex-issues:empty{display:none}
+  .ex-lbl{font-size:11px;font-weight:700;color:var(--muted);margin:12px 0 4px}
+  .ex-hint{font-weight:500;opacity:.8}
+  #exportpanel pre{background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:var(--ink);max-height:30vh;overflow:auto}
 
   /* ---- liquid glass: real backdrop-filter on HTML chrome (last in sheet so it wins the cascade) ---- */
   .drawer,.ctx{background:rgba(15,23,42,.42);-webkit-backdrop-filter:blur(24px) saturate(160%) brightness(1.1);backdrop-filter:blur(24px) saturate(160%) brightness(1.1);
@@ -200,6 +215,7 @@
     <button id="addmap" class="needserver">＋ Map</button>
     <button id="lanes" title="Toggle lane bands">Lanes</button>
     <button id="undo" class="needserver" title="Undo (⌘Z)">↶ Undo</button>
+    <button id="export" class="needserver" title="Generate an agent-followable workflow from this map + lint it">⤓ Workflow</button>
     <button id="fit">Fit</button>
   </div>
 </header>
@@ -226,6 +242,28 @@
   </div>
 </div>
 
+<div id="exportpanel" class="drawer" hidden>
+  <div class="drawer-head">
+    <div><div id="ex-title" style="font-size:15px;font-weight:700">Workflow export</div><div class="path" id="ex-map"></div></div>
+    <div class="spacer" style="flex:1"></div>
+    <button id="ex-close">✕</button>
+  </div>
+  <div class="ex-body">
+    <div id="ex-verdict" class="ex-verdict"></div>
+    <ul id="ex-issues" class="ex-issues"></ul>
+    <div class="ex-lbl">Loop spec <span class="ex-hint">— validates with loop_lint.py</span></div>
+    <pre id="ex-spec"></pre>
+    <div class="ex-lbl">Agent-followable workflow <span class="ex-hint">— paste into an agent</span></div>
+    <pre id="ex-md"></pre>
+  </div>
+  <div class="drawer-foot">
+    <button id="ex-copyspec">Copy spec</button>
+    <button id="ex-copymd" class="primary">Copy workflow</button>
+    <span class="spacer"></span>
+    <span class="msg" id="ex-msg"></span>
+  </div>
+</div>
+
 <div id="ctx" class="ctx" hidden>
   <div class="ct" id="ctx-title">Node</div>
   <div class="seg" id="ctx-types">
@@ -237,6 +275,8 @@
   <button class="full" id="ctx-hl">✦ Highlight</button>
   <div class="ctx-lbl" style="margin:8px 0 4px">Color</div>
   <div class="swatches" id="ctx-colors"></div>
+  <div class="ctx-lbl" style="margin:8px 0 4px">Gate — pass/fail check for this stage</div>
+  <input class="full" id="ctx-gate" autocomplete="off" placeholder="e.g. pytest tests/ -q">
   <select class="full" id="ctx-linkmap" title="Open another map from this node"></select>
   <button class="full arch" id="ctx-archive">− Archive</button>
 </div>
