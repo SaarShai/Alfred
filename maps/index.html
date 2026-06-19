@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Process Maps</title>
+<style>
+  :root{
+    --bg1:#0f172a; --bg2:#1e293b; --ink:#e2e8f0; --muted:#94a3b8;
+    --card:#ffffff; --card-ink:#0f172a; --line:#475569;
+    --step:#6366f1; --decision:#f59e0b; --link:#10b981; --edge:#94a3b8;
+    /* owner/lane palette */
+    --l0:#0d9488; --l1:#4f46e5; --l2:#64748b; --l3:#d97706; --l4:#a855f7; --l5:#0ea5e9; --l6:#e11d48;
+    --font: ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:var(--font);background:
+    radial-gradient(1200px 800px at 20% -10%, #243049 0%, transparent 60%),
+    linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--ink);overflow:hidden}
+  header{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:14px;
+    padding:12px 18px;z-index:10;
+    background:linear-gradient(180deg,rgba(15,23,42,.9),rgba(15,23,42,0));backdrop-filter:blur(6px)}
+  header h1{margin:0;font-size:17px;letter-spacing:.3px;font-weight:650}
+  .spacer{flex:1}
+  .btns{display:flex;gap:8px;align-items:center}
+  select,button{font:inherit;font-size:12px;font-weight:600;color:var(--ink);
+    background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.25);
+    padding:7px 12px;border-radius:9px;cursor:pointer;transition:.15s}
+  select{padding:7px 10px}
+  button:hover{background:rgba(148,163,184,.22);border-color:rgba(148,163,184,.45)}
+  button.primary{color:#fff;background:var(--step);border-color:transparent}
+  button.primary:hover{filter:brightness(1.08)}
+  button.on{color:#fff;background:var(--link);border-color:transparent}
+  body:not(.server) .needserver{display:none}
+  svg{width:100vw;height:100vh;display:block;cursor:grab}
+  svg:active{cursor:grabbing}
+
+  /* edges */
+  .edge{fill:none;stroke:var(--edge);stroke-width:2.2px;stroke-linecap:round;stroke-linejoin:round}
+  .edge.hit{stroke:transparent;stroke-width:16px;cursor:pointer}
+  .elabel-bg{fill:#0b1220;stroke:var(--edge);stroke-opacity:.4;stroke-width:1;pointer-events:none}
+  .elabel{fill:var(--ink);font-size:10.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .edge-del{opacity:0;transition:opacity .12s;cursor:pointer}
+  .edge-del:hover{opacity:1}
+  g.edgegrp:hover .edge-del{opacity:1}
+  g.edgegrp:hover .edge{stroke:var(--ink)}
+  #wire-preview{fill:none;stroke:var(--link);stroke-width:2.4px;stroke-dasharray:6 5;opacity:.9;pointer-events:none}
+
+  /* lane bands */
+  .laneband{opacity:.07;pointer-events:none}
+  .lanelabel{font-size:12px;font-weight:800;pointer-events:none;opacity:.6}
+
+  /* nodes */
+  .node{cursor:grab}
+  .node:active{cursor:grabbing}
+  .node .shape{filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+  .node text.label{font-size:13px;font-weight:700;fill:var(--card-ink);text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .node .typeglyph{font-size:11px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .node.linkable .shape{stroke-dasharray:2 3}
+  .node.drop-ok .shape{stroke:var(--link)!important;stroke-width:3.4px!important}
+  /* connection port */
+  .node .port{fill:var(--edge);opacity:.4;cursor:crosshair;transition:opacity .12s}
+  .node .port-hit{fill:transparent;cursor:crosshair}
+  .node:hover .port{opacity:1}
+  .node .port,.node .port-hit{touch-action:none}
+  @media(pointer:coarse){.node .port{opacity:.65}}
+
+  .hint{position:fixed;bottom:12px;left:18px;color:var(--muted);font-size:11px;z-index:10;max-width:62vw}
+  #bcrumb{position:fixed;top:54px;left:18px;z-index:9;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+  #bcrumb[hidden]{display:none}
+  #bcrumb a{color:var(--ink);cursor:pointer;text-decoration:none;font-weight:600}
+  #bcrumb a:hover{text-decoration:underline}
+  #connbar{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:20;
+    padding:8px 14px;border-radius:10px;font-size:12px;font-weight:600;
+    background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.5);color:#a7f3d0}
+  #connbar[hidden]{display:none}
+  #offline{display:none;position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:20;
+    padding:9px 15px;border-radius:10px;font-size:12px;
+    background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.5);color:#fde68a}
+  #offline code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:5px}
+  body.checked:not(.server) #offline{display:block}
+
+  /* notes drawer */
+  .drawer{position:fixed;top:0;right:0;bottom:0;z-index:60;width:min(560px,95vw);
+    display:flex;flex-direction:column;background:#0b1220;
+    border-left:1px solid rgba(148,163,184,.25);box-shadow:-12px 0 40px rgba(0,0,0,.5)}
+  .drawer[hidden]{display:none}
+  .drawer-head{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(148,163,184,.18)}
+  .drawer-head #ed-title{font-size:15px;font-weight:700}
+  .drawer-head .path{color:var(--muted);font-size:11px;margin-top:2px;font-family:ui-monospace,Menlo,monospace}
+  #ed-text{flex:1;margin:14px 18px;padding:12px;resize:none;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;
+    color:var(--ink);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.2);border-radius:10px}
+  #ed-text:focus{outline:none;border-color:var(--step)}
+  .drawer-foot{display:flex;align-items:center;gap:8px;padding:0 18px 16px}
+  .drawer-foot .spacer{flex:1}
+  .drawer-foot .msg{font-size:12px;color:var(--link)}
+
+  /* right-click context menu */
+  .ctx{position:fixed;z-index:70;background:#0b1220;border:1px solid rgba(148,163,184,.28);
+    border-radius:12px;padding:10px 11px;box-shadow:0 12px 36px rgba(0,0,0,.5);width:200px}
+  .ctx[hidden]{display:none}
+  .ctx .ct{font-size:12px;font-weight:700;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctx .seg{display:flex;gap:4px;margin-bottom:8px}
+  .ctx .seg button{flex:1;padding:6px 4px;font-size:11px}
+  .ctx .seg button.sel{color:#fff;background:var(--step);border-color:transparent}
+  .ctx .full{width:100%;margin-top:6px;font-size:12px;text-align:left}
+  .ctx select.full{text-align:left;padding:7px 9px}
+  .ctx .arch{color:#f87171;border-color:rgba(248,113,113,.3)}
+  .ctx .arch:hover{background:rgba(248,113,113,.15)}
+
+  /* floating inline inputs (node add/rename, edge label) */
+  .inlabel{position:fixed;z-index:80;transform:translate(-50%,-50%);
+    font:700 12px/1.1 var(--font);text-align:center;color:var(--ink);
+    background:#0b1220;border:1px solid var(--step);border-radius:8px;padding:6px 9px;width:160px}
+  .inlabel[hidden]{display:none}
+  #edge-label-input{width:130px;font-size:11px;border-color:var(--edge)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Process Maps</h1>
+  <select id="mapsel" title="Switch map"></select>
+  <div class="spacer"></div>
+  <div class="btns">
+    <button id="addnode" class="primary needserver" title="Add a node (or double-click empty canvas)">＋ Node</button>
+    <button id="addedge" class="needserver" title="Edge mode: click two nodes (or drag from a node's port)">↳ Edge</button>
+    <button id="addmap" class="needserver">＋ Map</button>
+    <button id="lanes" title="Toggle lane bands">Lanes</button>
+    <button id="fit">Fit</button>
+  </div>
+</header>
+
+<div id="bcrumb" hidden></div>
+<div id="connbar" hidden>Edge mode — click the source node, then the target. Esc to cancel.</div>
+<div id="offline">Read-only — editing needs the app. Run <code>node maps/serve.js</code>, then open the printed URL.</div>
+
+<svg></svg>
+<div class="hint">drag node = move · drag the right-edge dot = connect · double-click link = rename it · hover link → × deletes · double-click canvas = new node · right-click node = menu · scroll = zoom</div>
+
+<div id="editor" class="drawer" hidden>
+  <div class="drawer-head">
+    <div><div id="ed-title">node</div><div class="path" id="ed-path"></div></div>
+    <div class="spacer" style="flex:1"></div>
+    <button id="ed-close">✕</button>
+  </div>
+  <textarea id="ed-text" spellcheck="false"></textarea>
+  <div class="drawer-foot">
+    <button id="ed-openext">Open in app</button>
+    <span class="spacer"></span>
+    <span class="msg" id="ed-msg"></span>
+    <button id="ed-save" class="primary">Save</button>
+  </div>
+</div>
+
+<div id="ctx" class="ctx" hidden>
+  <div class="ct" id="ctx-title">Node</div>
+  <div class="seg" id="ctx-types">
+    <button data-t="step">Step</button>
+    <button data-t="decision">Decision</button>
+    <button data-t="subprocess-link" title="Links to a map">Link</button>
+  </div>
+  <button class="full" id="ctx-rename">✎ Rename</button>
+  <button class="full" id="ctx-notes">📝 Edit notes</button>
+  <select class="full" id="ctx-linkmap" title="Open another map from this node"></select>
+  <button class="full arch" id="ctx-archive">− Archive</button>
+</div>
+
+<input id="name-input" class="inlabel" hidden autocomplete="off" placeholder="title…">
+<input id="edge-label-input" class="inlabel" hidden autocomplete="off" placeholder="label…">
+
+<script src="./vendor/d3.min.js"></script>
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

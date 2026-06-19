@@ -4,7 +4,7 @@ type: node
 status: active
 created: 2026-06-02
 updated: 2026-06-02
-children: [wanderland, animayte, improving-my-use-of-ai, collecting-documenting-wisdom]
+children: [wanderland, animayte, improving-my-use-of-ai, collecting-documenting-wisdom, screenery-ops]
 tags: [pursuit-tree, forest-root]
 ---
 

@@ -137,9 +137,9 @@
     const nodes = s.root.descendants().reverse();
     const links = s.root.links();
 
-    const node = s.gNode.selectAll('g.node').data(nodes, d => d.id);
+    const node = s.gNode.selectAll('g.node').data(nodes, d => keyOf(d) || d.id);
     const nodeEnter = node.enter().append('g').attr('class', 'node')
-      .attr('transform', 'translate(' + src.hx0 + ',' + src.vy0 + ')')
+      .attr('transform', d => 'translate(' + (d.hx0 !== undefined ? d.hx0 : src.hx0) + ',' + (d.vy0 !== undefined ? d.vy0 : src.vy0) + ')')
       .attr('fill-opacity', 0).attr('stroke-opacity', 0)
       .on('click', (e, d) => {
         const hasKids = d.children || d._children;
@@ -209,7 +209,7 @@
       .attr('transform', 'translate(' + src.hx + ',' + src.vy + ')')
       .attr('fill-opacity', 0).attr('stroke-opacity', 0);
 
-    const link = s.gLink.selectAll('path').data(links, d => d.target.id);
+    const link = s.gLink.selectAll('path').data(links, d => keyOf(d.target) || d.target.id);
     const linkEnter = link.enter().append('path').attr('class', 'link')
       .attr('stroke', d => colorOf(d.target))
       .attr('d', () => { const o = { hx: src.hx0, vy: src.vy0 }; return diagonal({ source: o, target: o }); });
@@ -218,6 +218,32 @@
       .attr('d', () => { const o = { hx: src.hx, vy: src.vy }; return diagonal({ source: o, target: o }); });
 
     s.root.eachBefore(d => { d.hx0 = d.hx; d.vy0 = d.vy; });
+  }
+
+  function stableRebuild(newTrees) {
+    const snap = {}, oldYOffsets = states.map(s => s.yOffset);
+    states.forEach(s => s.root.each(d => { const k = keyOf(d); if (k) snap[k] = { hx: d.hx, vy: d.vy }; }));
+    window.TREES = newTrees;
+    buildStates(newTrees);
+    layout();  // sets d.x/d.y for new nodes; also clobbers s.yOffset — we restore below
+    let dirty = false;
+    states.forEach((s, i) => {
+      if (oldYOffsets[i] !== undefined) s.yOffset = oldYOffsets[i];
+      s.root.eachBefore(d => {
+        const k = keyOf(d), pcox = d.parent ? d.parent.cox : 0, pcoy = d.parent ? d.parent.coy : 0;
+        if (k && snap[k]) {
+          d.ox = snap[k].hx - d.y - pcox; d.oy = snap[k].vy - d.x - pcoy;
+          OFFSETS[k] = { x: d.ox, y: d.oy }; dirty = true;
+        } else {
+          d.hx0 = d.parent ? d.parent.hx : 0; d.vy0 = d.parent ? d.parent.vy : 0;
+        }
+        d.cox = pcox + (d.ox || 0); d.coy = pcoy + (d.oy || 0);
+        d.hx = d.y + d.cox; d.vy = d.x + d.coy;
+      });
+      s.g.attr('transform', 'translate(' + MARGIN_L + ',' + s.yOffset + ')');
+      renderTree(s, s.root);
+    });
+    if (dirty) saveOffsets();
   }
 
   function refresh(source) {
@@ -278,8 +304,7 @@
       if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; }
       msg.textContent = 'Saved ✓';
       if (j.title && edNode && j.title !== edNode.data.name) {  // title changed → relabel tree
-        window.TREES = j.trees; const keep = edPath;
-        buildStates(window.TREES); refresh(null); setTimeout(fit, 360);
+        stableRebuild(j.trees);
         document.getElementById('ed-title').textContent = j.title;
       }
     } catch (e) { msg.textContent = 'Error: ' + e.message; }
@@ -310,9 +335,7 @@
       const r = await fetch('/api/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ parent, title, note }) });
       const j = await r.json();
       if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; }
-      window.TREES = j.trees;
-      buildStates(window.TREES);
-      refresh(null); setTimeout(fit, 360);
+      stableRebuild(j.trees);
       closeModal();
     } catch (e) { msg.textContent = 'Error: ' + e.message; }
   }
@@ -329,6 +352,35 @@
     pop.hidden = false;
   }
   function closeSizePop() { document.getElementById('sizepop').hidden = true; sizeNode = null; }
+  async function renameNode() {
+    if (!sizeNode || !SERVER) return;
+    const cur = sizeNode.data.name;
+    const next = prompt('Rename node (also renames the doc file + updates backlinks):', cur);
+    if (next === null) return;
+    const title = next.trim();
+    if (!title || title === cur) { closeSizePop(); return; }
+    const rel = repoRel(sizeNode.data.url);
+    closeSizePop();
+    try {
+      const r = await fetch('/api/rename', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: rel, title }) });
+      const j = await r.json();
+      if (!j.ok) { alert('Rename failed: ' + j.error); return; }
+      stableRebuild(j.trees);
+    } catch (e) { alert('Rename error: ' + e.message); }
+  }
+  async function archiveNode() {
+    if (!sizeNode || !SERVER) return;
+    const name = sizeNode.data.name;
+    if (!confirm('Archive "' + name + '"?\n\nThe file moves to pursuits/.archive/ and disappears from the dashboard.')) return;
+    const rel = repoRel(sizeNode.data.url);
+    closeSizePop();
+    try {
+      const r = await fetch('/api/archive', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: rel }) });
+      const j = await r.json();
+      if (!j.ok) { alert('Archive failed: ' + j.error); return; }
+      stableRebuild(j.trees);
+    } catch (e) { alert('Archive error: ' + e.message); }
+  }
   function updateHlBtn() {
     const b = document.getElementById('size-hl');
     if (!b || !sizeNode) return;
@@ -365,6 +417,8 @@
   document.getElementById('size-up').onclick = () => nudgeScale(1);
   document.getElementById('size-down').onclick = () => nudgeScale(-1);
   document.getElementById('size-hl').onclick = toggleHilite;
+  document.getElementById('size-rename').onclick = renameNode;
+  document.getElementById('size-archive').onclick = archiveNode;
   document.addEventListener('click', e => { const pop = document.getElementById('sizepop'); if (!pop.hidden && !pop.contains(e.target)) closeSizePop(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeModal(); closeEditor(); closeSizePop(); }
@@ -373,7 +427,13 @@
   window.addEventListener('resize', fit);
 
   // detect server mode, then render
-  fetch('/api/ping').then(r => r.ok).then(ok => { SERVER = !!ok; }).catch(() => { SERVER = false; })
+  fetch('/api/ping').then(r => r.ok).then(ok => {
+    SERVER = !!ok;
+    if (SERVER) {
+      const es = new EventSource('/api/events');
+      es.onmessage = e => { try { stableRebuild(JSON.parse(e.data)); } catch (_) {} };
+    }
+  }).catch(() => { SERVER = false; })
     .finally(() => { document.body.classList.toggle('server', SERVER); document.body.classList.add('checked'); });
   buildStates(window.TREES);
   refresh(null);

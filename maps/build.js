@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+// Build the process-maps dashboard data by walking maps-data/ (source of truth).
+//   maps-data/index.md            -> registry: `maps: [slug, ...]` (menu order)
+//   maps-data/<map>/index.md      -> a map: `nodes: [slug,...]` + `edges:` list
+//   maps-data/<map>/<node>.md     -> a node: title, type, x, y, lane?, link_map?
+// Output: maps/data.js  (window.MAPS = { order:[...], maps:{ slug:{...} } })
+// Node identity is a stable `nid:` (minted + written back), like the pursuits build.
+// No deps. Offline. Run: node maps/build.js
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const MAPS = __dirname;                       // maps/
+const ROOT = path.resolve(MAPS, '..');        // repo root
+const SRC = path.join(ROOT, 'maps-data');
+const OUT = path.join(MAPS, 'data.js');
+
+const warnings = [];
+let nodeCount = 0;
+
+function clean(s) { return s == null ? null : String(s).trim().replace(/^["']|["']$/g, ''); }
+function fmBlock(txt) { const m = txt.match(/^---\n([\s\S]*?)\n---/); return m ? m[1] : ''; }
+function field(fm, key) { const m = fm.match(new RegExp('^' + key + ':\\s*(.+)$', 'm')); return m ? clean(m[1]) : null; }
+function listField(fm, key) {
+  const m = fm.match(new RegExp('^' + key + ':\\s*\\[(.*)\\]\\s*$', 'm'));
+  return m ? m[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+}
+// parse the `edges:` block: a sequence of `- {from: a, to: b, label: "..."}` lines
+function edgesField(fm) {
+  const out = [];
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*\}/g;
+  let m;
+  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: m[3] || '' });
+  return out;
+}
+
+// stable per-node/map id, persists across renames; minted + written back into the file
+const usedIds = new Set();
+function genId(prefix) { let id; do { id = prefix + Math.random().toString(36).slice(2, 7); } while (usedIds.has(id)); usedIds.add(id); return id; }
+function ensureNid(file, fm, prefix) {
+  const existing = field(fm, 'nid');
+  if (existing) { usedIds.add(existing); return existing; }
+  const nid = genId(prefix);
+  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/^---\n/, '---\nnid: ' + nid + '\n'));
+  return nid;
+}
+
+function readNode(mapSlug, nodeSlug) {
+  const file = path.join(SRC, mapSlug, nodeSlug + '.md');
+  if (!fs.existsSync(file)) { warnings.push('missing node: ' + mapSlug + '/' + nodeSlug); return null; }
+  const txt = fs.readFileSync(file, 'utf8');
+  const fm = fmBlock(txt);
+  const nid = ensureNid(file, fm, 'n');
+  const h1 = (txt.match(/^#\s+(.+)$/m) || [])[1];
+  const x = Number(field(fm, 'x')); const y = Number(field(fm, 'y'));
+  nodeCount++;
+  return {
+    id: nid,
+    slug: nodeSlug,
+    name: field(fm, 'title') || (h1 && h1.trim()) || nodeSlug,
+    type: field(fm, 'type') || 'step',
+    x: Number.isFinite(x) ? x : null,
+    y: Number.isFinite(y) ? y : null,
+    lane: field(fm, 'lane') || null,
+    link_map: field(fm, 'link_map') || null,
+    url: path.relative(MAPS, file),
+  };
+}
+
+function readMap(mapSlug) {
+  const idx = path.join(SRC, mapSlug, 'index.md');
+  if (!fs.existsSync(idx)) { warnings.push('missing map index: ' + mapSlug); return null; }
+  const txt = fs.readFileSync(idx, 'utf8');
+  const fm = fmBlock(txt);
+  const mid = ensureNid(idx, fm, 'm');
+  const nodeSlugs = listField(fm, 'nodes');
+  const nodes = nodeSlugs.map(s => readNode(mapSlug, s)).filter(Boolean);
+  const bySlug = {}; nodes.forEach(n => { bySlug[n.slug] = n.id; });
+  // seed any node missing x/y onto a simple staggered grid so it's never stacked at origin
+  let gi = 0;
+  nodes.forEach(n => { if (n.x == null || n.y == null) { n.x = 120 + (gi % 5) * 240; n.y = 120 + Math.floor(gi / 5) * 160; gi++; } });
+  const edges = edgesField(fm).map(e => {
+    const from = bySlug[e.from], to = bySlug[e.to];
+    if (!from) warnings.push('edge from unknown node: ' + mapSlug + '/' + e.from);
+    if (!to) warnings.push('edge to unknown node: ' + mapSlug + '/' + e.to);
+    return (from && to) ? { from, to, label: e.label || '' } : null;
+  }).filter(Boolean);
+  return { slug: mapSlug, id: mid, title: field(fm, 'title') || mapSlug, url: path.relative(MAPS, idx), nodes, edges };
+}
+
+const registry = path.join(SRC, 'index.md');
+if (!fs.existsSync(registry)) { console.error('missing maps-data/index.md'); process.exit(1); }
+const order = listField(fmBlock(fs.readFileSync(registry, 'utf8')), 'maps');
+const maps = {};
+order.forEach(slug => { const m = readMap(slug); if (m) maps[slug] = m; });
+
+fs.writeFileSync(OUT, 'window.MAPS = ' + JSON.stringify({ order: order.filter(s => maps[s]), maps }, null, 2) + ';\n');
+console.log('wrote ' + path.relative(process.cwd(), OUT) + '  (' + order.length + ' maps, ' + nodeCount + ' nodes)');
+if (warnings.length) { console.log('WARNINGS:'); warnings.forEach(w => console.log('  - ' + w)); }

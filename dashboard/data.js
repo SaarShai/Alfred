@@ -217,6 +217,44 @@ window.TREES = [
   {
     "name": "Collecting & documenting wisdom",
     "id": "ntwbp1q",
-    "url": "../pursuits/collecting-documenting-wisdom.md"
+    "url": "../pursuits/collecting-documenting-wisdom/index.md",
+    "children": [
+      {
+        "name": "ddd",
+        "id": "nsmf1u4",
+        "url": "../pursuits/collecting-documenting-wisdom/ddd.md"
+      }
+    ]
+  },
+  {
+    "name": "Screenery Ops",
+    "id": "n5lzw3s",
+    "url": "../pursuits/screenery-ops/index.md",
+    "children": [
+      {
+        "name": "Orders",
+        "id": "nkc755g",
+        "url": "../pursuits/screenery-ops/orders/index.md",
+        "children": [
+          {
+            "name": "Files",
+            "id": "ng580f1",
+            "url": "../pursuits/screenery-ops/orders/files/index.md",
+            "children": [
+              {
+                "name": "Backlog",
+                "id": "np58cal",
+                "url": "../pursuits/screenery-ops/orders/files/backlog.md"
+              }
+            ]
+          },
+          {
+            "name": "adsd",
+            "id": "nwr0ey2",
+            "url": "../pursuits/screenery-ops/orders/adsd.md"
+          }
+        ]
+      }
+    ]
   }
 ];

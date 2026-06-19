@@ -101,6 +101,11 @@
   .popover .hl-btn{width:100%;margin-top:8px;font-size:12px}
   .popover .hl-btn.on{color:#fff;background:var(--c3);border-color:transparent}
   .popover .hl-btn.on:hover{background:var(--c3);filter:brightness(1.08)}
+  .popover .rename-btn{width:100%;margin-top:8px;font-size:12px}
+  body:not(.server) .rename-btn{display:none}
+  .popover .archive-btn{width:100%;margin-top:8px;font-size:12px;color:#f87171;border-color:rgba(248,113,113,.3)}
+  .popover .archive-btn:hover{background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.55)}
+  body:not(.server) .archive-btn{display:none}
 
   /* top principles box (top-left) */
   #principles{position:fixed;top:64px;left:20px;z-index:9;width:248px;
@@ -189,6 +194,8 @@
     <button id="size-down" title="Smaller (this node + its children)">▼</button>
   </div>
   <button id="size-hl" class="hl-btn" title="Highlight this node — halo + fill with its color">Highlight</button>
+  <button id="size-rename" class="rename-btn" title="Rename this node — also renames the doc file and updates backlinks">✎ Rename</button>
+  <button id="size-archive" class="archive-btn" title="Archive this node — moves the file to pursuits/.archive/">− Archive</button>
 </div>
 
 <script src="./vendor/d3.min.js"></script>
