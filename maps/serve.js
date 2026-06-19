@@ -72,16 +72,52 @@ function setList(txt, key, arr) {
 }
 function getEdges(txt) {
   const out = [];
-  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*\}/g;
-  let m; while ((m = re.exec(txt))) out.push({ from: m[1].trim(), to: m[2].trim(), label: m[3] || '' });
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  let m; while ((m = re.exec(txt))) out.push({ from: m[1].trim(), to: m[2].trim(), label: m[3] || '', bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
   return out;
 }
 function setEdges(txt, arr) {
   txt = txt.replace(/^edges:[^\n]*(?:\n[ \t]+[^\n]*)*\n?/m, '');   // strip old block
-  const block = 'edges:\n' + arr.map(e => '  - {from: ' + e.from + ', to: ' + e.to + ', label: "' + (e.label || '') + '"}').join('\n') + '\n';
+  const block = 'edges:\n' + arr.map(e => {
+    let s = '  - {from: ' + e.from + ', to: ' + e.to + ', label: "' + (e.label || '') + '"';
+    if (e.bend) s += ', bend: ' + Math.round(e.bend);
+    if (e.color != null && e.color !== '') s += ', color: ' + e.color;
+    return s + '}';
+  }).join('\n') + '\n';
   const close = txt.indexOf('\n---', 3);                            // before closing fence
   if (close === -1) return txt;
   return txt.slice(0, close + 1) + (arr.length ? block : '') + txt.slice(close + 1);
+}
+// background-box frames (same block idiom as edges)
+function getFrames(txt) {
+  const out = [];
+  const re = /\{\s*id:\s*([^,}]+?)\s*,\s*label:\s*"([^"]*)"\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  let m; while ((m = re.exec(txt))) out.push({ id: m[1].trim(), label: m[2], x: +m[3], y: +m[4], w: +m[5], h: +m[6], color: m[7] != null ? +m[7] : 0 });
+  return out;
+}
+function setFrames(txt, arr) {
+  txt = txt.replace(/^frames:[^\n]*(?:\n[ \t]+[^\n]*)*\n?/m, '');
+  const block = 'frames:\n' + arr.map(f => '  - {id: ' + f.id + ', label: "' + (f.label || '') + '", x: ' + Math.round(f.x) + ', y: ' + Math.round(f.y) + ', w: ' + Math.round(f.w) + ', h: ' + Math.round(f.h) + ', color: ' + (f.color || 0) + '}').join('\n') + '\n';
+  const close = txt.indexOf('\n---', 3);
+  if (close === -1) return txt;
+  return txt.slice(0, close + 1) + (arr.length ? block : '') + txt.slice(close + 1);
+}
+function editFrame(mapSlug, op, f) {
+  const idx = mapIndex(mapSlug);
+  if (!fs.existsSync(idx)) throw new Error('unknown map');
+  let it = fs.readFileSync(idx, 'utf8');
+  let frames = getFrames(it);
+  if (op === 'add') {
+    let id, n = 0; do { id = 'fr' + Math.random().toString(36).slice(2, 7); } while (frames.some(x => x.id === id) && ++n < 50);
+    frames.push({ id, label: f.label || 'Group', x: f.x || 0, y: f.y || 0, w: f.w || 360, h: f.h || 240, color: f.color || 0 });
+  } else {
+    const t = frames.find(x => x.id === f.id);
+    if (!t) throw new Error('unknown frame');
+    if (op === 'del') frames = frames.filter(x => x.id !== f.id);
+    else if (op === 'geom') { t.x = f.x; t.y = f.y; t.w = Math.max(80, f.w); t.h = Math.max(60, f.h); }
+    else if (op === 'set') { if (f.label != null) t.label = f.label; if (f.color != null) t.color = f.color; }
+  }
+  fs.writeFileSync(idx, setFrames(it, frames));
 }
 
 // ---- node ops ----
@@ -158,17 +194,32 @@ function setType(rel, type) {
   if (type !== 'subprocess-link') txt = removeField(txt, 'link_map');   // a non-link node keeps no dangling link
   fs.writeFileSync(abs, txt);
 }
-// ---- edge ops (slugs, in the map index) ----
-function editEdge(mapSlug, from, to, label, remove) {
+// size / highlight / color overrides on a node
+function setNodeStyle(rel, d) {
+  const abs = safeSrc(rel);
+  if (!abs || !fs.existsSync(abs) || path.basename(abs) === 'index.md') throw new Error('not a node');
+  let txt = fs.readFileSync(abs, 'utf8');
+  if (d.scale !== undefined) txt = (d.scale && d.scale !== 1 ? setField(txt, 'scale', d.scale) : removeField(txt, 'scale'));
+  if (d.hl !== undefined) txt = (d.hl ? setField(txt, 'hl', 'true') : removeField(txt, 'hl'));
+  if (d.color !== undefined) txt = (d.color === null || d.color === '' ? removeField(txt, 'color') : setField(txt, 'color', d.color));
+  fs.writeFileSync(abs, txt);
+}
+// ---- edge ops (slugs, in the map index). d = {from,to,label?,bend?,color?,remove?} ----
+function editEdge(mapSlug, d) {
+  const { from, to, remove } = d;
   const idx = mapIndex(mapSlug);
   if (!fs.existsSync(idx)) throw new Error('unknown map');
   if (!remove && from === to) throw new Error('cannot connect a node to itself');
   let it = fs.readFileSync(idx, 'utf8');
   const all = getEdges(it);
-  const existing = all.find(e => e.from === from && e.to === to);
+  const ex = all.find(e => e.from === from && e.to === to);
   let edges = all.filter(e => !(e.from === from && e.to === to));   // drop any existing same pair
-  // label provided (incl. explicit "") wins; if omitted (undefined/null), keep the existing label on reconnect
-  if (!remove) edges.push({ from, to, label: (label !== undefined && label !== null) ? label : ((existing && existing.label) || '') });
+  if (!remove) edges.push({
+    from, to,
+    label: (d.label !== undefined && d.label !== null) ? d.label : ((ex && ex.label) || ''),  // omitted ⇒ keep on reconnect
+    bend: d.bend !== undefined ? d.bend : (ex ? ex.bend : 0) || 0,
+    color: d.color !== undefined ? d.color : (ex ? ex.color : null),
+  });
   fs.writeFileSync(idx, setEdges(it, edges));
 }
 function addMap(title) {
@@ -187,6 +238,26 @@ function addMap(title) {
 }
 
 function body(req, cb) { let b = ''; req.on('data', c => b += c); req.on('end', () => { try { cb(JSON.parse(b || '{}')); } catch (e) { cb(null); } }); }
+
+// ---- undo: snapshot a map's whole .md file set before each mutation; /api/undo restores the top ----
+const undoStack = [];
+const umap = d => d.map || (d.path ? mapSlugOf(safeSrc(d.path)) : null);
+function snapshotMap(mapSlug) {
+  if (!mapSlug) return null;
+  const dir = path.join(SRC, mapSlug);
+  if (!fs.existsSync(dir)) return null;
+  const files = {};
+  for (const name of fs.readdirSync(dir)) if (name.endsWith('.md')) files[name] = fs.readFileSync(path.join(dir, name), 'utf8');
+  return { mapSlug, files };
+}
+function pushUndo(mapSlug) { const s = snapshotMap(mapSlug); if (s) { undoStack.push(s); if (undoStack.length > 60) undoStack.shift(); } }
+function restoreSnap(s) {
+  const dir = path.join(SRC, s.mapSlug);
+  fs.mkdirSync(dir, { recursive: true });
+  const current = new Set(fs.readdirSync(dir).filter(n => n.endsWith('.md')));
+  for (const [name, content] of Object.entries(s.files)) { fs.writeFileSync(path.join(dir, name), content); current.delete(name); }
+  for (const name of current) fs.unlinkSync(path.join(dir, name));   // remove files created after the snapshot
+}
 
 http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
@@ -216,16 +287,19 @@ http.createServer((req, res) => {
     const abs = safeSrc(d.path);
     if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
     if (typeof d.content !== 'string') return json(res, { ok: false, error: 'no content' }, 400);
-    fs.writeFileSync(abs, d.content); rebuildAndReply(res, { title: titleOf(d.content) });
+    pushUndo(umap(d)); fs.writeFileSync(abs, d.content); rebuildAndReply(res, { title: titleOf(d.content) });
   })) return;
-  if (POST('/api/add', d => { const created = addNode(d.map, d.title, d.type, d.x, d.y, d.note, d.link_map); rebuildAndReply(res, { created }); })) return;
-  if (POST('/api/rename', d => { const np = renameNode(d.path, d.title); rebuildAndReply(res, { path: np }); })) return;
-  if (POST('/api/archive', d => { archiveNode(d.path); rebuildAndReply(res); })) return;
-  if (POST('/api/pos', d => { setPos(d.path, d.x, d.y); rebuildAndReply(res); })) return;
-  if (POST('/api/link', d => { setLink(d.path, d.link_map || ''); rebuildAndReply(res); })) return;
-  if (POST('/api/type', d => { setType(d.path, d.type); rebuildAndReply(res); })) return;
-  if (POST('/api/edge', d => { editEdge(d.map, d.from, d.to, d.label, !!d.remove); rebuildAndReply(res); })) return;
+  if (POST('/api/add', d => { pushUndo(d.map); const created = addNode(d.map, d.title, d.type, d.x, d.y, d.note, d.link_map); rebuildAndReply(res, { created }); })) return;
+  if (POST('/api/rename', d => { pushUndo(umap(d)); const np = renameNode(d.path, d.title); rebuildAndReply(res, { path: np }); })) return;
+  if (POST('/api/archive', d => { pushUndo(umap(d)); archiveNode(d.path); rebuildAndReply(res); })) return;
+  if (POST('/api/pos', d => { pushUndo(umap(d)); setPos(d.path, d.x, d.y); rebuildAndReply(res); })) return;
+  if (POST('/api/link', d => { pushUndo(umap(d)); setLink(d.path, d.link_map || ''); rebuildAndReply(res); })) return;
+  if (POST('/api/type', d => { pushUndo(umap(d)); setType(d.path, d.type); rebuildAndReply(res); })) return;
+  if (POST('/api/node-style', d => { pushUndo(umap(d)); setNodeStyle(d.path, d); rebuildAndReply(res); })) return;
+  if (POST('/api/edge', d => { pushUndo(d.map); editEdge(d.map, d); rebuildAndReply(res); })) return;
+  if (POST('/api/frame', d => { pushUndo(d.map); editFrame(d.map, d.op, d); rebuildAndReply(res); })) return;
   if (POST('/api/map-add', d => { const slug = addMap(d.title); rebuildAndReply(res, { slug }); })) return;
+  if (POST('/api/undo', () => { const s = undoStack.pop(); if (!s) return json(res, { ok: false, error: 'nothing to undo' }, 400); restoreSnap(s); rebuildAndReply(res); })) return;
 
   // static (maps/ only)
   let f = (p === '/' || p === '') ? '/index.html' : p;

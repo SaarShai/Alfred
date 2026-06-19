@@ -15,10 +15,13 @@ window.MAPS = {
           "slug": "order-intake",
           "name": "Order intake",
           "type": "step",
-          "x": 103,
-          "y": 149,
+          "x": 115,
+          "y": 222,
           "lane": null,
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/orders-operations/order-intake.md"
         },
         {
@@ -26,10 +29,13 @@ window.MAPS = {
           "slug": "job-tracker",
           "name": "Job Tracker",
           "type": "subprocess-link",
-          "x": 421,
-          "y": 150,
+          "x": 381,
+          "y": 88,
           "lane": null,
           "link_map": "screenery-flow",
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/orders-operations/job-tracker.md"
         },
         {
@@ -41,6 +47,9 @@ window.MAPS = {
           "y": 140,
           "lane": null,
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/orders-operations/shipping.md"
         }
       ],
@@ -48,14 +57,19 @@ window.MAPS = {
         {
           "from": "n-oi01",
           "to": "n-jt01",
-          "label": "log job"
+          "label": "log job",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-jt01",
           "to": "n-shp01",
-          "label": "completed"
+          "label": "completed",
+          "bend": 0,
+          "color": null
         }
-      ]
+      ],
+      "frames": []
     },
     "screenery-flow": {
       "slug": "screenery-flow",
@@ -72,6 +86,9 @@ window.MAPS = {
           "y": 80,
           "lane": "Alicia",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/confirm-order.md"
         },
         {
@@ -83,6 +100,9 @@ window.MAPS = {
           "y": 217,
           "lane": "Saar",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/open-job.md"
         },
         {
@@ -94,6 +114,9 @@ window.MAPS = {
           "y": 80,
           "lane": "Alicia",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/colour-stock-check.md"
         },
         {
@@ -105,6 +128,9 @@ window.MAPS = {
           "y": 220,
           "lane": "Saar",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/handoff.md"
         },
         {
@@ -116,6 +142,9 @@ window.MAPS = {
           "y": 360,
           "lane": "Alan",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/schedule-run.md"
         },
         {
@@ -127,6 +156,9 @@ window.MAPS = {
           "y": 500,
           "lane": "Factory",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/produce-log.md"
         },
         {
@@ -138,6 +170,9 @@ window.MAPS = {
           "y": 80,
           "lane": "Alicia",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/reconcile-stock.md"
         },
         {
@@ -149,6 +184,9 @@ window.MAPS = {
           "y": 80,
           "lane": "Alicia",
           "link_map": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
           "url": "../maps-data/screenery-flow/ship-close.md"
         }
       ],
@@ -156,39 +194,54 @@ window.MAPS = {
         {
           "from": "n-open01",
           "to": "n-col01",
-          "label": "breakdown frozen"
+          "label": "breakdown frozen",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-col01",
           "to": "n-hand01",
-          "label": "colour OK"
+          "label": "colour OK",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-hand01",
           "to": "n-sch01",
-          "label": "schedule"
+          "label": "schedule",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-sch01",
           "to": "n-prod01",
-          "label": "start production"
+          "label": "start production",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-prod01",
           "to": "n-rec01",
-          "label": "sheets used"
+          "label": "sheets used",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-rec01",
           "to": "n-ship01",
-          "label": ""
+          "label": "",
+          "bend": 0,
+          "color": null
         },
         {
           "from": "n-conf01",
           "to": "n-open01",
-          "label": "open row + files"
+          "label": "open row + files",
+          "bend": 0,
+          "color": null
         }
-      ]
+      ],
+      "frames": []
     }
   }
 };

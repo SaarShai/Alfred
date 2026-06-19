@@ -14,11 +14,16 @@
     --font: ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;font-family:var(--font);background:
-    radial-gradient(1200px 800px at 20% -10%, #243049 0%, transparent 60%),
-    linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--ink);overflow:hidden;
-    background-size:200% 200%,200% 200%;animation:drift 32s ease-in-out infinite}
-  @keyframes drift{0%,100%{background-position:0% 0%,0% 0%}50%{background-position:100% 100%,100% 100%}}
+  html,body{margin:0;height:100%;font-family:var(--font);color:var(--ink);overflow:hidden;
+    background:
+      radial-gradient(900px 700px at 15% 18%, rgba(99,102,241,.22) 0%, transparent 55%),
+      radial-gradient(820px 640px at 85% 80%, rgba(16,185,129,.18) 0%, transparent 55%),
+      radial-gradient(700px 600px at 70% 12%, rgba(168,85,247,.14) 0%, transparent 55%),
+      radial-gradient(1200px 800px at 20% -10%, #243049 0%, transparent 60%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    background-size:200% 200%,200% 200%,200% 200%,200% 200%,100% 100%;
+    animation:drift 34s ease-in-out infinite}
+  @keyframes drift{0%,100%{background-position:0% 0%,100% 100%,0% 50%,0 0,0 0}50%{background-position:100% 100%,0% 0%,100% 50%,0 0,0 0}}
   header{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:14px;
     padding:12px 18px;z-index:10;
     background:linear-gradient(180deg,rgba(15,23,42,.9),rgba(15,23,42,0));backdrop-filter:blur(6px)}
@@ -42,15 +47,27 @@
   .edge.hit{stroke:transparent;stroke-width:16px;cursor:pointer}
   .elabel-bg{fill:#0b1220;stroke:var(--edge);stroke-opacity:.4;stroke-width:1;pointer-events:none}
   .elabel{fill:var(--ink);font-size:10.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
-  .edge-del{opacity:0;transition:opacity .12s;cursor:pointer}
-  .edge-del:hover{opacity:1}
-  g.edgegrp:hover .edge-del{opacity:1}
-  g.edgegrp:hover .edge{stroke:var(--ink)}
+  .edge-ctrl{opacity:0;transition:opacity .12s;pointer-events:none}
+  g.edgegrp:hover .edge-ctrl{opacity:1;pointer-events:auto}
+  .edge-bend{fill:var(--edge);fill-opacity:.55;stroke:#fff;stroke-opacity:.4;cursor:ns-resize}
+  g.edgegrp:hover .edge:not(.flow){stroke-width:2.8px}
   #wire-preview{fill:none;stroke:var(--link);stroke-width:2.4px;stroke-dasharray:6 5;opacity:.9;pointer-events:none}
 
   /* lane bands */
   .laneband{opacity:.07;pointer-events:none}
   .lanelabel{font-size:12px;font-weight:800;pointer-events:none;opacity:.6}
+
+  /* background boxes (frames) — body is click-through; drag by header, resize by corner */
+  .frame-bg{fill:var(--fc);fill-opacity:.05;stroke:var(--fc);stroke-opacity:.35;stroke-width:1.5;pointer-events:none}
+  .frame:hover .frame-bg{fill-opacity:.08;stroke-opacity:.55}
+  .frame-head{fill:var(--fc);fill-opacity:.16;cursor:move}
+  .frame-label{font-size:12px;font-weight:700;fill:var(--fc);dominant-baseline:middle;pointer-events:none}
+  .frame-del,.frame-cyc{opacity:0;transition:opacity .12s;cursor:pointer}
+  .frame:hover .frame-del,.frame:hover .frame-cyc{opacity:1}
+  .frame-resize{opacity:0;transition:opacity .12s}
+  .frame:hover .frame-resize{opacity:1}
+  .frame .frame-bg{filter:drop-shadow(0 8px 20px rgba(0,0,0,.26))}
+  :root{--card-glass:rgba(255,255,255,.82)}
 
   /* nodes */
   .node{cursor:grab}
@@ -133,6 +150,16 @@
   .ctx select.full{text-align:left;padding:7px 9px}
   .ctx .arch{color:#f87171;border-color:rgba(248,113,113,.3)}
   .ctx .arch:hover{background:rgba(248,113,113,.15)}
+  .ctx .ctx-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+  .ctx .ctx-lbl{font-size:11px;font-weight:700;color:var(--muted)}
+  .ctx .ctx-row button{padding:4px 10px;font-size:14px;line-height:1;min-width:32px}
+  .ctx #ctx-size{font-size:12px;font-weight:700;min-width:44px;text-align:center}
+  .ctx #ctx-hl.on{color:#fff;background:var(--decision);border-color:transparent}
+  .swatches{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .swatches .sw{width:18px;height:18px;border-radius:6px;cursor:pointer;border:1px solid rgba(255,255,255,.25)}
+  .swatches .sw.sel{outline:2px solid #fff;outline-offset:1px}
+  .swatches .sw.clear{background:transparent;display:grid;place-items:center;font-size:12px;color:var(--muted);font-weight:700}
+  .node.hl .shape{filter:drop-shadow(0 6px 14px rgba(0,0,0,.4)) drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 17px var(--accent))}
 
   /* floating inline inputs (node add/rename, edge label) */
   .inlabel{position:fixed;z-index:80;transform:translate(-50%,-50%);
@@ -140,6 +167,25 @@
     background:#0b1220;border:1px solid var(--step);border-radius:8px;padding:6px 9px;width:160px}
   .inlabel[hidden]{display:none}
   #edge-label-input{width:130px;font-size:11px;border-color:var(--edge)}
+
+  /* ---- liquid glass: real backdrop-filter on HTML chrome (last in sheet so it wins the cascade) ---- */
+  .drawer,.ctx{background:rgba(15,23,42,.42);-webkit-backdrop-filter:blur(24px) saturate(160%) brightness(1.1);backdrop-filter:blur(24px) saturate(160%) brightness(1.1);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.18),inset -1px -1px 0 rgba(255,255,255,.05),0 16px 46px rgba(0,0,0,.55)}
+  button,select{background:rgba(255,255,255,.07);-webkit-backdrop-filter:blur(12px) saturate(160%) brightness(1.12);backdrop-filter:blur(12px) saturate(160%) brightness(1.12);
+    border:1px solid rgba(255,255,255,.16);box-shadow:inset 1px 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.15)}
+  button:hover{background:rgba(255,255,255,.14)}
+  button.primary{background:var(--step)}
+  .inlabel{background:rgba(15,23,42,.46);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%)}
+  header{-webkit-backdrop-filter:blur(22px) saturate(150%) brightness(1.08);backdrop-filter:blur(22px) saturate(150%) brightness(1.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+    .drawer,.ctx,.inlabel{background:#0b1220}
+    header{background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(15,23,42,.6))}
+  }
+  @media (prefers-reduced-transparency: reduce){
+    .drawer,.ctx,.inlabel,header{-webkit-backdrop-filter:none;backdrop-filter:none}
+    .drawer,.ctx,.inlabel{background:#0b1220}
+  }
 </style>
 </head>
 <body>
@@ -150,8 +196,10 @@
   <div class="btns">
     <button id="addnode" class="primary needserver" title="Add a node (or double-click empty canvas)">＋ Node</button>
     <button id="addedge" class="needserver" title="Edge mode: click two nodes (or drag from a node's port)">↳ Edge</button>
+    <button id="addbox" class="needserver" title="Add a background box to group nodes">▢ Box</button>
     <button id="addmap" class="needserver">＋ Map</button>
     <button id="lanes" title="Toggle lane bands">Lanes</button>
+    <button id="undo" class="needserver" title="Undo (⌘Z)">↶ Undo</button>
     <button id="fit">Fit</button>
   </div>
 </header>
@@ -185,8 +233,10 @@
     <button data-t="decision">Decision</button>
     <button data-t="subprocess-link" title="Links to a map">Link</button>
   </div>
-  <button class="full" id="ctx-rename">✎ Rename</button>
-  <button class="full" id="ctx-notes">📝 Edit notes</button>
+  <div class="ctx-row"><span class="ctx-lbl">Size</span><button id="ctx-smaller" title="Smaller">−</button><span id="ctx-size">100%</span><button id="ctx-bigger" title="Bigger">+</button></div>
+  <button class="full" id="ctx-hl">✦ Highlight</button>
+  <div class="ctx-lbl" style="margin:8px 0 4px">Color</div>
+  <div class="swatches" id="ctx-colors"></div>
   <select class="full" id="ctx-linkmap" title="Open another map from this node"></select>
   <button class="full arch" id="ctx-archive">− Archive</button>
 </div>

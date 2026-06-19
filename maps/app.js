@@ -19,23 +19,27 @@
   const NS = 'http://www.w3.org/2000/svg';
   const TYPE_COLOR = { step: 'var(--step)', decision: 'var(--decision)', 'subprocess-link': 'var(--link)' };
   const LANE_VARS = ['--l0', '--l1', '--l2', '--l3', '--l4', '--l5', '--l6'];
+  const PAL_HEX = ['#0d9488', '#4f46e5', '#64748b', '#d97706', '#a855f7', '#0ea5e9', '#e11d48'];   // matches --l0..--l6
 
   const svg = d3.select('svg');
   const svgN = svg.node();
   const canvas = svg.append('g');
+  const gFrame = canvas.append('g');                  // background boxes (behind everything)
   const gLane = canvas.append('g');
   const gEdge = canvas.append('g');
   const gNode = canvas.append('g');
   const gWire = canvas.append('g');                   // NEVER cleared by render()
   const wirePath = gWire.append('path').attr('id', 'wire-preview').attr('d', '');
-  const zoom = d3.zoom().scaleExtent([0.2, 2.5]).filter(e => !e.target.closest('.node'))
+  const FRAME_PAL = ['--l0', '--l1', '--l2', '--l3', '--l4', '--l5', '--l6'];
+  const zoom = d3.zoom().scaleExtent([0.2, 2.5]).filter(e => !e.target.closest('.node') && !e.target.closest('.frame-grab'))
     .on('zoom', e => canvas.attr('transform', e.transform));
   svg.call(zoom);
   const defs = svg.append('defs');
-  defs.html('<marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">' +
-    '<path d="M0,0 L8,4 L0,8 Z" fill="' + getComputedStyle(document.documentElement).getPropertyValue('--edge').trim() + '"/></marker>' +
+  const edgeCol = getComputedStyle(document.documentElement).getPropertyValue('--edge').trim();
+  const mk = (id, fill) => '<marker id="' + id + '" markerWidth="13" markerHeight="13" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="' + fill + '"/></marker>';
+  defs.html(mk('ah', edgeCol) + PAL_HEX.map((h, i) => mk('ah' + i, h)).join('') +   // default + per-palette colored arrowheads
     '<linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#10b981"/></linearGradient>' +
-    '<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.05"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>');
+    '<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.08"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>');
 
   const map = () => MAPS.maps[cur];
   const nidSlug = () => { const m = {}; (map() ? map().nodes : []).forEach(n => m[n.id] = n.slug); return m; };
@@ -59,9 +63,13 @@
 
   // ---- geometry ----
   const isDiamond = n => n.type === 'decision';
-  function halfExt(n) {
+  function baseHalf(n) {   // unscaled extents, used for DRAWING the shape
     if (isDiamond(n)) return { hw: Math.max(150, Math.min(300, (n.name || '').length * 8 + 70)) / 2, hh: 35 };
     return { hw: Math.max(120, Math.min(260, (n.name || '').length * 8 + 48)) / 2, hh: 23 };
+  }
+  function halfExt(n) {   // SCALED extents, used for edge/port canvas-coordinate math
+    const b = baseHalf(n), s = n.scale || 1;
+    return { hw: b.hw * s, hh: b.hh * s };
   }
   function edgePt(n, tx, ty) {
     const { hw, hh } = halfExt(n);
@@ -90,13 +98,40 @@
     const m = {}; lanes.forEach((l, i) => m[l] = 'var(' + LANE_VARS[i % LANE_VARS.length] + ')'); return m;
   }
   let LANE_COLORS = {};
-  const accent = n => (n.lane && LANE_COLORS[n.lane]) || TYPE_COLOR[n.type] || TYPE_COLOR.step;
+  const accent = n => (n.color != null ? PAL_HEX[n.color % PAL_HEX.length] : null) || (n.lane && LANE_COLORS[n.lane]) || TYPE_COLOR[n.type] || TYPE_COLOR.step;
 
   function render() {
     LANE_COLORS = laneColorMap();
-    gLane.selectAll('*').remove(); gEdge.selectAll('*').remove(); gNode.selectAll('*').remove();
+    gFrame.selectAll('*').remove(); gLane.selectAll('*').remove(); gEdge.selectAll('*').remove(); gNode.selectAll('*').remove();
     if (!map()) { updateBreadcrumb(); return; }
     const nodes = map().nodes, edges = map().edges;
+
+    // ---- background boxes (frames) — drawn first, behind everything; body is click-through ----
+    (map().frames || []).forEach(f => {
+      const col = 'var(' + FRAME_PAL[(f.color || 0) % FRAME_PAL.length] + ')';
+      const g = gFrame.append('g').attr('class', 'frame').attr('transform', 'translate(' + f.x + ',' + f.y + ')').style('--fc', col);
+      g.append('rect').attr('class', 'frame-bg').attr('width', f.w).attr('height', f.h).attr('rx', 18);
+      const head = g.append('g').attr('class', 'frame-grab').attr('transform', 'translate(0,0)');
+      head.append('rect').attr('class', 'frame-head').attr('width', f.w).attr('height', 26).attr('rx', 13);
+      head.append('text').attr('class', 'frame-label').attr('x', 14).attr('y', 14).text(f.label);
+      head.on('dblclick', (e) => { e.stopPropagation(); renameFrame(f); })
+        .call(d3.drag().clickDistance(4).container(() => gFrame.node())   // gFrame persists across render(); the per-frame g does not
+          .on('start', function (e) { e.sourceEvent.stopPropagation(); })
+          .on('drag', function (e) { f.x += e.dx; f.y += e.dy; render(); })
+          .on('end', function () { if (SERVER) api('/api/frame', { map: cur, op: 'geom', id: f.id, x: f.x, y: f.y, w: f.w, h: f.h }).then(flushPending); }));
+      const cyc = g.append('g').attr('class', 'frame-cyc').attr('transform', 'translate(' + (f.w - 34) + ',13)').on('click', (e) => { e.stopPropagation(); cycleFrameColor(f); });
+      cyc.append('circle').attr('r', 6).attr('fill', col);
+      const del = g.append('g').attr('class', 'frame-del').attr('transform', 'translate(' + (f.w - 14) + ',13)').on('click', (e) => { e.stopPropagation(); delFrame(f); });
+      del.append('circle').attr('r', 8).attr('fill', '#e11d48');
+      del.append('path').attr('d', 'M-3,-3 L3,3 M3,-3 L-3,3').attr('stroke', '#fff').attr('stroke-width', 1.6).attr('stroke-linecap', 'round');
+      const rz = g.append('g').attr('class', 'frame-grab frame-resize').attr('transform', 'translate(' + f.w + ',' + f.h + ')');
+      rz.append('rect').attr('x', -18).attr('y', -18).attr('width', 18).attr('height', 18).attr('fill', 'transparent').style('cursor', 'nwse-resize');
+      rz.append('path').attr('d', 'M-4,-13 L-13,-4 M-4,-8 L-8,-4').attr('stroke', col).attr('stroke-width', 1.8).attr('stroke-linecap', 'round').attr('opacity', .7);
+      rz.call(d3.drag().container(() => gFrame.node())
+        .on('start', function (e) { e.sourceEvent.stopPropagation(); })
+        .on('drag', function (e) { f.w = Math.max(80, f.w + e.dx); f.h = Math.max(60, f.h + e.dy); render(); })
+        .on('end', function () { if (SERVER) api('/api/frame', { map: cur, op: 'geom', id: f.id, x: f.x, y: f.y, w: f.w, h: f.h }).then(flushPending); }));
+    });
 
     // ---- lane bands (optional) ----
     if (showLanes) {
@@ -115,11 +150,13 @@
       const a = byId(e.from), b = byId(e.to); if (!a || !b) return;
       const p1 = rightPort(a), p2 = leftPort(b);
       const hasReverse = edges.some(o => o.from === e.to && o.to === e.from);
-      const bow = hasReverse ? (e.from < e.to ? 22 : -22) : 0;
+      const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);   // manual bend overrides the auto bidirectional bow
       const { d, c1, c2 } = edgePath(p1, p2, bow);
+      const stroke = e.color != null ? PAL_HEX[e.color % PAL_HEX.length] : null;
       const g = gEdge.append('g').attr('class', 'edgegrp');
-      g.append('path').attr('class', 'edge').attr('d', d).attr('marker-end', 'url(#ah)');
-      g.append('path').attr('class', 'edge flow').attr('d', d);   // gradient marching-ants overlay (CSS-animated)
+      const vis = g.append('path').attr('class', 'edge').attr('d', d).attr('marker-end', e.color != null ? 'url(#ah' + (e.color % PAL_HEX.length) + ')' : 'url(#ah)');
+      if (stroke) vis.style('stroke', stroke);
+      if (!stroke) g.append('path').attr('class', 'edge flow').attr('d', d);   // gradient marching-ants only on default-color edges
       g.append('path').attr('class', 'edge hit').attr('d', d).on('dblclick', (ev) => { ev.stopPropagation(); editEdgeLabel(e, p1, c1, c2, p2); });
       const mid = cubicMid(p1, c1, c2, p2);
       if (e.label) {
@@ -127,17 +164,25 @@
         const bb = t.node().getBBox();
         g.insert('rect', 'text.elabel').attr('class', 'elabel-bg').attr('x', bb.x - 6).attr('y', bb.y - 3).attr('width', bb.width + 12).attr('height', bb.height + 6).attr('rx', 6);
       }
-      // hover-× delete
-      const del = g.append('g').attr('class', 'edge-del').attr('transform', 'translate(' + (mid.x + (e.label ? 26 : 0)) + ',' + mid.y + ')').on('click', (ev) => { ev.stopPropagation(); deleteEdge(e); });
-      del.append('circle').attr('r', 8).attr('fill', '#e11d48');
-      del.append('path').attr('d', 'M-3,-3 L3,3 M3,-3 L-3,3').attr('stroke', '#fff').attr('stroke-width', 1.6).attr('stroke-linecap', 'round');
+      // hover controls: bend grab (at midpoint), color cycle (above), delete (below)
+      const ctrl = g.append('g').attr('class', 'edge-ctrl');
+      ctrl.append('circle').attr('class', 'edge-bend').attr('cx', mid.x).attr('cy', mid.y).attr('r', 9)
+        .call(d3.drag().container(() => canvas.node())     // canvas persists across render()
+          .on('start', ev => ev.sourceEvent.stopPropagation())
+          .on('drag', ev => { e.bend = (e.bend || 0) + ev.dy; render(); })
+          .on('end', () => { if (SERVER) { const n = nidSlug(); api('/api/edge', { map: cur, from: n[e.from], to: n[e.to], bend: Math.round(e.bend || 0) }).then(flushPending); } }));
+      const cyc = ctrl.append('g').attr('transform', 'translate(' + mid.x + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeColor(e); });
+      cyc.append('circle').attr('r', 7).attr('fill', stroke || 'var(--edge)').attr('stroke', '#fff').attr('stroke-opacity', .4);
+      const del = ctrl.append('g').attr('transform', 'translate(' + mid.x + ',' + (mid.y + 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); deleteEdge(e); });
+      del.append('circle').attr('r', 7).attr('fill', '#e11d48');
+      del.append('path').attr('d', 'M-2.5,-2.5 L2.5,2.5 M2.5,-2.5 L-2.5,2.5').attr('stroke', '#fff').attr('stroke-width', 1.5).attr('stroke-linecap', 'round');
     });
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
       .style('--accent', d => accent(d))
-      .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
+      .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
       .on('click', (e, d) => { clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // defer so dblclick can cancel
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; closeEditor(); openRename(d); })
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
@@ -147,14 +192,14 @@
         .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
 
     sel.each(function (d) {
-      const g = d3.select(this), { hw, hh } = halfExt(d), col = accent(d);
+      const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
       const inner = g.append('g').attr('class', 'node-inner');   // hover lift/scale live here so they never fight d3.drag's transform on .node
       if (isDiamond(d)) {
         const pts = [[0, -hh], [hw, 0], [0, hh], [-hw, 0]].map(p => p.join(',')).join(' ');
-        inner.append('polygon').attr('class', 'shape').attr('points', pts).attr('fill', 'var(--card)').attr('stroke', col).attr('stroke-width', 2.2);
+        inner.append('polygon').attr('class', 'shape').attr('points', pts).attr('fill', 'var(--card-glass)').attr('stroke', col).attr('stroke-width', 2.2);
         inner.append('polygon').attr('class', 'sheen').attr('points', pts).attr('fill', 'url(#glass)');
       } else {
-        inner.append('rect').attr('class', 'shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'var(--card)').attr('stroke', col).attr('stroke-width', 2.2);
+        inner.append('rect').attr('class', 'shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'var(--card-glass)').attr('stroke', col).attr('stroke-width', 2.2);
         inner.append('rect').attr('class', 'sheen').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'url(#glass)');
       }
       inner.append('text').attr('class', 'label').text(d.name);
@@ -235,6 +280,7 @@
   // ---- edge ops ----
   async function addEdge(fromSlug, toSlug) { if (!SERVER || !fromSlug || !toSlug) { flushPending(); return; } const j = await api('/api/edge', { map: cur, from: fromSlug, to: toSlug }); if (j.ok) applyMaps(j.maps); else alert('Edge: ' + j.error); flushPending(); }   // omit label → server keeps existing on reconnect
   async function deleteEdge(e) { if (!SERVER) return; if (!confirm('Delete this connection?')) return; const ns = nidSlug(); const j = await api('/api/edge', { map: cur, from: ns[e.from], to: ns[e.to], remove: true }); if (j.ok) applyMaps(j.maps); }
+  async function cycleEdgeColor(e) { if (!SERVER) return; const next = e.color == null ? 0 : (e.color + 1 >= PAL_HEX.length ? null : e.color + 1); const ns = nidSlug(); const j = await api('/api/edge', { map: cur, from: ns[e.from], to: ns[e.to], color: next }); if (j.ok) applyMaps(j.maps); }
   function editEdgeLabel(e, p1, c1, c2, p2) {
     const inp = document.getElementById('edge-label-input');
     const mid = cubicMid(p1, c1, c2, p2), t = d3.zoomTransform(svgN), pt = t.apply([mid.x, mid.y]);
@@ -276,22 +322,36 @@
     });
   }
 
-  // ---- context menu (right-click) ----
+  // ---- context menu (right-click): type · size · highlight · color · link · archive ----
   let ctxNode = null;
   function openCtx(e, d) {
     ctxNode = d; closeEditor();
     document.getElementById('ctx-title').textContent = d.name;
     document.querySelectorAll('#ctx-types button').forEach(b => b.classList.toggle('sel', b.dataset.t === d.type));
+    document.getElementById('ctx-size').textContent = Math.round((d.scale || 1) * 100) + '%';
+    document.getElementById('ctx-hl').classList.toggle('on', !!d.hl);
+    fillSwatches(d);
     fillLinkSelect(); document.getElementById('ctx-linkmap').value = d.link_map || '';
     const m = document.getElementById('ctx');
     m.style.left = Math.min(window.innerWidth - 214, e.clientX) + 'px';
-    m.style.top = Math.min(window.innerHeight - 230, e.clientY) + 'px';
+    m.style.top = Math.min(window.innerHeight - 300, e.clientY) + 'px';
     m.hidden = false;
   }
   function closeCtx() { document.getElementById('ctx').hidden = true; ctxNode = null; }
+  function fillSwatches(d) {
+    const box = document.getElementById('ctx-colors'); box.innerHTML = '';
+    const clear = document.createElement('div'); clear.className = 'sw clear' + (d.color == null ? ' sel' : ''); clear.textContent = '○'; clear.title = 'Default (lane/type)';
+    clear.onclick = () => ctxColor(null); box.appendChild(clear);
+    PAL_HEX.forEach((hex, i) => { const s = document.createElement('div'); s.className = 'sw' + (d.color === i ? ' sel' : ''); s.style.background = hex; s.onclick = () => ctxColor(i); box.appendChild(s); });
+  }
+  async function nodeStyle(patch) { if (!ctxNode || !SERVER) return; const j = await api('/api/node-style', Object.assign({ path: repoRel(ctxNode.url) }, patch)); if (j.ok) applyMaps(j.maps); else alert(j.error); }
   async function ctxType(t) { if (!ctxNode || !SERVER) return; const p = repoRel(ctxNode.url); closeCtx(); const j = await api('/api/type', { path: p, type: t }); if (j.ok) applyMaps(j.maps); else alert(j.error); }
+  function ctxSize(dir) { if (!ctxNode) return; const s = Math.max(0.5, Math.min(2.5, (ctxNode.scale || 1) * (dir > 0 ? 1.15 : 1 / 1.15))); document.getElementById('ctx-size').textContent = Math.round(s * 100) + '%'; ctxNode.scale = s; nodeStyle({ scale: +s.toFixed(3) }); }
+  function ctxHighlight() { if (!ctxNode) return; const hl = !ctxNode.hl; ctxNode.hl = hl; document.getElementById('ctx-hl').classList.toggle('on', hl); nodeStyle({ hl }); }
+  function ctxColor(i) { if (!ctxNode) return; ctxNode.color = i; fillSwatches(ctxNode); nodeStyle({ color: i }); }
   async function ctxLink(slug) { if (!ctxNode || !SERVER) return; const p = repoRel(ctxNode.url); closeCtx(); const j = await api('/api/link', { path: p, link_map: slug }); if (j.ok) applyMaps(j.maps); else alert(j.error); }
   async function ctxArchive() { if (!ctxNode || !SERVER) return; const n = ctxNode; closeCtx(); if (!confirm('Archive "' + n.name + '"?\nMoves the file to maps-data/.archive/ and removes it + its edges from this map.')) return; const j = await api('/api/archive', { path: repoRel(n.url) }); if (j.ok) applyMaps(j.maps); else alert('Archive: ' + j.error); }
+  async function doUndo() { if (!SERVER) return; const j = await api('/api/undo', {}); if (j.ok) applyMaps(j.maps); }
 
   // ---- map switching + breadcrumb + hash ----
   let suppressHash = false;
@@ -320,10 +380,42 @@
   }
   function viewCenter() { const t = d3.zoomTransform(svgN); return { x: (window.innerWidth / 2 - t.x) / t.k, y: (window.innerHeight / 2 - t.y) / t.k }; }
 
+  // ---- background boxes (frames) ----
+  async function addFrame() {
+    if (!SERVER || !cur) { alert('Create a map first.'); return; }
+    const c = viewCenter();
+    const j = await api('/api/frame', { map: cur, op: 'add', x: Math.round(c.x - 180), y: Math.round(c.y - 120), w: 360, h: 240, label: 'Group' });
+    if (j.ok) applyMaps(j.maps); else alert('Box: ' + j.error);
+  }
+  function renameFrame(f) {
+    if (!SERVER) return;
+    const t = d3.zoomTransform(svgN), pt = t.apply([f.x + 80, f.y + 13]);
+    showNameInput(pt[0], pt[1], f.label, async label => { const j = await api('/api/frame', { map: cur, op: 'set', id: f.id, label }); if (j.ok) applyMaps(j.maps); });
+  }
+  async function delFrame(f) {
+    if (!SERVER) return;
+    if (!confirm('Delete the box "' + f.label + '"?  (nodes inside are not affected)')) return;
+    const j = await api('/api/frame', { map: cur, op: 'del', id: f.id }); if (j.ok) applyMaps(j.maps);
+  }
+  async function cycleFrameColor(f) {
+    if (!SERVER) return;
+    const j = await api('/api/frame', { map: cur, op: 'set', id: f.id, color: ((f.color || 0) + 1) % FRAME_PAL.length }); if (j.ok) applyMaps(j.maps);
+  }
+
   // ---- notes drawer ----
-  let edPath = null;
+  let edPath = null, edNode = null;
+  // rename title+slug by double-clicking the title in the drawer
+  function renameFromDrawer(d) {
+    const r = document.getElementById('ed-title').getBoundingClientRect();
+    showNameInput(r.left + r.width / 2, r.top + 12, d.name, async title => {
+      if (!title || title === d.name) return;
+      const j = await api('/api/rename', { path: repoRel(d.url), title });
+      if (j.ok) { if (j.path) { edPath = j.path; if (edNode) edNode.url = '../' + j.path; } applyMaps(j.maps); document.getElementById('ed-title').textContent = title; }
+      else alert('Rename: ' + j.error);
+    });
+  }
   async function openEditor(d) {
-    edPath = repoRel(d.url);
+    edPath = repoRel(d.url); edNode = d;
     document.getElementById('ed-title').textContent = d.name; document.getElementById('ed-path').textContent = edPath;
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; document.getElementById('editor').hidden = false;
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
@@ -331,7 +423,7 @@
       document.getElementById('ed-text').value = j.content; document.getElementById('ed-msg').textContent = '';
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
-  function closeEditor() { document.getElementById('editor').hidden = true; edPath = null; }
+  function closeEditor() { document.getElementById('editor').hidden = true; edPath = null; edNode = null; }
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
     if (!edPath) return;
     const node = (map() ? map().nodes : []).find(n => repoRel(n.url) === edPath);
@@ -348,22 +440,30 @@
   document.getElementById('fit').onclick = fit;
   document.getElementById('addnode').onclick = () => { const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); };
   document.getElementById('addmap').onclick = addMapPrompt;
+  document.getElementById('addbox').onclick = addFrame;
   document.getElementById('addedge').onclick = () => setConnect(!connect.on);
   document.getElementById('lanes').onclick = () => { showLanes = !showLanes; document.getElementById('lanes').classList.toggle('on', showLanes); render(); };
+  document.getElementById('undo').onclick = doUndo;
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
-  document.getElementById('ctx-rename').onclick = () => { const d = ctxNode; closeCtx(); if (d) openRename(d); };
-  document.getElementById('ctx-notes').onclick = () => { const d = ctxNode; closeCtx(); if (d) openEditor(d); };
+  document.getElementById('ed-title').ondblclick = () => { if (edNode) renameFromDrawer(edNode); };   // rename title+slug from the side panel
+  document.getElementById('ctx-smaller').onclick = () => ctxSize(-1);
+  document.getElementById('ctx-bigger').onclick = () => ctxSize(1);
+  document.getElementById('ctx-hl').onclick = ctxHighlight;
   document.getElementById('ctx-archive').onclick = ctxArchive;
   document.getElementById('ctx-linkmap').onchange = e => ctxLink(e.target.value);
   document.querySelectorAll('#ctx-types button').forEach(b => b.onclick = () => ctxType(b.dataset.t));
   // double-click empty canvas → quick add
-  svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
+  svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   document.addEventListener('click', e => { const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeEditor(); closeCtx(); if (connect.on) setConnect(false); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
+      if (!typing) { e.preventDefault(); doUndo(); }   // let the browser do native text-undo inside fields
+    }
   });
 
   // ---- boot ----

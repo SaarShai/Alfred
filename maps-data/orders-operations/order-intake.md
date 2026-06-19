@@ -2,8 +2,8 @@
 nid: n-oi01
 title: "Order intake"
 type: step
-x: 103
-y: 149
+x: 115
+y: 222
 ---
 # Order intake
 

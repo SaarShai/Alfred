@@ -28,9 +28,17 @@ function listField(fm, key) {
 // parse the `edges:` block: a sequence of `- {from: a, to: b, label: "..."}` lines
 function edgesField(fm) {
   const out = [];
-  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*\}/g;
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
   let m;
-  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: m[3] || '' });
+  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: m[3] || '', bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
+  return out;
+}
+// parse the `frames:` block: `- {id: f1, label: "..", x: N, y: N, w: N, h: N, color: N}` (background boxes)
+function framesField(fm) {
+  const out = [];
+  const re = /\{\s*id:\s*([^,}]+?)\s*,\s*label:\s*"([^"]*)"\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  let m;
+  while ((m = re.exec(fm))) out.push({ id: clean(m[1]), label: m[2], x: +m[3], y: +m[4], w: +m[5], h: +m[6], color: m[7] != null ? +m[7] : 0 });
   return out;
 }
 
@@ -53,6 +61,7 @@ function readNode(mapSlug, nodeSlug) {
   const nid = ensureNid(file, fm, 'n');
   const h1 = (txt.match(/^#\s+(.+)$/m) || [])[1];
   const x = Number(field(fm, 'x')); const y = Number(field(fm, 'y'));
+  const scale = Number(field(fm, 'scale')); const color = field(fm, 'color');
   nodeCount++;
   return {
     id: nid,
@@ -63,6 +72,9 @@ function readNode(mapSlug, nodeSlug) {
     y: Number.isFinite(y) ? y : null,
     lane: field(fm, 'lane') || null,
     link_map: field(fm, 'link_map') || null,
+    scale: Number.isFinite(scale) && scale > 0 ? scale : 1,
+    hl: field(fm, 'hl') === 'true',
+    color: color != null && color !== '' ? +color : null,   // palette-index override of lane/type accent
     url: path.relative(MAPS, file),
   };
 }
@@ -83,9 +95,10 @@ function readMap(mapSlug) {
     const from = bySlug[e.from], to = bySlug[e.to];
     if (!from) warnings.push('edge from unknown node: ' + mapSlug + '/' + e.from);
     if (!to) warnings.push('edge to unknown node: ' + mapSlug + '/' + e.to);
-    return (from && to) ? { from, to, label: e.label || '' } : null;
+    return (from && to) ? { from, to, label: e.label || '', bend: e.bend || 0, color: e.color != null ? e.color : null } : null;
   }).filter(Boolean);
-  return { slug: mapSlug, id: mid, title: field(fm, 'title') || mapSlug, url: path.relative(MAPS, idx), nodes, edges };
+  const frames = framesField(fm);
+  return { slug: mapSlug, id: mid, title: field(fm, 'title') || mapSlug, url: path.relative(MAPS, idx), nodes, edges, frames };
 }
 
 const registry = path.join(SRC, 'index.md');
