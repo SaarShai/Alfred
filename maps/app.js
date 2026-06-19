@@ -14,6 +14,7 @@
   let pendingMaps = null;                            // SSE queued during a gesture
   let clickTimer = null;                             // single-click debounced against dblclick
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
+  const seen = new Set();                            // node ids already animated-in (so enter fires once)
 
   const NS = 'http://www.w3.org/2000/svg';
   const TYPE_COLOR = { step: 'var(--step)', decision: 'var(--decision)', 'subprocess-link': 'var(--link)' };
@@ -32,7 +33,9 @@
   svg.call(zoom);
   const defs = svg.append('defs');
   defs.html('<marker id="ah" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">' +
-    '<path d="M0,0 L8,4 L0,8 Z" fill="' + getComputedStyle(document.documentElement).getPropertyValue('--edge').trim() + '"/></marker>');
+    '<path d="M0,0 L8,4 L0,8 Z" fill="' + getComputedStyle(document.documentElement).getPropertyValue('--edge').trim() + '"/></marker>' +
+    '<linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#10b981"/></linearGradient>' +
+    '<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0.05"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>');
 
   const map = () => MAPS.maps[cur];
   const nidSlug = () => { const m = {}; (map() ? map().nodes : []).forEach(n => m[n.id] = n.slug); return m; };
@@ -68,13 +71,15 @@
     const s = Math.min(dx ? (hw + 2) / Math.abs(dx) : Infinity, dy ? (hh + 2) / Math.abs(dy) : Infinity);
     return { x: n.x + dx * s, y: n.y + dy * s };
   }
-  // chord-tangent cubic bezier; bow = signed perpendicular offset for bidirectional pairs
+  // edges leave the source's right side and enter the target's left side (n8n / React-Flow style)
+  const rightPort = n => ({ x: n.x + halfExt(n).hw, y: n.y });
+  const leftPort = n => ({ x: n.x - halfExt(n).hw, y: n.y });
+  // smooth HORIZONTAL-tangent cubic bezier — big horizontal control handles = pronounced S-curve.
+  // bow = vertical offset that separates a bidirectional A<->B pair.
   function edgePath(p1, p2, bow) {
-    const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1;
-    const k = Math.min(140, Math.max(40, len * 0.35));
-    const ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
-    const c1 = { x: p1.x + ux * k + nx * bow, y: p1.y + uy * k + ny * bow };
-    const c2 = { x: p2.x - ux * k + nx * bow, y: p2.y - uy * k + ny * bow };
+    const k = Math.max(45, Math.abs(p2.x - p1.x) * 0.5);     // handle length scales with horizontal gap
+    const c1 = { x: p1.x + k, y: p1.y + (bow || 0) };
+    const c2 = { x: p2.x - k, y: p2.y + (bow || 0) };
     return { d: 'M' + p1.x + ',' + p1.y + ' C' + c1.x + ',' + c1.y + ' ' + c2.x + ',' + c2.y + ' ' + p2.x + ',' + p2.y, c1, c2 };
   }
   const cubicMid = (p1, c1, c2, p2) => ({ x: .125 * p1.x + .375 * c1.x + .375 * c2.x + .125 * p2.x, y: .125 * p1.y + .375 * c1.y + .375 * c2.y + .125 * p2.y });
@@ -108,12 +113,13 @@
     edges.forEach(e => {
       if (e.from === e.to) return;                       // skip degenerate self-loop (server also rejects these)
       const a = byId(e.from), b = byId(e.to); if (!a || !b) return;
-      const p1 = edgePt(a, b.x, b.y), p2 = edgePt(b, a.x, a.y);
+      const p1 = rightPort(a), p2 = leftPort(b);
       const hasReverse = edges.some(o => o.from === e.to && o.to === e.from);
-      const bow = hasReverse ? (e.from < e.to ? 18 : -18) : 0;
+      const bow = hasReverse ? (e.from < e.to ? 22 : -22) : 0;
       const { d, c1, c2 } = edgePath(p1, p2, bow);
       const g = gEdge.append('g').attr('class', 'edgegrp');
       g.append('path').attr('class', 'edge').attr('d', d).attr('marker-end', 'url(#ah)');
+      g.append('path').attr('class', 'edge flow').attr('d', d);   // gradient marching-ants overlay (CSS-animated)
       g.append('path').attr('class', 'edge hit').attr('d', d).on('dblclick', (ev) => { ev.stopPropagation(); editEdgeLabel(e, p1, c1, c2, p2); });
       const mid = cubicMid(p1, c1, c2, p2);
       if (e.label) {
@@ -129,42 +135,54 @@
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : ''))
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
+      .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
       .on('click', (e, d) => { clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // defer so dblclick can cancel
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; closeEditor(); openRename(d); })
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e) { if (wire && wire.active) return; dragging = true; e.sourceEvent.stopPropagation(); })
+        .on('start', function (e) { if (wire && wire.active) return; dragging = true; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); })
         .on('drag', function (e, d) { if (wire && wire.active) return; d.x = e.x; d.y = e.y; render(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
+        .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = halfExt(d), col = accent(d);
+      const inner = g.append('g').attr('class', 'node-inner');   // hover lift/scale live here so they never fight d3.drag's transform on .node
       if (isDiamond(d)) {
-        g.append('polygon').attr('class', 'shape').attr('points', [[0, -hh], [hw, 0], [0, hh], [-hw, 0]].map(p => p.join(',')).join(' '))
-          .attr('fill', 'var(--card)').attr('stroke', col).attr('stroke-width', 2.2);
+        const pts = [[0, -hh], [hw, 0], [0, hh], [-hw, 0]].map(p => p.join(',')).join(' ');
+        inner.append('polygon').attr('class', 'shape').attr('points', pts).attr('fill', 'var(--card)').attr('stroke', col).attr('stroke-width', 2.2);
+        inner.append('polygon').attr('class', 'sheen').attr('points', pts).attr('fill', 'url(#glass)');
       } else {
-        g.append('rect').attr('class', 'shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11)
-          .attr('fill', 'var(--card)').attr('stroke', col).attr('stroke-width', 2.2);
+        inner.append('rect').attr('class', 'shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'var(--card)').attr('stroke', col).attr('stroke-width', 2.2);
+        inner.append('rect').attr('class', 'sheen').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'url(#glass)');
       }
-      g.append('text').attr('class', 'label').text(d.name);
+      inner.append('text').attr('class', 'label').text(d.name);
       if (d.type === 'subprocess-link') {
-        const bd = g.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
+        const bd = inner.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
         bd.append('circle').attr('r', 9).attr('fill', col);
         bd.append('text').attr('class', 'typeglyph').text('▸');
       }
-      // connection port (right edge)
+      // connection port (right edge) — on the outer group so the hover lift doesn't move the wire anchor
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
       g.append('circle').attr('class', 'port-hit').attr('cx', hw).attr('cy', 0).attr('r', 14)
         .on('pointerdown', (e) => beginWire(e, d))
         .on('click', (e) => e.stopPropagation());        // a stationary port tap must not bubble to the node
     });
+    nodes.forEach(n => seen.add(n.id));   // mark animated so a re-render (drag/SSE) won't replay enter
 
     updateBreadcrumb();
   }
 
+  function ripple(x, y) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
+    const c = gWire.append('circle').attr('class', 'ripple').attr('cx', x).attr('cy', y).attr('r', 8);
+    const node = c.node();
+    node.addEventListener('animationend', () => c.remove());
+    setTimeout(() => { try { c.remove(); } catch (_) {} }, 800);   // fallback so they never accumulate
+  }
+
   function onNodeClick(d) {
+    ripple(d.x, d.y);
     if (connect.on) {
       if (!connect.from) { connect.from = d.id; return; }
       if (connect.from === d.id) { connect.from = null; return; }
@@ -190,7 +208,7 @@
     if (!wire.moved && Math.hypot(mx - wire.x0, my - wire.y0) < 4) return;   // threshold
     wire.active = true; wire.moved = true;
     const src = byId(wire.fromId); if (!src) return;
-    wirePath.attr('d', edgePath(edgePt(src, mx, my), { x: mx, y: my }, 0).d);
+    wirePath.attr('d', edgePath(rightPort(src), { x: mx, y: my }, 0).d);
     const tgt = dropTarget(e); gNode.selectAll('g.node').classed('drop-ok', dd => tgt && tgt.id === dd.id && dd.id !== wire.fromId);
   });
   function endWire(e, cancelled) {
@@ -202,7 +220,7 @@
     wire = null;                                          // clear BEFORE addEdge/flushPending so guards release
     if (!cancelled && was.active && tgt && tgt.id !== fromId) {
       const ns = nidSlug(), fs = ns[fromId], ts = ns[tgt.id];
-      if (fs && ts) addEdge(fs, ts); else flushPending();
+      if (fs && ts) { ripple(tgt.x, tgt.y); addEdge(fs, ts); } else flushPending();
     } else flushPending();
   }
   svgN.addEventListener('pointerup', e => endWire(e, false));
@@ -278,7 +296,7 @@
   // ---- map switching + breadcrumb + hash ----
   let suppressHash = false;
   function setHash(slug) { suppressHash = true; location.hash = 'map=' + slug; setTimeout(() => suppressHash = false, 0); }
-  function switchMap(slug, noHash) { if (!MAPS.maps[slug]) return; cur = slug; document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug); render(); setTimeout(fit, 40); }
+  function switchMap(slug, noHash) { if (!MAPS.maps[slug]) return; cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug); render(); setTimeout(fit, 40); }
   function jumpMap(slug) { trail = []; switchMap(slug); }
   function drillTo(slug) { if (!MAPS.maps[slug]) { alert('Linked map "' + slug + '" not found.'); return; } trail.push(cur); switchMap(slug); }
   window.addEventListener('hashchange', () => { if (suppressHash) return; const m = (location.hash.match(/map=([^&]+)/) || [])[1]; if (m && MAPS.maps[m] && m !== cur) { trail = []; switchMap(m, true); } });
