@@ -20,16 +20,17 @@ command installed (e.g. Codex, Antigravity) or shows an "unknown command"
 error. Treat the rest of the message as the task. Don't improvise a hand-rolled
 equivalent:
 
-- `/think` — How an agent should think and approach problems — first-principles, reduce/simplify before adding, research-and-borrow before building, experiment-and-falsify, never hallucinate or flatter
+- `/think` — "How an agent should think and approach problems — first-principles, reduce/simplify before adding, research-and-borrow before building, experiment-and-falsify, never hallucinate or flatter
 
 ### Model-invokable (host fires on matching context)
 
 You don't need to dispatch these manually — but knowing they exist helps you
 notice when context matches one (e.g. `wiki-memory` for "have we done X").
 
+- `brainer-audit` — "Use when the user explicitly activates Brainer audit mode, asks to audit this session, audit Brainer use, or track Brainer skill usage
 - `cache-lint` — Audit a Claude Code project for prompt-cache hygiene against Anthropic's six cache rules (ordering, dynamic-content injection, tool stability, model switching, breakpoint sizing, fork safety)
 - `caveman-ultra` — Terse output style
-- `compliance-canary` — Use when a long session drifts — the single always-on drift watcher: one UserPromptSubmit hook combining a periodic skill-rule re-anchor (every N turns), symptomatic per-skill drift probes (filler creep, word-count growth, unverified done-claims, self-closing without asking, looping tool errors, rule fade), and a request ledger that keeps every user request OPEN until completed or the user closes it (so nothing the user asked for is silently dropped)
+- `compliance-canary` — "Use when a long session drifts — the single always-on drift watcher: one UserPromptSubmit hook combining a periodic skill-rule re-anchor (every N turns), symptomatic per-skill drift probes (filler creep, word-count growth, unverified done-claims, self-closing without asking, looping tool errors, rule fade), and a request ledger that keeps every user request OPEN until completed or the user closes it (so nothing the user asked for is silently dropped)
 - `context-keeper` — PreCompact hook that extracts structured state (files, commands, errors, numbers, decisions, failures) from the transcript before compaction
 - `context-refresh` — DEPRECATED — use the handoff skill (+ context-keeper for compaction)
 - `eval-gate` — Score AI output against a written rubric before it ships — an LLM-as-judge quality gate for content output (drafts, posts, answers) and product output (an agent's reply, an extraction, a generated payload)
@@ -41,17 +42,17 @@ notice when context matches one (e.g. `wiki-memory` for "have we done X").
 - `memory-decay` — Apply time-based confidence decay to wiki pages weekly/monthly or before a wiki audit
 - `output-filter` — Use when terminal output is noisy with ANSI / progress bars / duplicate lines and you want to keep the agent's eyes on signal
 - `personal-assistant` — Use for prompts prefixed /pa or /btw — route small or context-light requests away from the expensive main model.
-- `plan-first-execute` — Plan before executing non-trivial tasks
-- `prompt-triage` — Use on every UserPromptSubmit (pre-model hook) to classify the prompt and emit a directive telling the main model which subagent/model should handle it
+- `plan-first-execute` — Plan before executing non-trivial or spec-worthy tasks
+- `prompt-triage` — "Use on every UserPromptSubmit (pre-model hook) to classify the prompt and emit a directive telling the main model which subagent/model should handle it
 - `relay-sessions` — Use when the user asks to relay, hand off, summarize, continue in a fresh Codex session, or let a new session ask an old/older session targeted follow-up questions.
 - `requirements-ledger` — Use whenever the user states anything carrying intent — an ask, a question, a constraint, a preference, a compound "do X, Y, and Z" (one row per conjunct), or an implicit ask embedded in prose
 - `semantic-diff` — AST-node-level diff for file re-reads
 - `subagent-orchestrator` — Use when dispatching work to subagents — route to cheaper or specialist subagents while keeping final synthesis local.
-- `task-retrospective` — Use at the end of any non-trivial task (after the work is verified, before the final report); ALSO fire mid-task the moment the user corrects you — says you were wrong, that you skipped a step or claimed something without actually running it, calls out a mistake you have made before ("again", "second time", "you keep", "I told you", "stop doing that"), or pushes back on your approach; or when the user types /retro
+- `task-retrospective` — "Use only when the user explicitly activates task audit mode, asks for task-retrospective, says this task will repeat and should be learned from, requests an after-the-fact task learning audit, or types /retro
 - `verification-before-completion` — Use before claiming work is done, fixed, passing, committed, or ready.
 - `verify-before-completion` — Use before claiming work is done, fixed, passing, committed, or ready
-- `wiki-memory` — Repo-local markdown wiki with progressive retrieval (search → timeline → fetch) and gated writes (verified facts only)
-- `wiki-refresh` — Reconcile wiki-memory pages against the current codebase — Keep / Update / Consolidate / Replace / Delete drifted ones
+- `wiki-memory` — "Repo-local markdown wiki with progressive retrieval (search → timeline → fetch) and gated writes (verified facts only)
+- `wiki-refresh` — "Reconcile wiki-memory pages against the current codebase — Keep / Update / Consolidate / Replace / Delete drifted ones
 - `wiki-retrieve` — DEPRECATED — merged into wiki-memory
 - `wiki-write` — DEPRECATED — merged into wiki-memory (+ write-gate)
 - `write-gate` — Decide whether a candidate fact deserves persistent memory
