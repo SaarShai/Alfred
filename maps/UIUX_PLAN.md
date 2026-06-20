@@ -266,3 +266,25 @@ DEFERRED (architectural / scale — do not bite at 18 nodes; flagged for the use
 VERIFIED: server survived 30 concurrent writes (old server had CRASHED during pass-2 testing — corroborating
 #15/#16); 150-node re-stress 0 NaN/0 errors (perf refactor regression-free); XSS payloads inert; fuzz 19000/0;
 maps-data SHA restored to baseline bbe259c after every mutating test. No console errors.
+
+## PASS 2 DEFERRED ITEMS — now done (2026-06-20, on request)
+- [#6] Server shelled `node build.js` (new process) on EVERY mutation. Refactored build.js to export an
+      in-process `build()` (sole parser, returns the {order,maps} object; resets usedIds/warnings/nodeCount
+      per call; still works as a CLI via require.main). serve.js calls it directly. VERIFIED: mutation
+      round-trip dropped from ~100ms (process spawn) to **7ms**; also eliminated the concurrent-build
+      torn-write race (single-threaded in-process build is atomic) → request handlers no longer interleave.
+- [#7] SSE shipped the full window.MAPS on every edit. Now a single-map mutation broadcasts only that map
+      ({t:'patch', slug, order, map}); multi-map/unknown (undo, map-add, fs.watch) sends {t:'full'}. Client
+      accumulates per-slug patches (coalesces a burst without dropping any) and merges onto local MAPS.
+      The acting client still gets full state from the POST reply, so patches only affect OTHER clients.
+      VERIFIED via DOM + a 2nd EventSource: a raw POST add → 'patch' broadcast → client merged → node
+      rendered; undo → 'full' → reverted. (Honest note: I first reverted #7 after a DOM-vs-window.MAPS
+      measurement error — the app uses a closure-local `MAPS`, not the global `window.MAPS`, which is only
+      the boot snapshot. Once I measured via the DOM, #7 verified clean and was re-applied.)
+- [#8] checkSnap re-scanned + re-measured all nodes every drag-tick. Now the candidate geometry (x/y/hw)
+      is cached once at drag-start (other nodes don't move during a single-node drag) and cleared on
+      drag-end; checkSnap iterates the cache (fallback recompute if called outside a drag). No spatial grid
+      (over-engineering at this scale — halfExt is pure math). VERIFIED: syntax + logic; drag/snap intact.
+VERIFIED overall: fuzz 19000/0 through the build.js refactor; clean boot 3 nodes / 0 NaN / no console
+errors; maps-data SHA back to baseline bbe259c. All 3 are the genuine architectural items; only #6 had a
+material payoff at this scale (#7/#8 are correctness-preserving hygiene with marginal real-world gain).

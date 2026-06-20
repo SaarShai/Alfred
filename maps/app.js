@@ -88,8 +88,21 @@
   function flushPending() { if (pendingMaps && !(wire && wire.active) && !dragging && !inputOpen()) { const m = pendingMaps; pendingMaps = null; applyMaps(m); } }
   let rafPending = false;                              // coalesce burst pointermoves (120Hz trackpads) into one render per frame
   function scheduleRender() { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; render(); }); }
-  let sseBounceTimer = null, ssePending = null;        // coalesce SSE bursts into one applyMaps (large maps re-render is heavy)
+  let sseBounceTimer = null, ssePending = null;        // ssePending: accumulator { full, patches:{slug:map}, order } so a burst of per-map patches coalesces without dropping any
   function debounceSse(fn, delay) { clearTimeout(sseBounceTimer); sseBounceTimer = setTimeout(fn, delay); }
+  function queueSse(d) {
+    if (!ssePending) ssePending = { full: null, patches: {}, order: null };
+    if (d && d.t === 'patch') { ssePending.patches[d.slug] = d.map; ssePending.order = d.order; }
+    else { ssePending.full = (d && d.t === 'full') ? d.maps : d; ssePending.patches = {}; }   // a full snapshot supersedes any queued patches
+  }
+  function flushSse() {
+    const q = ssePending; ssePending = null;
+    if (!q) return;
+    let m;
+    if (q.full) { m = q.full; if (Object.keys(q.patches).length) m = { order: q.order || m.order, maps: Object.assign({}, m.maps, q.patches) }; }
+    else { if (!MAPS) return; m = { order: q.order || MAPS.order, maps: Object.assign({}, MAPS.maps, q.patches) }; }   // merge patched map(s) onto the maps we already hold
+    applyMaps(m);
+  }
   function updateZoomHud() { const el = document.getElementById('zoom-pct'); if (el) el.textContent = Math.round(d3.zoomTransform(svgN).k * 100) + '%'; }
   let minimapCollapsed = false, _mmGeom = null;
   function updateMinimap() {   // FULL rebuild — node bboxes + a draggable viewport rect. Call on render / data change, NOT per zoom tick.
@@ -317,9 +330,9 @@
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d, e); })   // double-click: open editor (or drill a link node; Shift/Cmd = notes)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
+        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragId = d.id; snapCands = snapCandsFor(d); document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
         .on('drag', function (e, d) { if (wire && wire.active) return; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (!group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } dragging = false; dragId = null; document.body.classList.remove('dragging'); if (motionAllowed()) { landId = d.id; setTimeout(() => { landId = null; }, 420); } render(); if (SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));
+        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (!group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } snapCands = null; dragging = false; dragId = null; document.body.classList.remove('dragging'); if (motionAllowed()) { landId = d.id; setTimeout(() => { landId = null; }, 420); } render(); if (SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -565,11 +578,13 @@
 
   // ---- snap-on-drag + alignment guides (item 10) ----
   let snapGuide = null; const SNAP_DIST = 16;
+  let snapCands = null;   // candidate node geometry, cached once per drag-start (other nodes don't move during a single-node drag) instead of re-scanning + re-measuring every tick
+  function snapCandsFor(d) { return (map() ? map().nodes : []).filter(n => n.id !== d.id).map(n => ({ x: n.x, y: n.y, hw: halfExt(n).hw })); }
   function checkSnap(d) {
     const k = d3.zoomTransform(svgN).k, thr = SNAP_DIST / k, dhw = halfExt(d).hw;
     let bestX = null, bestY = null;
-    (map() ? map().nodes : []).forEach(n => {
-      if (n.id === d.id) return; const nhw = halfExt(n).hw;
+    (snapCands || snapCandsFor(d)).forEach(n => {
+      const nhw = n.hw;
       if (Math.abs(d.x - n.x) < thr) bestX = n.x;
       else if (Math.abs((d.x + dhw) - (n.x - nhw)) < thr) bestX = n.x - nhw - dhw;
       else if (Math.abs((d.x - dhw) - (n.x + nhw)) < thr) bestX = n.x + nhw + dhw;
@@ -1473,7 +1488,7 @@
   function startEventSource() {
     if (eventSource) return;
     eventSource = new EventSource('/api/events');
-    eventSource.onmessage = ev => { try { ssePending = JSON.parse(ev.data); debounceSse(() => { if (ssePending) applyMaps(ssePending); }, 80); } catch (_) {} };   // coalesce SSE bursts → one applyMaps
+    eventSource.onmessage = ev => { try { queueSse(JSON.parse(ev.data)); debounceSse(flushSse, 80); } catch (_) {} };   // coalesce SSE bursts → one applyMaps (per-slug patches merged)
     eventSource.onerror = () => { if (eventSource) eventSource.close(); eventSource = null; updateConnStatus('reconnecting'); setTimeout(startEventSource, 2000); };   // auto-reconnect w/ status
     eventSource.onopen = () => { if (SERVER) updateConnStatus('live'); };
   }

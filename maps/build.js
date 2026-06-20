@@ -120,12 +120,24 @@ function readMap(mapSlug) {
   return { slug: mapSlug, id: mid, title: field(fm, 'title') || mapSlug, kind, url: path.relative(MAPS, idx), nodes, edges, frames };
 }
 
-const registry = path.join(SRC, 'index.md');
-if (!fs.existsSync(registry)) { console.error('missing maps-data/index.md'); process.exit(1); }
-const order = listField(fmBlock(fs.readFileSync(registry, 'utf8')), 'maps');
-const maps = {};
-order.forEach(slug => { const m = readMap(slug); if (m) maps[slug] = m; });
+// Build maps/data.js from maps-data/. Callable in-process (serve.js) AND as a CLI.
+// Returns the {order, maps} object so the server can broadcast it without re-reading data.js.
+function build() {
+  warnings.length = 0; nodeCount = 0; usedIds.clear();   // reset module state → repeated in-process builds are independent
+  const registry = path.join(SRC, 'index.md');
+  if (!fs.existsSync(registry)) throw new Error('missing maps-data/index.md');
+  const order = listField(fmBlock(fs.readFileSync(registry, 'utf8')), 'maps');
+  const maps = {};
+  order.forEach(slug => { const m = readMap(slug); if (m) maps[slug] = m; });
+  const out = { order: order.filter(s => maps[s]), maps };
+  fs.writeFileSync(OUT, 'window.MAPS = ' + JSON.stringify(out, null, 2) + ';\n');
+  return out;
+}
 
-fs.writeFileSync(OUT, 'window.MAPS = ' + JSON.stringify({ order: order.filter(s => maps[s]), maps }, null, 2) + ';\n');
-console.log('wrote ' + path.relative(process.cwd(), OUT) + '  (' + order.length + ' maps, ' + nodeCount + ' nodes)');
-if (warnings.length) { console.log('WARNINGS:'); warnings.forEach(w => console.log('  - ' + w)); }
+module.exports = { build };
+
+if (require.main === module) {   // CLI: node build.js
+  const out = build();
+  console.log('wrote ' + path.relative(process.cwd(), OUT) + '  (' + out.order.length + ' maps, ' + nodeCount + ' nodes)');
+  if (warnings.length) { console.log('WARNINGS:'); warnings.forEach(w => console.log('  - ' + w)); }
+}

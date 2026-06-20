@@ -7,6 +7,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
+const { build } = require('./build.js');   // call the SOLE parser in-process (no per-mutation `node` spawn → fast, and no concurrent-build torn-write race)
 
 process.on('uncaughtException', e => console.error('[serve] uncaught (kept alive):', e && (e.stack || e.message || e)));   // a dev server must survive one bad async throw, not die mid-session
 process.on('unhandledRejection', e => console.error('[serve] unhandled rejection:', e && (e.message || e)));
@@ -20,24 +21,22 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 const slugify = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 function json(res, o, code) { res.writeHead(code || 200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); }
-function rebuild(cb) { execFile('node', [path.join(DASH, 'build.js')], { cwd: ROOT }, cb); }
+function rebuild() { return build(); }   // synchronous, in-process; returns {order, maps}
 
 const sseClients = new Set();
-function broadcast(maps) {
-  const msg = 'data:' + JSON.stringify(maps) + '\n\n';
+let changedSlug = null;   // set by the POST wrapper to the single map a mutation touched (null = multi-map/unknown → send full)
+function broadcast(maps, slug) {
+  // single-map edit → ship only that map (other SSE clients merge it); multi-map/unknown → full snapshot. The acting client already has full state from the POST reply.
+  const payload = (slug && maps.maps[slug]) ? { t: 'patch', slug, order: maps.order, map: maps.maps[slug] } : { t: 'full', maps };
+  const msg = 'data:' + JSON.stringify(payload) + '\n\n';
   sseClients.forEach(res => { try { res.write(msg); } catch (e) { sseClients.delete(res); } });
 }
 // rebuild then push fresh window.MAPS to all clients; reply to the caller too
 function rebuildAndReply(res, extra) {
-  rebuild(err => {
-    if (err) return json(res, { ok: false, error: 'build failed: ' + err.message }, 500);
-    try {   // read/parse of data.js runs in an async cb OUTSIDE the POST try → a torn/corrupt data.js would crash the whole server
-      const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
-      const maps = JSON.parse(raw);
-      broadcast(maps);
-      json(res, Object.assign({ ok: true, maps }, extra || {}));
-    } catch (e) { json(res, { ok: false, error: 'read failed: ' + (e.message || e) }, 500); }
-  });
+  let maps;
+  try { maps = build(); } catch (e) { changedSlug = null; return json(res, { ok: false, error: 'build failed: ' + (e.message || e) }, 500); }   // in-process build returns the object directly (no re-read of data.js → no torn-read race)
+  broadcast(maps, changedSlug); changedSlug = null;
+  json(res, Object.assign({ ok: true, maps }, extra || {}));
 }
 
 // confine a repo-relative path to maps-data/
@@ -413,7 +412,7 @@ http.createServer((req, res) => {
     return;
   }
 
-  const POST = (route, fn) => { if (p === route && req.method === 'POST') { body(req, d => { if (!d) return json(res, { ok: false, error: 'bad json' }, 400); try { fn(d); } catch (e) { json(res, { ok: false, error: String(e.message || e) }, 400); } }); return true; } return false; };
+  const POST = (route, fn) => { if (p === route && req.method === 'POST') { body(req, d => { if (!d) return json(res, { ok: false, error: 'bad json' }, 400); changedSlug = (d.map || umap(d)) || null; try { fn(d); } catch (e) { changedSlug = null; json(res, { ok: false, error: String(e.message || e) }, 400); } }); return true; } return false; };
 
   if (POST('/api/save', d => {
     const abs = safeSrc(d.path);
@@ -447,22 +446,17 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });   // dev server: never cache, so edits always load fresh
     res.end(buf);
   });
-}).listen(PORT, () => rebuild(() => {
+}).listen(PORT, () => {
+  try { build(); } catch (e) { console.error('[serve] initial build failed:', e && (e.message || e)); }
   const url = 'http://localhost:' + PORT;
   console.log('maps dashboard on ' + url + '  (Ctrl-C to stop)');
   if (!process.env.NO_OPEN) { try { execFile('open', [url], () => {}); } catch (e) {} }
-}));
+});
 
 let watchTimer = null;
 try {
   fs.watch(SRC, { recursive: true }, () => {
     clearTimeout(watchTimer);
-    watchTimer = setTimeout(() => rebuild(err => {
-      if (err) return;
-      try {   // readFileSync was outside the try → a torn data.js read here crashes the server
-        const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
-        broadcast(JSON.parse(raw));
-      } catch (_) {}
-    }), 300);
+    watchTimer = setTimeout(() => { try { broadcast(build()); } catch (_) {} }, 300);   // external .md edit → in-process rebuild + push
   });
 } catch (e) { /* maps-data/ may not exist yet on first boot */ }
