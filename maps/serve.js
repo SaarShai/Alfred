@@ -8,6 +8,9 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 
+process.on('uncaughtException', e => console.error('[serve] uncaught (kept alive):', e && (e.stack || e.message || e)));   // a dev server must survive one bad async throw, not die mid-session
+process.on('unhandledRejection', e => console.error('[serve] unhandled rejection:', e && (e.message || e)));
+
 const DASH = __dirname;                         // maps/
 const ROOT = path.resolve(DASH, '..');          // repo root
 const SRC = path.join(ROOT, 'maps-data');       // markdown source
@@ -28,10 +31,12 @@ function broadcast(maps) {
 function rebuildAndReply(res, extra) {
   rebuild(err => {
     if (err) return json(res, { ok: false, error: 'build failed: ' + err.message }, 500);
-    const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
-    const maps = JSON.parse(raw);
-    broadcast(maps);
-    json(res, Object.assign({ ok: true, maps }, extra || {}));
+    try {   // read/parse of data.js runs in an async cb OUTSIDE the POST try → a torn/corrupt data.js would crash the whole server
+      const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
+      const maps = JSON.parse(raw);
+      broadcast(maps);
+      json(res, Object.assign({ ok: true, maps }, extra || {}));
+    } catch (e) { json(res, { ok: false, error: 'read failed: ' + (e.message || e) }, 500); }
   });
 }
 
@@ -121,7 +126,7 @@ function editFrame(mapSlug, op, f) {
     const t = frames.find(x => x.id === f.id);
     if (!t) throw new Error('unknown frame');
     if (op === 'del') frames = frames.filter(x => x.id !== f.id);
-    else if (op === 'geom') { t.x = f.x; t.y = f.y; t.w = Math.max(80, f.w); t.h = Math.max(60, f.h); }
+    else if (op === 'geom') { const num = (v, d) => Number.isFinite(+v) ? +v : d; t.x = num(f.x, t.x); t.y = num(f.y, t.y); t.w = Math.max(80, num(f.w, t.w)); t.h = Math.max(60, num(f.h, t.h)); }   // coerce finite: a NaN x/y silently drops the frame on next build
     else if (op === 'set') { if (f.label != null) t.label = f.label; if (f.color != null) t.color = f.color; }
   }
   fs.writeFileSync(idx, setFrames(it, frames));
@@ -392,7 +397,7 @@ http.createServer((req, res) => {
   }
   if (p === '/api/doc') {
     const abs = safeSrc(u.searchParams.get('path'));
-    if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
+    if (!abs || !fs.existsSync(abs) || !fs.statSync(abs).isFile()) return json(res, { ok: false, error: 'not found' }, 404);   // isFile guard: readFileSync on a dir throws EISDIR (uncaught → crash)
     const content = fs.readFileSync(abs, 'utf8');
     return json(res, { ok: true, content, title: titleOf(content) });
   }
@@ -454,8 +459,10 @@ try {
     clearTimeout(watchTimer);
     watchTimer = setTimeout(() => rebuild(err => {
       if (err) return;
-      const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
-      try { broadcast(JSON.parse(raw)); } catch (_) {}
+      try {   // readFileSync was outside the try → a torn data.js read here crashes the server
+        const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.MAPS = /, '').replace(/;\s*$/, '');
+        broadcast(JSON.parse(raw));
+      } catch (_) {}
     }), 300);
   });
 } catch (e) { /* maps-data/ may not exist yet on first boot */ }

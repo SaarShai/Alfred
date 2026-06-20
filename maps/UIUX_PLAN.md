@@ -229,3 +229,40 @@ NOTE: #6's first verify was hollow — the repair never executed (blocked by #10
 Files touched: maps/serve.js, maps/build.js, maps/app.js (no commit — per standing rule).
 All 10 fixes verified end-to-end via live HTTP + DOM; maps-data SHA returned to baseline bbe259c after
 every mutating test. Server port 3000, no-cache. Canonical in Alfred `dashboard` branch.
+
+## TROUBLESHOOT PASS 2 (2026-06-20) — different methods, 15 more bugs fixed
+Methods NEW vs pass 1: (a) empirical data-layer FUZZING — 19,000 randomized cases: differential
+(build.edgesField vs serve.getEdges agree), round-trip (setEdges→edgesField loses no field), label-
+injection (malicious label never spawns a phantom edge), setField/setList adversarial values → ALL PASS,
+0 fail. (b) CONCURRENCY stress — 30 simultaneous /api/pos → all ok, server alive, data.js valid.
+(c) new-lens audit workflow (security/perf/memory/a11y/error-handling): 18 real + 1 uncertain, 0 debunked.
+Fixed 15 + the uncertain:
+- [#1 security] Stored XSS: cmd-palette rendered node/map name via innerHTML (app.js:1263). Fix: escHtml
+      helper + escape each char in fuzzyScore highlight + escape the fallback. VERIFIED inert (0 <img>).
+- [#2 security] Stored XSS: editor ref-chip rendered [[wikilink]] label via innerHTML (app.js:1082).
+      Fix: build chip via createElement + textNode. VERIFIED inert.
+- [#3 perf] render() byId() O(N) per edge → O(E·N)/frame. Fix: idMap once. VERIFIED geometry unchanged.
+- [#4 perf] bidirectional-edge edges.some() O(E²)/frame. Fix: edgeSet once.
+- [#5 perf] computeLint() (topo-sort) ran every frame incl. during drag. Fix: skip while dragging
+      (topology is drag-invariant).
+- [#9 mem] ghostDocCache never cleared → pinned stale MAPS nodes. Fix: reset in applyMaps.
+- [#10 mem] `seen` Set grew unbounded on one map. Fix: prune to live ids in render.
+- [#11 a11y] context-menu opened without moving focus in (trap dead). Fix: focus the menu on open.
+- [#12 a11y] Home overview cards mouse-only. Fix: tabindex+role+Enter/Space, focus first on open.
+- [#13 a11y/correctness] closing editor/ctx/knowpick stranded focus on a hidden input (same focus-trap
+      class as pass-1 #9). Fix: blur active element on close.
+- [#14 a11y] breadcrumb <a> unreachable by keyboard. Fix: tabindex+role+Enter/Space handler.
+- [#15 crash] rebuildAndReply read/parsed data.js OUTSIDE the try (runs after EVERY mutation) → a torn
+      data.js crashed the whole server. Fix: wrap in try/catch + process.on('uncaughtException'/'unhandledRejection').
+- [#16 crash] GET /api/doc on a directory path threw EISDIR (uncaught → crash). Fix: statSync isFile guard.
+      VERIFIED → 404, server survives.
+- [#17 wrong] api() had no catch → a network blip = unhandled rejection + stranded 'Saving…' status.
+      Fix: try/catch → {ok:false,error:'network'}.
+- [#18 data-loss] editFrame 'geom' wrote unvalidated NaN x/y → frame dropped on next build. Fix: coerce finite.
+- [uncertain→fixed] fs.watch rebuild cb read data.js outside its try → same crash class. Fix: wrapped.
+DEFERRED (architectural / scale — do not bite at 18 nodes; flagged for the user, not silently dropped):
+  #6 incremental rebuild (server cold-rebuilds whole corpus per mutation), #7 SSE ships full MAPS per edit,
+  #8 checkSnap scans all nodes per drag-tick (needs a spatial index). All are optimizations, not defects.
+VERIFIED: server survived 30 concurrent writes (old server had CRASHED during pass-2 testing — corroborating
+#15/#16); 150-node re-stress 0 NaN/0 errors (perf refactor regression-free); XSS payloads inert; fuzz 19000/0;
+maps-data SHA restored to baseline bbe259c after every mutating test. No console errors.

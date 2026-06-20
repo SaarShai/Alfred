@@ -63,12 +63,16 @@
   const nidSlug = () => { const m = {}; (map() ? map().nodes : []).forEach(n => m[n.id] = n.slug); return m; };
   const byId = id => (map() ? map().nodes : []).find(n => n.id === id);
   const repoRel = u => (u || '').replace(/^(\.\.\/)+/, '');
+  const escHtml = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');   // for the few innerHTML paths (cmd-palette highlight); a node named "<img onerror>" must not execute
   const inputOpen = () => !document.getElementById('name-input').hidden || !document.getElementById('edge-label-input').hidden;
 
   const TOASTY = { '/api/archive': b => 'Archived "' + ((b.path || '').split('/').pop().replace(/\.md$/, '')) + '"', '/api/add': b => 'Added "' + (b.title || 'node') + '"', '/api/edge': b => b.remove ? 'Deleted connection' : null, '/api/frame': b => b.op === 'del' ? 'Deleted box' : null };
   async function api(path, b) {
-    const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
-    const j = await r.json();
+    let j;
+    try {
+      const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
+      j = await r.json();
+    } catch (e) { return { ok: false, error: 'network' }; }   // a blip/500 must return a falsy result, not reject — callers check j.ok and would otherwise strand 'Saving…/Fixing…' on an unhandled rejection
     if (j && j.ok && TOASTY[path]) { const label = TOASTY[path](b); if (label) showUndoToast(label); }   // surface undo for destructive/creative actions
     return j;
   }
@@ -76,7 +80,7 @@
     clearTimeout(sseBounceTimer); ssePending = null;     // a direct apply supersedes any queued SSE snapshot
     if ((wire && wire.active) || dragging || inputOpen()) { pendingMaps = m; return; }  // don't tear down mid-gesture
     pendingMaps = null;                                  // applying authoritative state — drop any stale queued snapshot
-    MAPS = m; _nidIx = null; _backlinkIx = null;         // new MAPS object → drop the memoized nid + backlink indexes
+    MAPS = m; _nidIx = null; _backlinkIx = null; ghostDocCache = {};   // new MAPS object → drop the memoized nid + backlink indexes + hover-doc cache (else it pins stale node objects)
     if (!MAPS.maps[cur]) { cur = MAPS.order[0] || null; trail = []; }
     if (edPath) revalidateEditor();                      // open notes drawer: re-check the node still exists
     fillMapSelect(); render();
@@ -182,9 +186,9 @@
       if (s[si] === q[qi]) { const wordStart = si === 0 || /[^a-z0-9]/.test(s[si - 1]); score += (last === si - 1) ? 3 : wordStart ? 2 : 1; marked.push(si); last = si; qi++; }
       si++;
     }
-    if (qi < q.length) return { score: -1, highlighted: str };
+    if (qi < q.length) return { score: -1, highlighted: escHtml(str) };
     const set = new Set(marked); let out = '', span = false;
-    for (let i = 0; i < str.length; i++) { if (set.has(i)) { if (!span) { out += '<mark>'; span = true; } out += str[i]; } else { if (span) { out += '</mark>'; span = false; } out += str[i]; } }
+    for (let i = 0; i < str.length; i++) { const c = escHtml(str[i]); if (set.has(i)) { if (!span) { out += '<mark>'; span = true; } out += c; } else { if (span) { out += '</mark>'; span = false; } out += c; } }   // escape each char so the <mark> wrapper stays the only live HTML
     if (span) out += '</mark>';
     return { score, highlighted: out };
   }
@@ -255,15 +259,17 @@
     }
 
     // ---- edges ----
+    const idMap = new Map(allNodes.map(n => [n.id, n]));                       // O(1) node lookup (was byId() O(N) per edge → O(E·N)/frame)
+    const edgeSet = new Set(edges.map(e => e.from + ' ' + e.to));         // O(1) reverse-edge test (was edges.some() O(E) per edge → O(E²)/frame)
     edges.forEach(e => {
-      const a = byId(e.from), b = byId(e.to); if (!a || !b) return;
+      const a = idMap.get(e.from), b = idMap.get(e.to); if (!a || !b) return;
       if (!visibleNodeIds.has(a.id) && !visibleNodeIds.has(b.id)) return;   // cull edges with both endpoints off-screen
       const selfLoop = e.from === e.to;
       let p1, p2, c1, c2, d, mid;
       if (selfLoop) { ({ d, c1, c2 } = selfLoopPath(a, e.bend)); mid = c1; p1 = mid; p2 = mid; }   // feedback / retry edge
       else {
         p1 = rightPort(a); p2 = leftPort(b);
-        const hasReverse = edges.some(o => o.from === e.to && o.to === e.from);
+        const hasReverse = edgeSet.has(e.to + ' ' + e.from);
         const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);   // manual bend overrides the auto bidirectional bow
         ({ d, c1, c2 } = (e.route === 'smooth') ? orthStepPath(p1, p2) : edgePath(p1, p2, bow));
         mid = cubicMid(p1, c1, c2, p2);
@@ -375,6 +381,7 @@
       entering.select('.node-inner').style('animation-delay', d => Math.min((rank.get(d.id) || 0) * 38, 380) + 'ms');
     }
     allNodes.forEach(n => seen.add(n.id));   // mark ALL (incl. culled) seen so panning a node into view doesn't replay its enter animation
+    if (seen.size > allNodes.length) { const live = new Set(allNodes.map(n => n.id)); for (const id of seen) if (!live.has(id)) seen.delete(id); }   // prune archived/removed ids so `seen` can't grow unbounded across a long single-map session
 
     // ---- knowledge trays: a node's [[…]] citations hang BELOW it (bottom = the knowledge axis, distinct from L→R flow) ----
     nodes.forEach(n => {
@@ -745,8 +752,9 @@
     const r = m.getBoundingClientRect();
     m.style.left = Math.max(8, Math.min(window.innerWidth - r.width - 8, e.clientX)) + 'px';
     m.style.top = Math.max(8, Math.min(window.innerHeight - r.height - 8, e.clientY)) + 'px';
+    m.tabIndex = -1; m.focus();   // move focus into the menu so its Tab focus-trap works and a keyboard user isn't stranded
   }
-  function closeCtx() { document.getElementById('ctx').hidden = true; ctxNode = null; }
+  function closeCtx() { const m = document.getElementById('ctx'); const ae = document.activeElement; if (ae && m.contains(ae)) ae.blur(); m.hidden = true; ctxNode = null; }   // blur so focus leaves the hidden menu → keyboard shortcuts stay alive
   function fillSwatches(d) {
     const box = document.getElementById('ctx-colors'); box.innerHTML = '';
     const clear = document.createElement('div'); clear.className = 'sw clear' + (d.color == null ? ' sel' : ''); clear.textContent = '○'; clear.title = 'Default (lane/type)';
@@ -857,10 +865,11 @@
   window.addEventListener('hashchange', () => { if (suppressHash) return; const m = (location.hash.match(/map=([^&]+)/) || [])[1]; if (m && MAPS.maps[m] && m !== cur) { trail = []; switchMap(m, true); } });
   function updateBreadcrumb() {   // always-visible path: ⌂ Home › parent › … › current (parents clickable; climbs the trail)
     const bc = document.getElementById('bcrumb'); bc.innerHTML = '';
-    const homeBtn = document.createElement('a'); homeBtn.textContent = '⌂ Home'; homeBtn.onclick = () => { trail = []; jumpMap(MAPS.order[0] || null); }; bc.appendChild(homeBtn);
+    const crumb = (text, fn) => { const a = document.createElement('a'); a.textContent = text; a.tabIndex = 0; a.setAttribute('role', 'link'); a.onclick = fn; a.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fn(); } }; return a; };   // keyboard-accessible crumbs (were <a> with onclick, unreachable by Tab)
+    bc.appendChild(crumb('⌂ Home', () => { trail = []; jumpMap(MAPS.order[0] || null); }));
     if (trail.length || cur) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; bc.appendChild(s); }
     trail.forEach((slug, i) => {
-      const a = document.createElement('a'); a.textContent = (MAPS.maps[slug] || {}).title || slug; a.onclick = () => { const tgt = trail[i]; trail = trail.slice(0, i); switchMap(tgt || MAPS.order[0] || null); }; bc.appendChild(a);   // capture tgt BEFORE the slice empties trail[i], else every ancestor click lands on Home
+      bc.appendChild(crumb((MAPS.maps[slug] || {}).title || slug, () => { const tgt = trail[i]; trail = trail.slice(0, i); switchMap(tgt || MAPS.order[0] || null); }));   // capture tgt BEFORE the slice empties trail[i], else every ancestor click lands on Home
       if (i < trail.length - 1 || cur) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; bc.appendChild(s); }
     });
     if (cur) { const span = document.createElement('span'); span.textContent = (map() || {}).title || cur; bc.appendChild(span); }
@@ -963,7 +972,7 @@
       document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
-  function closeEditor() { edPath = null; edNode = null; edContentHash = null; document.getElementById('ed-refs').hidden = true; fadeOut(document.getElementById('editor')); }
+  function closeEditor() { edPath = null; edNode = null; edContentHash = null; const ed = document.getElementById('editor'); const ae = document.activeElement; if (ae && ed.contains(ae)) ae.blur(); document.getElementById('ed-refs').hidden = true; fadeOut(ed); }   // blur so focus leaves the hidden editor (else shortcuts/typing-guard stay stuck on the textarea)
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
     if (!edPath) return;
     const node = (map() ? map().nodes : []).find(n => repoRel(n.url) === edPath);
@@ -1022,7 +1031,7 @@
     }
   }
   // ---- hover-preview a Source-of-Truth ghost: popover with the cited node's glyph, gate, home, excerpt ----
-  let ghostHoverTimer = null, ghostPopover = null; const ghostDocCache = {};
+  let ghostHoverTimer = null, ghostPopover = null, ghostDocCache = {};   // ghostDocCache reset in applyMaps so it can't pin stale (pre-refresh) MAPS node objects
   function hideGhostPopover() { clearTimeout(ghostHoverTimer); if (ghostPopover) { ghostPopover.remove(); ghostPopover = null; } }
   async function fetchGhostDoc(nid) {
     if (ghostDocCache[nid] !== undefined) return ghostDocCache[nid];
@@ -1079,7 +1088,7 @@
       const hit = stub ? null : resolveRef(tgt);
       const chip = document.createElement('span');
       chip.className = 'refchip' + (hit || stub ? '' : ' broken');
-      chip.innerHTML = '<span class="ic">§</span>' + (l.label || tgt);
+      { const ic = document.createElement('span'); ic.className = 'ic'; ic.textContent = '§'; chip.append(ic, document.createTextNode(l.label || tgt)); }   // DOM build, not innerHTML — a [[id|<img onerror>]] label must not execute
       if (hit) { chip.title = '→ ' + (hit.node.name || tgt) + '  (' + hit.map + ')'; chip.onclick = () => gotoRef(tgt); }
       else if (stub) { chip.title = 'Not written yet (stub)'; chip.style.opacity = '.55'; chip.style.cursor = 'default'; }
       else { chip.title = 'Unresolved: ' + tgt; }
@@ -1128,7 +1137,7 @@
     const j = await api('/api/link-knowledge', { map: cur, path: repoRel(d.url), ref: it.id, label: it.name });   // ghost auto-appears in d's tray
     if (j.ok) applyMaps(j.maps); else alert('Link: ' + j.error);
   }
-  function closeKnowPick() { kpCiting = null; brokenRefPicker = null; closeCitationPicker(); fadeOut(document.getElementById('knowpick')); }
+  function closeKnowPick() { kpCiting = null; brokenRefPicker = null; const kp = document.getElementById('knowpick'); const ae = document.activeElement; if (ae && kp.contains(ae)) ae.blur(); closeCitationPicker(); fadeOut(kp); }   // blur so focus leaves the hidden picker
   // ---- inline [[ citation autocomplete (20) + broken-ref repair (21): both reuse this picker ----
   function buildKpAll() { kpAll = []; MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => kpAll.push({ id: n.id, name: n.name, type: n.type, mapTitle: m.title || slug })); }); kpAll.sort((a, b) => (a.type === 'reference' ? 0 : 1) - (b.type === 'reference' ? 0 : 1) || a.name.localeCompare(b.name)); }
   function openCitationPicker(ta, caretPos) {
@@ -1252,7 +1261,7 @@
   function renderCmdpalList(q) {
     const box = document.getElementById('cmdpal-list'); box.innerHTML = '';
     const qs = (q || '').trim();
-    const results = cmdpalReg.map(it => { const m = fuzzyScore(it.q || it.label, qs), disp = fuzzyScore(it.label, qs); return Object.assign({}, it, { score: m.score, highlighted: disp.score > 0 ? disp.highlighted : it.label }); })
+    const results = cmdpalReg.map(it => { const m = fuzzyScore(it.q || it.label, qs), disp = fuzzyScore(it.label, qs); return Object.assign({}, it, { score: m.score, highlighted: disp.score > 0 ? disp.highlighted : escHtml(it.label) }); })
       .filter(it => !qs || it.score > 0).sort((a, b) => b.score - a.score).slice(0, 40);
     cmdpalSel = Math.max(0, Math.min(cmdpalSel, results.length - 1));
     if (!results.length) { const e = document.createElement('div'); e.className = 'kp-foot'; e.textContent = 'No matches.'; box.appendChild(e); return; }
@@ -1312,6 +1321,7 @@
   }
   function renderLint() {
     const panel = document.getElementById('lint-panel'); if (!panel) return;
+    if (dragging) return;   // lint is graph-topology only; dragging changes positions, not topology → skip the O(V+E) topo-sort on every drag-tick render (refreshed on drag-end render)
     const issues = computeLint(), badge = panel.querySelector('.lint-badge');
     if (!issues.length) { badge.hidden = true; panel.classList.remove('open'); return; }
     badge.hidden = false; badge.querySelector('.lint-count').textContent = issues.length;
@@ -1338,10 +1348,13 @@
       card.appendChild(info);
       const children = MAPS.order.filter(x => parentOf[x] === slug);
       if (children.length) { const ch = document.createElement('div'); ch.className = 'hc-children'; ch.textContent = '↳ ' + children.map(x => (MAPS.maps[x] || {}).title || x).join(', '); card.appendChild(ch); }
-      card.onclick = () => { closeHomeOverlay(); jumpMap(slug); };
+      const go = () => { closeHomeOverlay(); jumpMap(slug); };
+      card.tabIndex = 0; card.setAttribute('role', 'button'); card.onclick = go;
+      card.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } };   // cards were mouse-only <div>s
       cards.appendChild(card);
     });
     overlay.classList.add('open');
+    const first = cards.querySelector('.home-card'); if (first) first.focus();   // move focus into the overlay for keyboard users (Esc closes via the global handler)
   }
   function closeHomeOverlay() { document.getElementById('home-overlay').classList.remove('open'); }
 
