@@ -8,8 +8,7 @@
   let cur = MAPS.order[0] || null;
   let trail = [];
   let SERVER = false;
-  let connect = { on: false, from: null };          // header "Edge" toggle fallback
-  let wire = null;                                   // active drag-to-connect
+  let wire = null;                                   // active drag-to-connect (drag from a node's right-edge port)
   let showLanes = false;
   let pendingMaps = null;                            // SSE queued during a gesture
   let clickTimer = null;                             // single-click debounced against dblclick
@@ -32,7 +31,14 @@
   const wirePath = gWire.append('path').attr('id', 'wire-preview').attr('d', '');
   const FRAME_PAL = ['--l0', '--l1', '--l2', '--l3', '--l4', '--l5', '--l6'];
   const zoom = d3.zoom().scaleExtent([0.2, 2.5]).filter(e => !e.target.closest('.node') && !e.target.closest('.frame-grab'))
-    .on('zoom', e => canvas.attr('transform', e.transform));
+    .on('zoom', e => {
+      let t = e.transform;
+      if (!isFinite(t.x) || !isFinite(t.y) || !isFinite(t.k)) {   // self-heal a corrupted (NaN) transform so pan never dies
+        t = d3.zoomIdentity.translate(isFinite(t.x) ? t.x : 0, isFinite(t.y) ? t.y : 0).scale(isFinite(t.k) && t.k > 0 ? t.k : 1);
+        svgN.__zoom = t;
+      }
+      canvas.attr('transform', t);
+    });
   svg.call(zoom);
   const defs = svg.append('defs');
   const edgeCol = getComputedStyle(document.documentElement).getPropertyValue('--edge').trim();
@@ -228,13 +234,6 @@
 
   function onNodeClick(d) {
     ripple(d.x, d.y);
-    if (connect.on) {
-      if (!connect.from) { connect.from = d.id; return; }
-      if (connect.from === d.id) { connect.from = null; return; }
-      const ns = nidSlug(), fs = ns[connect.from], ts = ns[d.id]; connect.from = null; setConnect(false);
-      if (fs && ts) addEdge(fs, ts); else alert('That node no longer exists — it may have been changed by another editor.');
-      return;
-    }
     if (d.link_map) { drillTo(d.link_map); return; }
     openEditor(d);
   }
@@ -377,6 +376,7 @@
     map().nodes.forEach(n => { const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); maxY = Math.max(maxY, n.y + hh); });
     const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.6, Math.min(w / (maxX - minX + 200), h / (maxY - minY + 220)));
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    if (!isFinite(k) || k <= 0 || !isFinite(cx) || !isFinite(cy)) return;   // never push a NaN/degenerate transform
     svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * cx, h / 2 - k * cy).scale(k));
   }
   function viewCenter() { const t = d3.zoomTransform(svgN); return { x: (window.innerWidth / 2 - t.x) / t.k, y: (window.innerHeight / 2 - t.y) / t.k }; }
@@ -435,7 +435,6 @@
   async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; } msg.textContent = 'Saved ✓'; if (j.maps) applyMaps(j.maps); }
 
   async function addMapPrompt() { if (!SERVER) return; const t = prompt('New map name:'); if (t === null) return; const title = t.trim(); if (!title) return; const j = await api('/api/map-add', { title }); if (!j.ok) { alert('Map: ' + j.error); return; } trail = []; cur = j.slug; applyMaps(j.maps); setHash(j.slug); }
-  function setConnect(on) { connect.on = on; if (!on) connect.from = null; document.getElementById('addedge').classList.toggle('on', on); document.getElementById('connbar').hidden = !on; }
 
   // ---- workflow export (map → loop spec + agent Markdown, validated by loop_lint.py) ----
   async function openExport() {
@@ -471,7 +470,6 @@
   document.getElementById('addnode').onclick = () => { const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); };
   document.getElementById('addmap').onclick = addMapPrompt;
   document.getElementById('addbox').onclick = addFrame;
-  document.getElementById('addedge').onclick = () => setConnect(!connect.on);
   document.getElementById('lanes').onclick = () => { showLanes = !showLanes; document.getElementById('lanes').classList.toggle('on', showLanes); render(); };
   document.getElementById('undo').onclick = doUndo;
   document.getElementById('export').onclick = openExport;
@@ -495,7 +493,7 @@
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   document.addEventListener('click', e => { const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeEditor(); closeCtx(); document.getElementById('exportpanel').hidden = true; if (connect.on) setConnect(false); }
+    if (e.key === 'Escape') { closeEditor(); closeCtx(); document.getElementById('exportpanel').hidden = true; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
