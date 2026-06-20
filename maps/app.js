@@ -27,7 +27,7 @@
   const PAL_HEX = ['#0d9488', '#4f46e5', '#64748b', '#d97706', '#a855f7', '#0ea5e9', '#e11d48',   // matches --l0..--l6
     '#16a34a', '#111827', '#eab308', '#d946ef'];   // + green, black, yellow, magenta
 
-  const svg = d3.select('svg');
+  const svg = d3.select('svg').attr('role', 'application').attr('aria-label', 'Process map editor');
   const svgN = svg.node();
   const canvas = svg.append('g');
   const gFrame = canvas.append('g');                  // background boxes (behind everything)
@@ -45,6 +45,7 @@
         svgN.__zoom = t;
       }
       canvas.attr('transform', t);
+      scheduleRender();   // re-cull to the new viewport (coalesced to one render/frame) so panning never leaves stale culled-out nodes
     });
   svg.call(zoom);
   const defs = svg.append('defs');
@@ -65,6 +66,7 @@
     return r.json();
   }
   function applyMaps(m) {
+    clearTimeout(sseBounceTimer); ssePending = null;     // a direct apply supersedes any queued SSE snapshot
     if ((wire && wire.active) || dragging || inputOpen()) { pendingMaps = m; return; }  // don't tear down mid-gesture
     pendingMaps = null;                                  // applying authoritative state — drop any stale queued snapshot
     MAPS = m; _nidIx = null;                              // new MAPS object → drop the memoized nid index
@@ -75,6 +77,8 @@
   function flushPending() { if (pendingMaps && !(wire && wire.active) && !dragging && !inputOpen()) { const m = pendingMaps; pendingMaps = null; applyMaps(m); } }
   let rafPending = false;                              // coalesce burst pointermoves (120Hz trackpads) into one render per frame
   function scheduleRender() { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; render(); }); }
+  let sseBounceTimer = null, ssePending = null;        // coalesce SSE bursts into one applyMaps (large maps re-render is heavy)
+  function debounceSse(fn, delay) { clearTimeout(sseBounceTimer); sseBounceTimer = setTimeout(fn, delay); }
 
   // ---- geometry ----
   const isDiamond = n => n.type === 'decision';
@@ -117,6 +121,24 @@
   let LANE_COLORS = {};
   const accent = n => (n.color != null ? PAL_HEX[n.color % PAL_HEX.length] : null) || (n.lane && LANE_COLORS[n.lane]) || TYPE_COLOR[n.type] || TYPE_COLOR.step;
   const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionAllowed = () => !reduceMotion() && !document.body.classList.contains('calm');   // gate EVERY new animation through this (reduced-motion + calm-mode audit)
+  function announce(msg) { const el = document.getElementById('status-msg'); if (el) el.textContent = msg; }   // a11y: push status to the live region
+  // fuzzy subsequence scorer — rewards consecutive + word-start matches; returns {score, highlighted}. Used by the picker + command palette.
+  function fuzzyScore(str, query) {
+    const s = (str || '').toLowerCase(), q = (query || '').toLowerCase();
+    if (!q) return { score: 0, highlighted: str };
+    if (!s) return { score: -1, highlighted: str };
+    let qi = 0, si = 0, score = 0, last = -1; const marked = [];
+    while (si < s.length && qi < q.length) {
+      if (s[si] === q[qi]) { const wordStart = si === 0 || /[^a-z0-9]/.test(s[si - 1]); score += (last === si - 1) ? 3 : wordStart ? 2 : 1; marked.push(si); last = si; qi++; }
+      si++;
+    }
+    if (qi < q.length) return { score: -1, highlighted: str };
+    const set = new Set(marked); let out = '', span = false;
+    for (let i = 0; i < str.length; i++) { if (set.has(i)) { if (!span) { out += '<mark>'; span = true; } out += str[i]; } else { if (span) { out += '</mark>'; span = false; } out += str[i]; } }
+    if (span) out += '</mark>';
+    return { score, highlighted: out };
+  }
   function fadeOut(el) {   // play the .exiting menu-out animation, then hide — state resets stay synchronous at the call site
     if (!el || el.hidden) return;
     if (reduceMotion()) { el.hidden = true; return; }
@@ -136,8 +158,12 @@
     LANE_COLORS = laneColorMap();
     gFrame.selectAll('*').remove(); gLane.selectAll('*').remove(); gEdge.selectAll('*').remove(); gNode.selectAll('*').remove();
     if (!map()) { updateBreadcrumb(); return; }
-    const nodes = map().nodes, edges = map().edges;
-    const hasOut = new Set(edges.filter(e => e.from !== e.to).map(e => e.from));   // node ids that are a stage (have an outgoing edge) — used for gate-status badges
+    const edges = map().edges;
+    const t = d3.zoomTransform(svgN);   // viewport culling: only build geometry for nodes near the visible rect (all nodes still live in MAPS — visual only)
+    const vpL = (0 - t.x) / t.k, vpT = (0 - t.y) / t.k, vpR = (window.innerWidth - t.x) / t.k, vpB = (window.innerHeight - t.y) / t.k, cullPad = 240;
+    const culled = d => { const h = halfExt(d); return d.x - h.hw - cullPad > vpR || d.x + h.hw + cullPad < vpL || d.y - h.hh - cullPad > vpB || d.y + h.hh + cullPad < vpT; };
+    const allNodes = map().nodes, nodes = allNodes.filter(n => !culled(n)), visibleNodeIds = new Set(nodes.map(n => n.id));
+    const hasOut = new Set(edges.filter(e => e.from !== e.to).map(e => e.from));   // node ids that are a stage (have an outgoing edge) — used for gate-status badges (computed over ALL edges)
 
     // ---- background boxes (frames) — drawn first, behind everything; body is click-through ----
     (map().frames || []).forEach(f => {
@@ -181,6 +207,7 @@
     edges.forEach(e => {
       if (e.from === e.to) return;                       // skip degenerate self-loop (server also rejects these)
       const a = byId(e.from), b = byId(e.to); if (!a || !b) return;
+      if (!visibleNodeIds.has(a.id) && !visibleNodeIds.has(b.id)) return;   // cull edges with both endpoints off-screen
       const p1 = rightPort(a), p2 = leftPort(b);
       const hasReverse = edges.some(o => o.from === e.to && o.to === e.from);
       const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);   // manual bend overrides the auto bidirectional bow
@@ -216,6 +243,8 @@
       .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
+      .attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => 'Node: ' + d.name + ' (' + d.type + ')')   // a11y: focusable + labelled
+      .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectClick(e, d.id); render(); onNodeOpen(d); } })   // keyboard activate = open
       .on('click', (e, d) => { ripple(d.x, d.y, accent(d)); selectClick(e, d.id); render(); clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // ripple + select immediately; defer the navigation so a dblclick can cancel it
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d); })   // double-click opens the edit panel (n8n / Miro / Figma convention)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
@@ -266,7 +295,7 @@
       const rank = new Map(entering.data().slice().sort((a, b) => a.x - b.x).map((d, i) => [d.id, i]));
       entering.select('.node-inner').style('animation-delay', d => Math.min((rank.get(d.id) || 0) * 38, 380) + 'ms');
     }
-    nodes.forEach(n => seen.add(n.id));   // mark animated so a re-render (drag/SSE) won't replay enter
+    allNodes.forEach(n => seen.add(n.id));   // mark ALL (incl. culled) seen so panning a node into view doesn't replay its enter animation
 
     // ---- knowledge trays: a node's [[…]] citations hang BELOW it (bottom = the knowledge axis, distinct from L→R flow) ----
     nodes.forEach(n => {
@@ -532,12 +561,15 @@
     });
   }
   window.addEventListener('hashchange', () => { if (suppressHash) return; const m = (location.hash.match(/map=([^&]+)/) || [])[1]; if (m && MAPS.maps[m] && m !== cur) { trail = []; switchMap(m, true); } });
-  function updateBreadcrumb() {
-    const bc = document.getElementById('bcrumb');
-    if (!trail.length) { bc.hidden = true; return; }
-    bc.hidden = false; bc.innerHTML = '';
-    trail.forEach((slug, i) => { const a = document.createElement('a'); a.textContent = (MAPS.maps[slug] || {}).title || slug; a.onclick = () => { const target = trail[i]; trail = trail.slice(0, i); switchMap(target); }; bc.appendChild(a); bc.appendChild(document.createTextNode(' › ')); });
-    const span = document.createElement('span'); span.textContent = (map() || {}).title || cur; bc.appendChild(span);
+  function updateBreadcrumb() {   // always-visible path: ⌂ Home › parent › … › current (parents clickable; climbs the trail)
+    const bc = document.getElementById('bcrumb'); bc.innerHTML = '';
+    const homeBtn = document.createElement('a'); homeBtn.textContent = '⌂ Home'; homeBtn.onclick = () => { trail = []; jumpMap(MAPS.order[0] || null); }; bc.appendChild(homeBtn);
+    if (trail.length || cur) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; bc.appendChild(s); }
+    trail.forEach((slug, i) => {
+      const a = document.createElement('a'); a.textContent = (MAPS.maps[slug] || {}).title || slug; a.onclick = () => { trail = trail.slice(0, i); switchMap(trail[i] || MAPS.order[0] || null); }; bc.appendChild(a);
+      if (i < trail.length - 1 || cur) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; bc.appendChild(s); }
+    });
+    if (cur) { const span = document.createElement('span'); span.textContent = (map() || {}).title || cur; bc.appendChild(span); }
   }
   // parent→child map relationships, derived from subprocess-link nodes (node.link_map points at a child map)
   function mapParents() {
@@ -613,7 +645,7 @@
     document.getElementById('exportpanel').hidden = true;
     edPath = repoRel(d.url); edNode = d;
     document.getElementById('ed-title').textContent = d.name; document.getElementById('ed-path').textContent = edPath;
-    document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; }
+    document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; const f = ed.querySelector('button,input,textarea'); if (f) f.focus(); }
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
       document.getElementById('ed-text').value = j.content; document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
@@ -626,7 +658,7 @@
     if (node) document.getElementById('ed-title').textContent = node.name;
     else document.getElementById('ed-msg').textContent = 'This node was changed or removed elsewhere — reopen to edit.';
   }
-  async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; } msg.textContent = 'Saved ✓'; if (j.maps) applyMaps(j.maps); }
+  async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; announce('Save failed: ' + j.error); return; } msg.textContent = 'Saved ✓'; announce('Saved'); if (j.maps) applyMaps(j.maps); }
 
   // ---- cross-map wiki references: a node body may cite [[nid|label]] (any map) — same syntax as the wiki ----
   let _nidIx = null;                                  // memoized across a render; invalidated on applyMaps (so trays don't rebuild it per ref per frame)
@@ -747,7 +779,7 @@
     $('ex-map').textContent = (map() || {}).title || cur;
     const v = $('ex-verdict'); v.className = 'ex-verdict'; v.textContent = 'Generating…';
     $('ex-issues').innerHTML = ''; $('ex-spec').textContent = ''; $('ex-md').textContent = ''; $('ex-msg').textContent = '';
-    $('exportpanel').hidden = false;
+    $('exportpanel').hidden = false; { const f = $('ex-copymd'); if (f) setTimeout(() => f.focus(), 10); }
     try {
       const r = await fetch('/api/export?map=' + encodeURIComponent(cur)); const j = await r.json();
       if (!j.ok) { v.className = 'ex-verdict fail'; v.textContent = 'Error: ' + j.error; return; }
@@ -818,12 +850,36 @@
       if (!typing) { e.preventDefault(); doUndo(); }   // let the browser do native text-undo inside fields
     }
   });
+  ['ctx', 'editor', 'knowpick', 'exportpanel'].forEach(id => {   // a11y focus-trap — keep Tab within an open dialog (attached once, inert while hidden)
+    const dlg = document.getElementById(id); if (!dlg) return;
+    dlg.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || dlg.hidden) return;
+      const f = dlg.querySelectorAll('button,input,textarea,select,[tabindex]:not([tabindex="-1"])'); if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+  });
 
   // ---- boot ----
+  const statusEl = document.getElementById('connstatus');
+  function updateConnStatus(state) {
+    if (!statusEl) return;
+    statusEl.className = state === 'live' ? '' : state === 'readonly' ? 'readonly' : 'reconnecting';
+    statusEl.textContent = state === 'live' ? '● Live' : state === 'readonly' ? '◌ Read-only' : '⟳ Reconnecting…';
+  }
+  let eventSource = null;
+  function startEventSource() {
+    if (eventSource) return;
+    eventSource = new EventSource('/api/events');
+    eventSource.onmessage = ev => { try { ssePending = JSON.parse(ev.data); debounceSse(() => { if (ssePending) applyMaps(ssePending); }, 80); } catch (_) {} };   // coalesce SSE bursts → one applyMaps
+    eventSource.onerror = () => { if (eventSource) eventSource.close(); eventSource = null; updateConnStatus('reconnecting'); setTimeout(startEventSource, 2000); };   // auto-reconnect w/ status
+    eventSource.onopen = () => { if (SERVER) updateConnStatus('live'); };
+  }
   fetch('/api/ping').then(r => r.ok).then(ok => {
     SERVER = !!ok;
-    if (SERVER) { const es = new EventSource('/api/events'); es.onmessage = ev => { try { applyMaps(JSON.parse(ev.data)); } catch (_) {} }; }
-  }).catch(() => { SERVER = false; })
+    if (SERVER) { updateConnStatus('live'); startEventSource(); } else updateConnStatus('readonly');
+  }).catch(() => { SERVER = false; updateConnStatus('readonly'); })
     .finally(() => { document.body.classList.toggle('server', SERVER); document.body.classList.add('checked'); });
 
   const boot = (location.hash.match(/map=([^&]+)/) || [])[1];

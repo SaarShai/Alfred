@@ -9,6 +9,7 @@
     --bg1:#f7f3ec; --bg2:#eee7db; --ink:#41404c; --muted:#928f9c;
     --card:#ffffff; --card-ink:#3c3b48; --line:#ddd6ca;
     --step:#8a8fe6; --decision:#eeb06a; --link:#73c5ab; --edge:#bdb4a6; --ref:#6b7280;
+    --tonal-frame:rgba(65,64,76,.08); --tonal-tray:rgba(65,64,76,.04);   /* tonal container fills — dashes reserved for ghosts/references */
     /* owner/lane palette (pastel) */
     --l0:#5fbaa4; --l1:#8b91e6; --l2:#a3a8b6; --l3:#e6a55f; --l4:#bd95e2; --l5:#73b6e0; --l6:#e58fa1;
     --font: ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -68,7 +69,7 @@
   .ghost-label{fill:var(--ink);font-size:12.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;opacity:.85;pointer-events:none}
   .ghost-sub{fill:var(--ref);font-size:9.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none;letter-spacing:.2px}
   /* collapsible box (>1 source) */
-  .tray-box{fill:rgba(107,114,128,.07);stroke:var(--ref);stroke-width:1.4px;stroke-dasharray:5 4}
+  .tray-box{fill:var(--tonal-tray);stroke:var(--ref);stroke-width:1px;stroke-dasharray:none}
   .tray-caret{fill:var(--ref);font-size:10px;font-weight:700;dominant-baseline:central;pointer-events:none}
   .tray-title{fill:var(--ink);font-size:11px;font-weight:700;dominant-baseline:central;opacity:.8;pointer-events:none}
   .tray-row{fill:transparent}
@@ -95,11 +96,11 @@
 
   /* lane bands */
   .laneband{opacity:.07;pointer-events:none}
-  .lanelabel{font-size:12px;font-weight:800;pointer-events:none;opacity:.6}
+  .lanelabel{font-size:var(--fs-2);font-weight:650;pointer-events:none;opacity:.6}
 
   /* background boxes (frames) — body is click-through; drag by header, resize by corner */
-  .frame-bg{fill:var(--fc);fill-opacity:.05;stroke:var(--fc);stroke-opacity:.35;stroke-width:1.5;pointer-events:none}
-  .frame:hover .frame-bg{fill-opacity:.08;stroke-opacity:.55}
+  .frame-bg{fill:var(--fc);fill-opacity:.12;stroke:var(--fc);stroke-opacity:.20;stroke-width:1.5;pointer-events:none}
+  .frame:hover .frame-bg{fill-opacity:.16;stroke-opacity:.35}
   .frame-head{fill:var(--fc);fill-opacity:.16;cursor:move}
   .frame-label{font-size:12px;font-weight:700;fill:var(--fc);dominant-baseline:middle;pointer-events:none}
   .frame-del,.frame-cyc{opacity:0;transition:opacity .12s;cursor:pointer}
@@ -113,7 +114,7 @@
   .node{cursor:grab}
   .node:active{cursor:grabbing}
   .node .shape{filter:drop-shadow(0 6px 14px rgba(65,64,76,.16))}
-  .node text.label{font-size:13px;font-weight:700;fill:var(--card-ink);text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+  .node text.label{font-size:var(--fs-3);font-weight:700;fill:var(--card-ink);text-anchor:middle;dominant-baseline:middle;pointer-events:none}
   .node .typeglyph{font-size:11px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
   .node.linkable .shape{stroke-dasharray:2 3}
   .node.drop-ok .shape{stroke:var(--link)!important;stroke-width:3.4px!important}
@@ -166,21 +167,36 @@
     html,body,.node.enter .node-inner,.edge.flow,.edge-trace,.ripple,.gatebadge.pulse circle,.node.drop-ok .shape,.ctx.exiting,.drawer.exiting,.kp.exiting{animation:none}
     .node-inner,.node:hover .node-inner,.node.grabbing .node-inner,.node .port,.node:hover .port{transition:none;transform:none}
   }
+  /* calm mode — user-initiated motion off (mirrors prefers-reduced-motion). EVERY new animated item must join this list. */
+  body.calm,body.calm .node.enter .node-inner,body.calm .edge.flow,body.calm .edge-trace,body.calm .ripple,body.calm .gatebadge.pulse circle,body.calm .node.drop-ok .shape,body.calm .ctx.exiting,body.calm .drawer.exiting,body.calm .kp.exiting{animation:none!important}
+  body.calm .node-inner,body.calm .node:hover .node-inner,body.calm .node.grabbing .node-inner,body.calm .node .port,body.calm .node:hover .port{transition:none!important;transform:none!important}
 
   .hint{position:fixed;bottom:12px;left:18px;color:var(--muted);font-size:11px;z-index:10;max-width:62vw}
-  #bcrumb{position:fixed;top:54px;left:18px;z-index:9;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+  #bcrumb{position:fixed;top:54px;left:18px;z-index:9;display:flex;gap:6px;align-items:center;font-size:var(--fs-2);color:var(--muted);font-weight:600}
   #bcrumb[hidden]{display:none}
-  #bcrumb a{color:var(--ink);cursor:pointer;text-decoration:none;font-weight:600}
-  #bcrumb a:hover{text-decoration:underline}
+  #bcrumb span{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(12px) saturate(120%);backdrop-filter:blur(12px) saturate(120%);border:1px solid rgba(65,64,76,.1);border-radius:7px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #bcrumb a{cursor:pointer;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:rgba(255,255,255,.4);-webkit-backdrop-filter:blur(12px) saturate(120%);backdrop-filter:blur(12px) saturate(120%);border:1px solid rgba(65,64,76,.1);border-radius:7px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:.12s}
+  #bcrumb a:hover{background:rgba(255,255,255,.7);border-color:rgba(65,64,76,.25)}
+  #bcrumb .sep{color:var(--muted);padding:0 2px;display:inline;background:none;border:none}
   #connbar{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:20;
     padding:8px 14px;border-radius:10px;font-size:12px;font-weight:600;
     background:rgba(16,185,129,.16);border:1px solid rgba(16,185,129,.5);color:#a7f3d0}
   #connbar[hidden]{display:none}
-  #offline{display:none;position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:20;
+  #offline{display:none;position:fixed;top:92px;left:50%;transform:translateX(-50%);z-index:20;
     padding:9px 15px;border-radius:10px;font-size:12px;
     background:rgba(238,176,106,.18);border:1px solid rgba(238,176,106,.6);color:#9a6a18}
   #offline code{background:rgba(65,64,76,.1);padding:1px 6px;border-radius:5px}
   body.checked:not(.server) #offline{display:block}
+  /* live/read-only/reconnecting connection chip (top-center) */
+  #connstatus{position:fixed;top:54px;left:50%;transform:translateX(-50%);z-index:20;padding:5px 11px;border-radius:9px;font-size:var(--fs-1);font-weight:700;letter-spacing:.3px;
+    background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.45);color:#0f7a5c;display:flex;align-items:center;gap:4px;transition:all .2s}
+  #connstatus.readonly{background:rgba(238,176,106,.15);border-color:rgba(238,176,106,.45);color:#9a6a18}
+  #connstatus.reconnecting{background:rgba(148,163,184,.18);border-color:rgba(148,163,184,.5);color:#5f5e5a}
+  @keyframes dot-pulse{0%,100%{opacity:.5}50%{opacity:1}}
+  #connstatus.reconnecting::before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;animation:dot-pulse .8s ease-in-out infinite}
+  @media (prefers-reduced-motion: reduce){#connstatus.reconnecting::before{animation:none;opacity:.6}}
+  body.calm #connstatus.reconnecting::before{animation:none;opacity:.6}
+  body.embed #connstatus{display:none}
 
   /* notes drawer */
   .drawer{position:fixed;top:0;right:0;bottom:0;z-index:60;width:min(560px,95vw);
@@ -329,20 +345,22 @@
   </div>
 </header>
 
-<div id="knowpick" class="kp" hidden>
+<div id="knowpick" class="kp" hidden role="dialog" aria-modal="true">
   <div class="kp-head"><span>Link a source of truth</span><button id="kp-x" title="Close">✕</button></div>
   <input id="kp-search" placeholder="Search nodes by name or map…" autocomplete="off" spellcheck="false">
   <div id="kp-list" class="kp-list"></div>
   <div class="kp-foot">Picks pin a ghost of the chosen node here and cite it from the selected node.</div>
 </div>
 
-<div id="bcrumb" hidden></div>
+<div id="bcrumb"></div>
+<div id="connstatus">●Live</div>
 <div id="offline">Read-only — editing needs the app. Run <code>node maps/serve.js</code>, then open the printed URL.</div>
 <div id="pips"></div>
 
 <svg></svg>
+<div id="status-msg" aria-live="polite" aria-atomic="true" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden"></div>
 
-<div id="editor" class="drawer" hidden>
+<div id="editor" class="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="ed-title">
   <div class="drawer-head">
     <div><div id="ed-title">node</div><div class="path" id="ed-path"></div></div>
     <div class="spacer" style="flex:1"></div>
@@ -358,7 +376,7 @@
   </div>
 </div>
 
-<div id="exportpanel" class="drawer" hidden>
+<div id="exportpanel" class="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="ex-title">
   <div class="drawer-head">
     <div><div id="ex-title" style="font-size:15px;font-weight:700">Workflow export</div><div class="path" id="ex-map"></div></div>
     <div class="spacer" style="flex:1"></div>
@@ -380,7 +398,7 @@
   </div>
 </div>
 
-<div id="ctx" class="ctx" hidden>
+<div id="ctx" class="ctx" hidden role="dialog" aria-modal="true" aria-labelledby="ctx-title">
   <div class="ct" id="ctx-title">Node</div>
   <div class="ctx-actions">
     <button id="ctx-rename" class="mini" title="Rename this node (also: double-click its title in the side panel)">✎ Rename</button>

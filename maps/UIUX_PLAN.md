@@ -94,3 +94,22 @@ Foundation API (built first, in main loop; leaves target this):
 - [ ] 49 Save-conflict guard for the open notes drawer
 
 (51 = 3 foundation + 5 + 8 + 12 + 23. Items renumbered here by build order.)
+
+## Integration log (main-loop, preview-verified per batch)
+
+Master plan = 9 deconflicted batches (fleet output w6a3wlw6j). Status:
+- [x] Foundation F1–F3 — tokens, selection model, selection ring. VERIFIED.
+- [x] **Batch 1** (shared foundations): 1 breadcrumb · 26 type-scale (light pass) · 27 tonal fills ·
+      29 fuzzy matcher · 45 calm-mode/motionAllowed · 46 a11y (svg role, live region, focusable
+      nodes, dialog roles, focus-trap). VERIFIED: no console errors; breadcrumb "⌂ Home › Layers";
+      calm halts body drift (drift→none→drift); nodes tabindex+aria; dialogs role=dialog.
+- [x] **Batch 2** (conn-status chip + SSE throttle + viewport culling) — 2, 48. VERIFIED: "● Live"
+      chip renders; SSE coalesced (80ms debounce); cull predicate proven (visible@origin, culled@+5000,
+      restored); zoom handler now re-renders so culling re-applies on pan. No errors.
+- [ ] Batch 3 (zoom HUD + minimap + LOD) — 33, 34, 37
+- [ ] Batch 4 (editing spine: marquee, toolbar, align, resize, snap, empty-state) — 6,8,9,12,10,13
+- [ ] Batch 5 (connections + server changes) — 4,22,23,25,24,5,14,15  ← only batch touching serve.js/build.js
+- [ ] Batch 6 (motion on node chain) — 39,38,41,43,42,44
+- [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47
+- [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49
+- [ ] Batch 9 (validation lint panel) — 17
