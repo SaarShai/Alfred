@@ -375,6 +375,7 @@ http.createServer((req, res) => {
   if (POST('/api/rename', d => { pushUndo(umap(d)); const np = renameNode(d.path, d.title); rebuildAndReply(res, { path: np }); })) return;
   if (POST('/api/archive', d => { pushUndo(umap(d)); archiveNode(d.path); rebuildAndReply(res); })) return;
   if (POST('/api/pos', d => { pushUndo(umap(d)); setPos(d.path, d.x, d.y); rebuildAndReply(res); })) return;
+  if (POST('/api/poslist', d => { pushUndo(d.map); (d.positions || []).forEach(p => setPos(p.path, p.x, p.y)); rebuildAndReply(res); })) return;   // batch move (auto-tidy): one undo, one rebuild
   if (POST('/api/link', d => { pushUndo(umap(d)); setLink(d.path, d.link_map || ''); rebuildAndReply(res); })) return;
   if (POST('/api/type', d => { pushUndo(umap(d)); setType(d.path, d.type); rebuildAndReply(res); })) return;
   if (POST('/api/node-style', d => { pushUndo(umap(d)); setNodeStyle(d.path, d); rebuildAndReply(res); })) return;

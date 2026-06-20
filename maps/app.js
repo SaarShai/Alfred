@@ -113,6 +113,7 @@
     gFrame.selectAll('*').remove(); gLane.selectAll('*').remove(); gEdge.selectAll('*').remove(); gNode.selectAll('*').remove();
     if (!map()) { updateBreadcrumb(); return; }
     const nodes = map().nodes, edges = map().edges;
+    const hasOut = new Set(edges.filter(e => e.from !== e.to).map(e => e.from));   // node ids that are a stage (have an outgoing edge) — used for gate-status badges
 
     // ---- background boxes (frames) — drawn first, behind everything; body is click-through ----
     (map().frames || []).forEach(f => {
@@ -215,6 +216,14 @@
         const bd = inner.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
         bd.append('circle').attr('r', 9).attr('fill', col);
         bd.append('text').attr('class', 'typeglyph').text('▸');
+      }
+      // gate-status badge (top-right): ✓ = gated · ! = a stage with no gate (would FAIL the workflow export)
+      const gated = d.gate && String(d.gate).trim();
+      if (gated || hasOut.has(d.id)) {
+        const gb = inner.append('g').attr('class', 'gatebadge').attr('transform', 'translate(' + (hw - 2) + ',' + (-hh + 2) + ')');
+        gb.append('circle').attr('r', 8).attr('fill', gated ? 'var(--link)' : 'var(--decision)');
+        gb.append('text').attr('class', 'typeglyph').attr('font-size', '11px').text(gated ? '✓' : '!');
+        gb.append('title').text(gated ? 'gate: ' + gated : 'stage has no gate — add one (right-click → Gate) before the workflow can run');
       }
       // connection port (right edge) — on the outer group so the hover lift doesn't move the wire anchor
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
@@ -391,6 +400,29 @@
   }
   function raisePip(win) { win.style.zIndex = ++pipZ; }
   function closePip(slug) { const w = openPips[slug]; if (w) { w.remove(); delete openPips[slug]; } }
+
+  // ---- auto-tidy: lay nodes out left-to-right by flow order (longest-path layering) ----
+  async function tidyLayout() {
+    if (!SERVER) return;
+    const m = map(); if (!m || !m.nodes.length) return;
+    const nodes = m.nodes, edges = (m.edges || []).filter(e => e.from !== e.to);
+    const byid = {}; nodes.forEach(n => byid[n.id] = n);
+    const out = {}, indeg = {}; nodes.forEach(n => { out[n.id] = []; indeg[n.id] = 0; });
+    edges.forEach(e => { if (byid[e.from] && byid[e.to]) { out[e.from].push(e.to); indeg[e.to]++; } });
+    const q = nodes.filter(n => indeg[n.id] === 0).map(n => n.id), order = [], deg = Object.assign({}, indeg);
+    while (q.length) { const id = q.shift(); order.push(id); out[id].forEach(t => { if (--deg[t] === 0) q.push(t); }); }
+    const layer = {}; nodes.forEach(n => layer[n.id] = 0);
+    order.forEach(id => out[id].forEach(t => { layer[t] = Math.max(layer[t], layer[id] + 1); }));
+    let maxL = 0; Object.values(layer).forEach(l => maxL = Math.max(maxL, l));
+    const placed = new Set(order); nodes.forEach(n => { if (!placed.has(n.id)) layer[n.id] = maxL + 1; });   // cyclic leftovers → trailing column
+    const cols = {}; nodes.forEach(n => (cols[layer[n.id]] = cols[layer[n.id]] || []).push(n));
+    const COLGAP = 280, ROWGAP = 150, X0 = 160, CY = 320;
+    Object.keys(cols).map(Number).sort((a, b) => a - b).forEach(L => {
+      cols[L].forEach((n, i) => { n.x = X0 + L * COLGAP; n.y = CY + (i - (cols[L].length - 1) / 2) * ROWGAP; });
+    });
+    render(); setTimeout(fit, 60);
+    api('/api/poslist', { map: cur, positions: nodes.map(n => ({ path: repoRel(n.url), x: Math.round(n.x), y: Math.round(n.y) })) }).then(flushPending);
+  }
   function dragPip(win, handle, resize) {
     handle.addEventListener('pointerdown', e => {
       if (!resize && e.target.closest('button')) return;
@@ -512,6 +544,7 @@
   // ---- wire UI ----
   document.getElementById('mapsel').onchange = e => jumpMap(e.target.value);
   document.getElementById('fit').onclick = fit;
+  document.getElementById('tidy').onclick = tidyLayout;
   document.getElementById('addnode').onclick = () => { const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); };
   document.getElementById('addmap').onclick = addMapPrompt;
   document.getElementById('addbox').onclick = addFrame;
