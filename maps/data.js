@@ -337,8 +337,8 @@ window.MAPS = {
           "slug": "start",
           "name": "Start",
           "type": "step",
-          "x": 160,
-          "y": 200,
+          "x": 60,
+          "y": 344,
           "lane": null,
           "link_map": null,
           "gate": "./cli/bin/screenery-design illustrator --help",
@@ -346,6 +346,21 @@ window.MAPS = {
           "hl": false,
           "color": null,
           "url": "../maps-data/layers/start.md"
+        },
+        {
+          "id": "nxp98d",
+          "slug": "front-layer",
+          "name": "front layer",
+          "type": "step",
+          "x": 234,
+          "y": 216,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/layers/front-layer.md"
         }
       ],
       "edges": [],

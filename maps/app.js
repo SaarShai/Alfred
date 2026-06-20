@@ -20,7 +20,8 @@
   const NS = 'http://www.w3.org/2000/svg';
   const TYPE_COLOR = { step: 'var(--step)', decision: 'var(--decision)', 'subprocess-link': 'var(--link)' };
   const LANE_VARS = ['--l0', '--l1', '--l2', '--l3', '--l4', '--l5', '--l6'];
-  const PAL_HEX = ['#0d9488', '#4f46e5', '#64748b', '#d97706', '#a855f7', '#0ea5e9', '#e11d48'];   // matches --l0..--l6
+  const PAL_HEX = ['#0d9488', '#4f46e5', '#64748b', '#d97706', '#a855f7', '#0ea5e9', '#e11d48',   // matches --l0..--l6
+    '#16a34a', '#111827', '#eab308', '#d946ef'];   // + green, black, yellow, magenta
 
   const svg = d3.select('svg');
   const svgN = svg.node();

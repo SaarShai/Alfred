@@ -2,8 +2,8 @@
 nid: lay100
 title: "Start"
 type: step
-x: 160
-y: 200
+x: 60
+y: 344
 gate: "./cli/bin/screenery-design illustrator --help"
 ---
 # Start
