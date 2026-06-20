@@ -10,6 +10,7 @@ window.MAPS = {
       "slug": "orders-operations",
       "id": "m-ords01",
       "title": "Orders Operations",
+      "kind": "process",
       "url": "../maps-data/orders-operations/index.md",
       "nodes": [
         {
@@ -17,6 +18,7 @@ window.MAPS = {
           "slug": "order-intake",
           "name": "Order intake",
           "type": "step",
+          "refs": [],
           "x": 58,
           "y": 274,
           "lane": null,
@@ -32,6 +34,7 @@ window.MAPS = {
           "slug": "job-tracker",
           "name": "Job Tracker",
           "type": "subprocess-link",
+          "refs": [],
           "x": 414,
           "y": 386,
           "lane": null,
@@ -47,6 +50,7 @@ window.MAPS = {
           "slug": "shipping",
           "name": "Shipping & close",
           "type": "step",
+          "refs": [],
           "x": 845,
           "y": 64,
           "lane": null,
@@ -74,12 +78,14 @@ window.MAPS = {
           "color": null
         }
       ],
-      "frames": []
+      "frames": [],
+      "ghosts": []
     },
     "screenery-flow": {
       "slug": "screenery-flow",
       "id": "m-scrn01",
       "title": "Screenery — Operating Flow",
+      "kind": "process",
       "url": "../maps-data/screenery-flow/index.md",
       "nodes": [
         {
@@ -87,6 +93,7 @@ window.MAPS = {
           "slug": "confirm-order",
           "name": "Confirm the order",
           "type": "step",
+          "refs": [],
           "x": 100,
           "y": 80,
           "lane": "Alicia",
@@ -102,6 +109,7 @@ window.MAPS = {
           "slug": "open-job",
           "name": "Open job & make files",
           "type": "step",
+          "refs": [],
           "x": 337,
           "y": 217,
           "lane": "Saar",
@@ -117,6 +125,7 @@ window.MAPS = {
           "slug": "colour-stock-check",
           "name": "Check colour vs stock",
           "type": "step",
+          "refs": [],
           "x": 540,
           "y": 80,
           "lane": "Alicia",
@@ -132,6 +141,7 @@ window.MAPS = {
           "slug": "handoff",
           "name": "Hand off to factory",
           "type": "step",
+          "refs": [],
           "x": 760,
           "y": 220,
           "lane": "Saar",
@@ -147,6 +157,7 @@ window.MAPS = {
           "slug": "schedule-run",
           "name": "Schedule the run",
           "type": "step",
+          "refs": [],
           "x": 760,
           "y": 360,
           "lane": "Alan",
@@ -162,6 +173,7 @@ window.MAPS = {
           "slug": "produce-log",
           "name": "Produce & log",
           "type": "step",
+          "refs": [],
           "x": 980,
           "y": 500,
           "lane": "Factory",
@@ -177,6 +189,7 @@ window.MAPS = {
           "slug": "reconcile-stock",
           "name": "Reconcile stock",
           "type": "step",
+          "refs": [],
           "x": 1200,
           "y": 80,
           "lane": "Alicia",
@@ -192,6 +205,7 @@ window.MAPS = {
           "slug": "ship-close",
           "name": "Ship & close",
           "type": "step",
+          "refs": [],
           "x": 1420,
           "y": 80,
           "lane": "Alicia",
@@ -254,12 +268,14 @@ window.MAPS = {
           "color": null
         }
       ],
-      "frames": []
+      "frames": [],
+      "ghosts": []
     },
     "illustrator": {
       "slug": "illustrator",
       "id": "ill001",
       "title": "Illustrator",
+      "kind": "process",
       "url": "../maps-data/illustrator/index.md",
       "nodes": [
         {
@@ -267,6 +283,12 @@ window.MAPS = {
           "slug": "start",
           "name": "Start",
           "type": "step",
+          "refs": [
+            {
+              "target": "nxp98d",
+              "label": "front layer"
+            }
+          ],
           "x": 160,
           "y": 200,
           "lane": null,
@@ -282,6 +304,7 @@ window.MAPS = {
           "slug": "layers",
           "name": "Layers",
           "type": "subprocess-link",
+          "refs": [],
           "x": 306,
           "y": 360,
           "lane": null,
@@ -297,6 +320,7 @@ window.MAPS = {
           "slug": "test",
           "name": "test",
           "type": "step",
+          "refs": [],
           "x": 390,
           "y": 127,
           "lane": null,
@@ -312,6 +336,7 @@ window.MAPS = {
           "slug": "tester",
           "name": "tester",
           "type": "step",
+          "refs": [],
           "x": 390,
           "y": 127,
           "lane": null,
@@ -324,12 +349,20 @@ window.MAPS = {
         }
       ],
       "edges": [],
-      "frames": []
+      "frames": [],
+      "ghosts": [
+        {
+          "ref": "nxp98d",
+          "x": 370,
+          "y": 290
+        }
+      ]
     },
     "layers": {
       "slug": "layers",
       "id": "lay001",
       "title": "Layers",
+      "kind": "process",
       "url": "../maps-data/layers/index.md",
       "nodes": [
         {
@@ -337,6 +370,7 @@ window.MAPS = {
           "slug": "front-layer",
           "name": "front layer",
           "type": "step",
+          "refs": [],
           "x": 234,
           "y": 216,
           "lane": null,
@@ -352,6 +386,7 @@ window.MAPS = {
           "slug": "middle-layer",
           "name": "middle layer",
           "type": "step",
+          "refs": [],
           "x": 257,
           "y": 356,
           "lane": null,
@@ -367,6 +402,7 @@ window.MAPS = {
           "slug": "back-layer",
           "name": "back layer",
           "type": "step",
+          "refs": [],
           "x": 253,
           "y": 470,
           "lane": null,
@@ -379,7 +415,8 @@ window.MAPS = {
         }
       ],
       "edges": [],
-      "frames": []
+      "frames": [],
+      "ghosts": []
     }
   }
 };

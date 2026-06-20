@@ -3,6 +3,8 @@ nid: ill001
 title: "Illustrator"
 type: map
 nodes: [start, layers, test, tester]
+ghosts:
+  - {ref: nxp98d, x: 370, y: 290}
 ---
 # Illustrator
 

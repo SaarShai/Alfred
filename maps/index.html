@@ -52,6 +52,30 @@
   .edge-bend{fill:var(--edge);fill-opacity:.7;stroke:#41404c;stroke-opacity:.35;cursor:ns-resize}
   g.edgegrp:hover .edge:not(.flow){stroke-width:2.8px}
   #wire-preview{fill:none;stroke:var(--link);stroke-width:2.4px;stroke-dasharray:6 5;opacity:.9;pointer-events:none}
+  .edge.ref{stroke:var(--ref);stroke-width:1.6px;stroke-dasharray:4 4;opacity:.65}
+  /* knowledge ghosts — dashed mirror of a SoT node from another map */
+  g.ghost{cursor:pointer}
+  .ghost-shape{fill:rgba(107,114,128,.06);stroke:var(--ref);stroke-width:1.6px;stroke-dasharray:5 4;rx:11}
+  g.ghost:hover .ghost-shape{fill:rgba(107,114,128,.13)}
+  .ghost-label{fill:var(--ink);font-size:12.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;opacity:.85;pointer-events:none}
+  .ghost-sub{fill:var(--ref);font-size:9.5px;font-weight:700;text-anchor:middle;dominant-baseline:middle;pointer-events:none;letter-spacing:.2px}
+  /* knowledge picker overlay */
+  .kp{position:fixed;z-index:75;top:64px;left:50%;transform:translateX(-50%);width:min(420px,92vw);
+    background:#fffdf8;border:1px solid rgba(65,64,76,.16);border-radius:14px;box-shadow:0 18px 50px rgba(40,38,50,.22);
+    padding:12px;display:flex;flex-direction:column;gap:8px}
+  .kp[hidden]{display:none}
+  .kp-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink)}
+  .kp-head button{padding:2px 8px}
+  #kp-search{font:inherit;font-size:13px;color:var(--ink);background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.25);padding:9px 11px;border-radius:9px}
+  #kp-search:focus{outline:none;border-color:var(--ref)}
+  .kp-list{max-height:46vh;overflow:auto;display:flex;flex-direction:column;gap:3px}
+  .kp-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:9px;cursor:pointer;font-size:12.5px}
+  .kp-item:hover,.kp-item.on{background:rgba(107,114,128,.14)}
+  .kp-item .kp-glyph{width:16px;height:16px;border-radius:5px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;flex:none}
+  .kp-item .kp-name{font-weight:600;color:var(--ink)}
+  .kp-item .kp-map{color:var(--muted);font-size:11px;margin-left:auto}
+  .kp-foot{font-size:10.5px;color:var(--muted)}
+  body.libmap svg{background:repeating-linear-gradient(135deg,rgba(107,114,128,.035) 0 14px,transparent 14px 28px)}
 
   /* lane bands */
   .laneband{opacity:.07;pointer-events:none}
@@ -246,9 +270,17 @@
     <button id="undo" class="needserver" title="Undo (⌘Z)">↶ Undo</button>
     <button id="export" class="needserver" title="Generate an agent-followable workflow from this map + lint it">⤓ Workflow</button>
     <button id="tidy" class="needserver" title="Auto-arrange nodes left-to-right by flow order">⇄ Tidy</button>
+    <button id="libtoggle" class="needserver" title="Mark this map as a source-of-truth library (no flow / workflow)">▤ Library</button>
     <button id="fit">Fit</button>
   </div>
 </header>
+
+<div id="knowpick" class="kp" hidden>
+  <div class="kp-head"><span>Link a source of truth</span><button id="kp-x" title="Close">✕</button></div>
+  <input id="kp-search" placeholder="Search nodes by name or map…" autocomplete="off" spellcheck="false">
+  <div id="kp-list" class="kp-list"></div>
+  <div class="kp-foot">Picks pin a ghost of the chosen node here and cite it from the selected node.</div>
+</div>
 
 <div id="bcrumb" hidden></div>
 <div id="offline">Read-only — editing needs the app. Run <code>node maps/serve.js</code>, then open the printed URL.</div>
@@ -308,6 +340,7 @@
   <div class="swatches" id="ctx-colors"></div>
   <div class="ctx-lbl" style="margin:8px 0 4px">Gate — pass/fail check for this stage</div>
   <input class="full" id="ctx-gate" autocomplete="off" placeholder="e.g. pytest tests/ -q">
+  <button class="full" id="ctx-linkknow" title="Cite a source-of-truth node and pin a ghost of it in this map">§ Link knowledge…</button>
   <button class="full" id="ctx-newsub" title="Create a new map and turn this node into a link to it">⊕ New sub-map from this node</button>
   <select class="full" id="ctx-linkmap" title="Open another map from this node"></select>
   <button class="full arch" id="ctx-archive">− Archive</button>

@@ -120,6 +120,48 @@ function editFrame(mapSlug, op, f) {
   fs.writeFileSync(idx, setFrames(it, frames));
 }
 
+// ghost nodes — a mirror of a SoT node (by its nid) placed in another map (same block idiom as frames)
+function getGhosts(txt) {
+  const out = [];
+  const re = /\{\s*ref:\s*([^,}]+?)\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*\}/g;
+  let m; while ((m = re.exec(txt))) out.push({ ref: m[1].trim(), x: +m[2], y: +m[3] });
+  return out;
+}
+function setGhosts(txt, arr) {
+  txt = txt.replace(/^ghosts:[^\n]*(?:\n[ \t]+[^\n]*)*\n?/m, '');
+  const block = 'ghosts:\n' + arr.map(g => '  - {ref: ' + g.ref + ', x: ' + Math.round(g.x) + ', y: ' + Math.round(g.y) + '}').join('\n') + '\n';
+  const close = txt.indexOf('\n---', 3);
+  if (close === -1) return txt;
+  return txt.slice(0, close + 1) + (arr.length ? block : '') + txt.slice(close + 1);
+}
+function editGhost(mapSlug, op, g) {
+  const idx = mapIndex(mapSlug);
+  if (!fs.existsSync(idx)) throw new Error('unknown map');
+  let it = fs.readFileSync(idx, 'utf8');
+  let ghosts = getGhosts(it);
+  if (op === 'add') { if (!g.ref) throw new Error('no ref'); if (!ghosts.some(x => x.ref === g.ref)) ghosts.push({ ref: g.ref, x: g.x || 0, y: g.y || 0 }); }
+  else if (op === 'move') { const t = ghosts.find(x => x.ref === g.ref); if (t) { t.x = g.x; t.y = g.y; } }
+  else if (op === 'del') { ghosts = ghosts.filter(x => x.ref !== g.ref); }
+  fs.writeFileSync(idx, setGhosts(it, ghosts));
+}
+// append a [[nid|label]] citation to a node body (idempotent — skips if it already cites that target)
+function appendRef(rel, target, label) {
+  const abs = safeSrc(rel);
+  if (!abs || !fs.existsSync(abs) || path.basename(abs) === 'index.md') throw new Error('not a node');
+  if (!target) throw new Error('no ref target');
+  let txt = fs.readFileSync(abs, 'utf8');
+  if (new RegExp('\\[\\[' + target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\||\\])').test(txt)) return;   // already cites it
+  const link = '[[' + target + (label ? '|' + label : '') + ']]';
+  fs.writeFileSync(abs, txt.replace(/\s*$/, '') + '\n\nRef: ' + link + '\n');
+}
+function setMapKind(mapSlug, kind) {
+  const idx = mapIndex(mapSlug);
+  if (!fs.existsSync(idx)) throw new Error('unknown map');
+  let it = fs.readFileSync(idx, 'utf8');
+  it = (kind && kind !== 'process') ? setField(it, 'kind', kind) : removeField(it, 'kind');
+  fs.writeFileSync(idx, it);
+}
+
 // ---- node ops ----
 function addNode(mapSlug, title, type, x, y, note, linkMap) {
   const idx = mapIndex(mapSlug);
@@ -381,6 +423,9 @@ http.createServer((req, res) => {
   if (POST('/api/node-style', d => { pushUndo(umap(d)); setNodeStyle(d.path, d); rebuildAndReply(res); })) return;
   if (POST('/api/edge', d => { pushUndo(d.map); editEdge(d.map, d); rebuildAndReply(res); })) return;
   if (POST('/api/frame', d => { pushUndo(d.map); editFrame(d.map, d.op, d); rebuildAndReply(res); })) return;
+  if (POST('/api/ghost', d => { pushUndo(d.map); editGhost(d.map, d.op, d); rebuildAndReply(res); })) return;
+  if (POST('/api/link-knowledge', d => { pushUndo(d.map); appendRef(d.path, d.ref, d.label); editGhost(d.map, 'add', { ref: d.ref, x: d.x, y: d.y }); rebuildAndReply(res); })) return;
+  if (POST('/api/map-kind', d => { pushUndo(d.map); setMapKind(d.map, d.kind); rebuildAndReply(res); })) return;
   if (POST('/api/map-add', d => { const slug = addMap(d.title); rebuildAndReply(res, { slug }); })) return;
   if (POST('/api/undo', () => { const s = undoStack.pop(); if (!s) return json(res, { ok: false, error: 'nothing to undo' }, 400); restoreSnap(s); rebuildAndReply(res); })) return;
 

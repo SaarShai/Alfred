@@ -47,7 +47,7 @@
   const defs = svg.append('defs');
   const edgeCol = getComputedStyle(document.documentElement).getPropertyValue('--edge').trim();
   const mk = (id, fill) => '<marker id="' + id + '" markerWidth="13" markerHeight="13" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="' + fill + '"/></marker>';
-  defs.html(mk('ah', edgeCol) + PAL_HEX.map((h, i) => mk('ah' + i, h)).join('') +   // default + per-palette colored arrowheads
+  defs.html(mk('ah', edgeCol) + mk('ahref', '#6b7280') + PAL_HEX.map((h, i) => mk('ah' + i, h)).join('') +   // default + reference + per-palette colored arrowheads
     '<linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#10b981"/></linearGradient>' +
     '<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.08"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>');
 
@@ -236,7 +236,42 @@
     });
     nodes.forEach(n => seen.add(n.id));   // mark animated so a re-render (drag/SSE) won't replay enter
 
+    // ---- knowledge ghosts: mirrors of SoT nodes that live in another map ----
+    // each stored ghost {ref,x,y} resolves (by nid, then slug/name) to a real node elsewhere
+    const ghosts = (map().ghosts || []).map(g => { const hit = resolveRef(g.ref); return hit ? { ref: g.ref, _src: g, x: g.x, y: g.y, name: hit.node.name, type: hit.node.type, color: hit.node.color, homeTitle: (MAPS.maps[hit.map] || {}).title || hit.map, sameMap: hit.map === cur } : null; }).filter(Boolean);
+    const ghostByKey = {}; ghosts.forEach(gh => { const hit = resolveRef(gh.ref); if (hit) ghostByKey[hit.node.id] = gh; ghostByKey[gh.ref] = gh; });
+
+    // dashed reference edges: any node citing [[ref]] → the ghost of that ref in this map (drawn in gEdge, behind nodes)
+    nodes.forEach(n => (n.refs || []).forEach(rf => {
+      const hit = resolveRef(rf.target), gh = ghostByKey[hit ? hit.node.id : rf.target] || ghostByKey[rf.target];
+      if (!gh) return;
+      const p1 = rightPort(n), gb = baseHalf(gh), p2 = { x: gh.x - gb.hw - 2, y: gh.y };
+      const { d } = edgePath(p1, p2, 0);
+      gEdge.append('path').attr('class', 'edge ref').attr('d', d).attr('marker-end', 'url(#ahref)');
+    }));
+
+    // ghost shapes (dashed, grey, § badge, "↗ home-map" subtitle) — click jumps to the real node; drag repositions
+    const gsel = gNode.selectAll('g.ghost').data(ghosts, d => d.ref).enter().append('g')
+      .attr('class', 'ghost').attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
+      .on('click', (e, d) => { e.stopPropagation(); gotoRef(d.ref); })
+      .on('contextmenu', (e, d) => { e.preventDefault(); openGhostCtx(e, d); })
+      .call(d3.drag().clickDistance(5)
+        .on('start', function (e) { dragging = true; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); })
+        .on('drag', function (e, d) { d._src.x = e.x; d._src.y = e.y; render(); })
+        .on('end', function (e, d) { dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/ghost', { map: cur, op: 'move', ref: d.ref, x: Math.round(d._src.x), y: Math.round(d._src.y) }).then(flushPending); else flushPending(); }));
+    gsel.each(function (d) {
+      const g = d3.select(this), { hw, hh } = baseHalf(d);
+      g.append('rect').attr('class', 'ghost-shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11);
+      g.append('text').attr('class', 'ghost-label').text(d.name);
+      g.append('text').attr('class', 'ghost-sub').attr('y', hh + 12).text('↗ ' + d.homeTitle);
+      const bd = g.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
+      bd.append('circle').attr('r', 9).attr('fill', 'var(--ref)');
+      bd.append('text').attr('class', 'typeglyph').text('§');
+      g.append('title').text('Source of truth — lives in "' + d.homeTitle + '". Click to open · right-click to unpin.');
+    });
+
     updateBreadcrumb();
+    syncLibToggle();
   }
 
   function ripple(x, y) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
@@ -551,6 +586,10 @@
     const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.4, d3.zoomTransform(svgN).k || 1);
     svg.transition().duration(450).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * n.x, h / 2 - k * n.y).scale(k));
   }
+  function openGhostCtx(e, d) {   // right-click a ghost → unpin it from this map (citation + SoT node stay; Undo restores)
+    if (!SERVER) return;
+    api('/api/ghost', { map: cur, op: 'del', ref: d.ref }).then(j => { if (j.ok) applyMaps(j.maps); });
+  }
   function gotoRef(target) {
     const hit = resolveRef(target); if (!hit) return false;
     const open = () => { const n = (MAPS.maps[hit.map].nodes || []).find(x => x.id === hit.node.id) || hit.node; focusNode(n); openEditor(n); };
@@ -575,6 +614,47 @@
       else { chip.title = 'Unresolved: ' + tgt; }
       box.appendChild(chip);
     });
+  }
+
+  // ---- knowledge picker: cite a SoT node from the right-clicked node + pin a ghost of it here ----
+  let kpCiting = null, kpAll = [];
+  function openKnowPick(d) {
+    if (!SERVER) return; kpCiting = d; closeCtx();
+    kpAll = [];
+    MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => { if (n.id === d.id) return; kpAll.push({ id: n.id, name: n.name, type: n.type, mapTitle: m.title || slug }); }); });
+    kpAll.sort((a, b) => (a.type === 'reference' ? 0 : 1) - (b.type === 'reference' ? 0 : 1) || a.name.localeCompare(b.name));   // SoT nodes first
+    document.getElementById('kp-search').value = ''; renderKpList('');
+    document.getElementById('knowpick').hidden = false;
+    setTimeout(() => document.getElementById('kp-search').focus(), 0);
+  }
+  function renderKpList(q) {
+    const box = document.getElementById('kp-list'); box.innerHTML = '';
+    const ql = q.trim().toLowerCase();
+    const items = kpAll.filter(it => !ql || it.name.toLowerCase().includes(ql) || it.mapTitle.toLowerCase().includes(ql)).slice(0, 60);
+    if (!items.length) { const e = document.createElement('div'); e.className = 'kp-foot'; e.textContent = 'No matches.'; box.appendChild(e); return; }
+    items.forEach(it => {
+      const row = document.createElement('div'); row.className = 'kp-item';
+      const col = it.type === 'reference' ? 'var(--ref)' : (TYPE_COLOR[it.type] || TYPE_COLOR.step);
+      const g = document.createElement('span'); g.className = 'kp-glyph'; g.style.background = col; g.textContent = it.type === 'reference' ? '§' : '•';
+      const nm = document.createElement('span'); nm.className = 'kp-name'; nm.textContent = it.name;
+      const mp = document.createElement('span'); mp.className = 'kp-map'; mp.textContent = it.mapTitle;
+      row.append(g, nm, mp); row.onclick = () => pickKnow(it); box.appendChild(row);
+    });
+  }
+  async function pickKnow(it) {
+    if (!kpCiting || !SERVER) return;
+    const d = kpCiting, x = Math.round(d.x + halfExt(d).hw + 150), y = Math.round(d.y + 90);
+    closeKnowPick();
+    const j = await api('/api/link-knowledge', { map: cur, path: repoRel(d.url), ref: it.id, label: it.name, x, y });
+    if (j.ok) applyMaps(j.maps); else alert('Link: ' + j.error);
+  }
+  function closeKnowPick() { document.getElementById('knowpick').hidden = true; kpCiting = null; }
+  // mark/unmark the current map as a SoT library (kind: reference)
+  function syncLibToggle() { const m = map(), on = !!(m && m.kind === 'reference'); document.getElementById('libtoggle').classList.toggle('on', on); document.body.classList.toggle('libmap', on); }
+  async function toggleLibrary() {
+    if (!SERVER || !cur) return; const m = map();
+    const j = await api('/api/map-kind', { map: cur, kind: (m && m.kind === 'reference') ? 'process' : 'reference' });
+    if (j.ok) applyMaps(j.maps); else alert(j.error);
   }
 
   // inline (not prompt(): blocked in sandboxed preview iframes) — new top-level map, then switch to it
@@ -648,6 +728,10 @@
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
   document.getElementById('ed-text').addEventListener('input', e => renderRefs(e.target.value));   // live-update reference chips as you type [[…]]
+  document.getElementById('libtoggle').onclick = toggleLibrary;
+  document.getElementById('kp-x').onclick = closeKnowPick;
+  document.getElementById('kp-search').addEventListener('input', e => renderKpList(e.target.value));
+  document.getElementById('ctx-linkknow').onclick = () => { if (ctxNode) openKnowPick(ctxNode); };
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
   document.getElementById('ed-title').ondblclick = () => { if (edNode) renameFromDrawer(edNode); };   // rename title+slug from the side panel
   document.getElementById('ctx-smaller').onclick = () => ctxSize(-1);
@@ -662,7 +746,7 @@
   svg.on('contextmenu.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; e.preventDefault(); closeCtx(); const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   document.addEventListener('click', e => { const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx(); });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeEditor(); closeCtx(); document.getElementById('exportpanel').hidden = true; }
+    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
