@@ -200,12 +200,30 @@
 
   /* right-click context menu */
   .ctx{position:fixed;z-index:70;background:#fffdf8;border:1px solid rgba(65,64,76,.16);
-    border-radius:12px;padding:10px 11px;box-shadow:0 12px 36px rgba(65,64,76,.2);width:200px}
+    border-radius:12px;padding:10px 11px;box-shadow:0 12px 36px rgba(65,64,76,.2);width:206px;max-height:calc(100vh - 20px);overflow:auto}
   .ctx[hidden]{display:none}
-  .ctx .ct{font-size:12px;font-weight:700;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctx .ct{font-size:13px;font-weight:750;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ctx .seg{display:flex;gap:4px;margin-bottom:8px}
   .ctx .seg button{flex:1;padding:6px 4px;font-size:11px}
   .ctx .seg button.sel{color:#fff;background:var(--step);border-color:transparent}
+  /* quick actions row (rename / notes) */
+  .ctx-actions{display:flex;gap:6px;margin-bottom:10px}
+  .ctx-actions .mini{flex:1;padding:6px 4px;font-size:11px;font-weight:700}
+  /* type picker — a 2×2 grid of shape-previewed, color-coded tiles (mirrors the node's own glyph + accent) */
+  .typetiles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 11px}
+  .typetiles .ttile{display:flex;flex-direction:column;align-items:center;gap:5px;padding:9px 4px;border-radius:10px;
+    border:1px solid rgba(65,64,76,.14);background:rgba(255,255,255,.5);cursor:pointer;
+    transition:transform .14s var(--spring),border-color .14s,background .14s,box-shadow .14s}
+  .typetiles .ttile .tg{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;font-size:15px;font-weight:800;line-height:1;
+    color:#fff;background:var(--tc);box-shadow:0 2px 7px color-mix(in srgb,var(--tc) 50%,transparent)}
+  .typetiles .ttile .tl{font-size:10.5px;font-weight:700;color:var(--ink);letter-spacing:.2px}
+  .typetiles .ttile:hover{border-color:var(--tc);background:#fff;transform:translateY(-1px)}
+  .typetiles .ttile.sel{border-color:var(--tc);background:color-mix(in srgb,var(--tc) 13%,#fff);box-shadow:inset 0 0 0 1.6px var(--tc)}
+  .typetiles .ttile.sel .tl{color:var(--tc)}
+  @supports not (background:color-mix(in srgb,red,blue)){
+    .typetiles .ttile.sel{background:rgba(138,143,230,.12)}
+    .typetiles .ttile .tg{box-shadow:0 2px 7px rgba(65,64,76,.28)}
+  }
   .ctx .full{width:100%;margin-top:6px;font-size:12px;text-align:left}
   .ctx select.full{text-align:left;padding:7px 9px}
   .ctx .arch{color:#f87171;border-color:rgba(248,113,113,.3)}
@@ -357,11 +375,16 @@
 
 <div id="ctx" class="ctx" hidden>
   <div class="ct" id="ctx-title">Node</div>
-  <div class="seg" id="ctx-types">
-    <button data-t="step">Step</button>
-    <button data-t="decision">Decision</button>
-    <button data-t="subprocess-link" title="Links to a map">Link</button>
-    <button data-t="reference" title="Source of truth — referenced, not run. No gate, skipped by the workflow.">Ref</button>
+  <div class="ctx-actions">
+    <button id="ctx-rename" class="mini" title="Rename this node (also: double-click its title in the side panel)">✎ Rename</button>
+    <button id="ctx-notes" class="mini" title="Open the notes / edit panel (also: double-click the node)">✐ Notes</button>
+  </div>
+  <div class="ctx-lbl">Type</div>
+  <div class="typetiles" id="ctx-types">
+    <button data-t="step" class="ttile" style="--tc:var(--step)" title="A process step"><span class="tg">▭</span><span class="tl">Step</span></button>
+    <button data-t="decision" class="ttile" style="--tc:var(--decision)" title="A branch / decision point"><span class="tg">◇</span><span class="tl">Decision</span></button>
+    <button data-t="subprocess-link" class="ttile" style="--tc:var(--link)" title="Links to another map"><span class="tg">▸</span><span class="tl">Link</span></button>
+    <button data-t="reference" class="ttile" style="--tc:var(--ref)" title="Source of truth — referenced, not run. No gate, skipped by the workflow."><span class="tg">§</span><span class="tl">Ref</span></button>
   </div>
   <div class="ctx-row"><span class="ctx-lbl">Size</span><button id="ctx-smaller" title="Smaller">−</button><span id="ctx-size">100%</span><button id="ctx-bigger" title="Bigger">+</button></div>
   <button class="full" id="ctx-hl">✦ Highlight</button>

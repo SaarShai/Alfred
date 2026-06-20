@@ -3,8 +3,8 @@ color: 8
 nid: nxp98d
 title: "front layer"
 type: step
-x: 234
-y: 216
+x: 316
+y: 172
 ---
 
 # front layer

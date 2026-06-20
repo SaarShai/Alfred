@@ -2,8 +2,8 @@
 nid: n-col01
 title: "Check colour vs stock"
 type: step
-x: 600
-y: 79
+x: 615
+y: 71
 lane: Alicia
 ---
 # Check colour vs stock

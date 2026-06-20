@@ -1,5 +1,4 @@
 ---
-refs_collapsed: true
 nid: ill100
 title: "Start"
 type: step

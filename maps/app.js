@@ -215,8 +215,8 @@
       .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
-      .on('click', (e, d) => { clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // defer so dblclick can cancel
-      .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; closeEditor(); openRename(d); })
+      .on('click', (e, d) => { ripple(d.x, d.y, accent(d)); clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // ripple immediately; defer the navigation so a dblclick can cancel it
+      .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d); })   // double-click opens the edit panel (n8n / Miro / Figma convention)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
         .on('start', function (e, d) { if (wire && wire.active) return; dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
@@ -322,11 +322,13 @@
     setTimeout(() => { try { p.remove(); } catch (_) {} }, 900);
   }
 
-  function onNodeClick(d) {
+  function onNodeClick(d) {   // single-click (deferred): a link node navigates into its sub-map; a plain node already got its ripple
     const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
-    ripple(d.x, d.y, accent(d));
-    if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); return; }   // top level: float a window; inside a window: drill in place
-    openEditor(d);
+    if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); }   // top level: float a window; inside a window: drill in place
+  }
+  function onNodeOpen(d) {   // double-click: open the edit panel (notes drawer) — the primary "open this node" action
+    const live = byId(d.id); if (!live) return; d = live;
+    closeCtx(); openEditor(d);
   }
 
   // ---- drag-to-connect ----
@@ -426,9 +428,10 @@
     fillLinkSelect(); document.getElementById('ctx-linkmap').value = d.link_map || '';
     document.getElementById('ctx-gate').value = d.gate || '';
     const m = document.getElementById('ctx');
-    m.style.left = Math.min(window.innerWidth - 214, e.clientX) + 'px';
-    m.style.top = Math.min(window.innerHeight - 300, e.clientY) + 'px';
-    m.hidden = false;
+    m.style.left = '-9999px'; m.style.top = '0px'; m.hidden = false;   // unhide off-screen so we can measure actual height before clamping
+    const r = m.getBoundingClientRect();
+    m.style.left = Math.max(8, Math.min(window.innerWidth - r.width - 8, e.clientX)) + 'px';
+    m.style.top = Math.max(8, Math.min(window.innerHeight - r.height - 8, e.clientY)) + 'px';
   }
   function closeCtx() { document.getElementById('ctx').hidden = true; ctxNode = null; }
   function fillSwatches(d) {
@@ -779,6 +782,8 @@
   document.getElementById('ctx-linkknow').onclick = () => { if (ctxNode) openKnowPick(ctxNode); };
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
   document.getElementById('ed-title').ondblclick = () => { if (edNode) renameFromDrawer(edNode); };   // rename title+slug from the side panel
+  document.getElementById('ctx-rename').onclick = () => { const d = ctxNode; closeCtx(); if (d) openRename(d); };
+  document.getElementById('ctx-notes').onclick = () => { const d = ctxNode; closeCtx(); if (d) openEditor(d); };
   document.getElementById('ctx-smaller').onclick = () => ctxSize(-1);
   document.getElementById('ctx-bigger').onclick = () => ctxSize(1);
   document.getElementById('ctx-hl').onclick = ctxHighlight;
