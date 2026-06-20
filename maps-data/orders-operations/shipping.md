@@ -3,8 +3,8 @@ color: 3
 nid: n-shp01
 title: "Shipping & close"
 type: subprocess-link
-x: 1027
-y: 188
+x: 975
+y: 92
 ---
 # Shipping & close
 
