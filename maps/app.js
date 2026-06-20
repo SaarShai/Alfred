@@ -45,7 +45,7 @@
         svgN.__zoom = t;
       }
       canvas.attr('transform', t);
-      updateZoomHud(); document.body.classList.toggle('lod-far', t.k < 0.55); updateMinimap();   // live zoom % + LOD + minimap viewport — all cheap, NO full render
+      updateZoomHud(); document.body.classList.toggle('lod-far', t.k < 0.55); updateMinimapViewport();   // live zoom % + LOD + minimap viewport rect — all cheap, NO full rebuild
     })
     .on('end', () => scheduleRender());   // re-cull to the SETTLED viewport once the pan/zoom/transition completes (per-tick render storms fight programmatic zoom transitions)
   svg.call(zoom);
@@ -81,23 +81,29 @@
   let sseBounceTimer = null, ssePending = null;        // coalesce SSE bursts into one applyMaps (large maps re-render is heavy)
   function debounceSse(fn, delay) { clearTimeout(sseBounceTimer); sseBounceTimer = setTimeout(fn, delay); }
   function updateZoomHud() { const el = document.getElementById('zoom-pct'); if (el) el.textContent = Math.round(d3.zoomTransform(svgN).k * 100) + '%'; }
-  let minimapCollapsed = false;
-  function updateMinimap() {   // bottom-right thumbnail: all node bboxes + a draggable viewport rect (cheap: rects only, no labels/edges)
+  let minimapCollapsed = false, _mmGeom = null;
+  function updateMinimap() {   // FULL rebuild — node bboxes + a draggable viewport rect. Call on render / data change, NOT per zoom tick.
     const mm = document.getElementById('minimap-svg'); if (!mm || minimapCollapsed) return;
     const mmg = d3.select(mm); mmg.selectAll('*').remove();
-    const ns = (map() ? map().nodes : []); if (!ns.length) return;
+    const ns = (map() ? map().nodes : []); if (!ns.length) { _mmGeom = null; return; }
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     ns.forEach(n => { const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); maxY = Math.max(maxY, n.y + hh); });
-    if (!isFinite(minX)) return;
+    if (!isFinite(minX)) { _mmGeom = null; return; }
     const W = 160, H = 120, pad = 5, iw = W - pad * 2, ih = H - pad * 2, bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
     const scale = Math.min(iw / bw, ih / bh, 1), ox = pad - minX * scale + (iw - bw * scale) / 2, oy = pad - minY * scale + (ih - bh * scale) / 2;
+    _mmGeom = { scale, ox, oy };
     ns.forEach(n => { const { hw, hh } = halfExt(n); mmg.append('rect').attr('class', 'minimap-node').attr('x', ox + (n.x - hw) * scale).attr('y', oy + (n.y - hh) * scale).attr('width', hw * 2 * scale).attr('height', hh * 2 * scale).attr('rx', 2); });
-    const t = d3.zoomTransform(svgN);
-    const vx = (window.innerWidth / 2 - t.x) / t.k, vy = (window.innerHeight / 2 - t.y) / t.k, vw = window.innerWidth / t.k, vh = window.innerHeight / t.k;
-    const vr = mmg.append('rect').attr('class', 'minimap-viewport').attr('x', ox + (vx - vw / 2) * scale).attr('y', oy + (vy - vh / 2) * scale).attr('width', vw * scale).attr('height', vh * scale);
-    vr.call(d3.drag().container(() => mm)                                   // drag the viewport rect to pan the canvas there
+    mmg.append('rect').attr('class', 'minimap-viewport').call(d3.drag().container(() => mm)   // drag the viewport rect to pan the canvas there
       .on('start', e => e.sourceEvent.stopPropagation())
       .on('drag', e => { const nx = (e.x - ox) / scale, ny = (e.y - oy) / scale, k = d3.zoomTransform(svgN).k, W2 = window.innerWidth, H2 = window.innerHeight; svg.call(zoom.transform, d3.zoomIdentity.translate(W2 / 2 - k * nx, H2 / 2 - k * ny).scale(k)); }));
+    updateMinimapViewport();
+  }
+  function updateMinimapViewport() {   // CHEAP — reposition ONLY the existing viewport rect (per zoom/pan tick; no DOM rebuild → drag-to-pan stays stable)
+    if (!_mmGeom || minimapCollapsed) return;
+    const vr = document.querySelector('#minimap-svg .minimap-viewport'); if (!vr) return;
+    const { scale, ox, oy } = _mmGeom, t = d3.zoomTransform(svgN);
+    const vx = (window.innerWidth / 2 - t.x) / t.k, vy = (window.innerHeight / 2 - t.y) / t.k, vw = window.innerWidth / t.k, vh = window.innerHeight / t.k;
+    d3.select(vr).attr('x', ox + (vx - vw / 2) * scale).attr('y', oy + (vy - vh / 2) * scale).attr('width', vw * scale).attr('height', vh * scale);
   }
 
   // ---- geometry ----
@@ -198,7 +204,7 @@
     const edges = map().edges;
     const t = d3.zoomTransform(svgN);   // viewport culling: only build geometry for nodes near the visible rect (all nodes still live in MAPS — visual only)
     const vpL = (0 - t.x) / t.k, vpT = (0 - t.y) / t.k, vpR = (window.innerWidth - t.x) / t.k, vpB = (window.innerHeight - t.y) / t.k, cullPad = 240;
-    const culled = d => { const h = halfExt(d); return d.x - h.hw - cullPad > vpR || d.x + h.hw + cullPad < vpL || d.y - h.hh - cullPad > vpB || d.y + h.hh + cullPad < vpT; };
+    const culled = d => { if (!window.innerWidth) return false; const h = halfExt(d); return d.x - h.hw - cullPad > vpR || d.x + h.hw + cullPad < vpL || d.y - h.hh - cullPad > vpB || d.y + h.hh + cullPad < vpT; };   // never cull before the viewport is laid out (iframe 0×0 pre-paint) → render all
     const allNodes = map().nodes, nodes = allNodes.filter(n => !culled(n)), visibleNodeIds = new Set(nodes.map(n => n.id));
     const hasOut = new Set(edges.filter(e => e.from !== e.to).map(e => e.from));   // node ids that are a stage (have an outgoing edge) — used for gate-status badges (computed over ALL edges)
     const hasIn = new Set(edges.filter(e => e.from !== e.to).map(e => e.to));      // node ids with an incoming edge → for START/END terminal rings
@@ -267,6 +273,7 @@
         const bb = t.node().getBBox();
         g.insert('rect', 'text.elabel').attr('class', 'elabel-bg').attr('x', bb.x - 6).attr('y', bb.y - 3).attr('width', bb.width + 12).attr('height', bb.height + 6).attr('rx', 6);
       }
+      if (mid.x < vpL || mid.x > vpR || mid.y < vpT || mid.y > vpB) return;   // edge midpoint off-screen (one endpoint far off-canvas) → skip the unreachable hover controls
       // hover controls: bend grab (at midpoint), color cycle + route toggle (above), delete (below)
       const ctrl = g.append('g').attr('class', 'edge-ctrl');
       ctrl.append('circle').attr('class', 'edge-bend').attr('cx', mid.x).attr('cy', mid.y).attr('r', 9)
@@ -407,6 +414,7 @@
     node.addEventListener('animationend', () => c.remove());
     setTimeout(() => { try { c.remove(); } catch (_) {} }, 800);   // fallback so they never accumulate
   }
+  function pulseNode(id) { const n = byId(id); if (n && motionAllowed()) ripple(n.x, n.y, accent(n)); }   // one-shot "this changed" confirmation on a style/type edit (gWire → survives render, gated by motionAllowed)
   function traceEdge(a, b) {   // one-shot tracer that draws itself along a new edge's curve on a successful connect (gWire = never cleared)
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const p = gWire.append('path').attr('class', 'edge-trace').attr('d', edgePath(rightPort(a), leftPort(b), 0).d);
@@ -479,6 +487,7 @@
       '<button data-a="archive" class="arch" title="Archive selection">−</button>' +
       '</div>';
     document.body.appendChild(selToolbar);
+    requestAnimationFrame(() => positionSelToolbar());   // re-place once layout has settled (offsetWidth is 0 on the creation frame)
     selToolbar.querySelectorAll('button').forEach(b => b.onclick = () => selAction(b.dataset.a));
   }
   function selAction(a) {
@@ -705,8 +714,8 @@
     clear.onclick = () => ctxColor(null); box.appendChild(clear);
     PAL_HEX.forEach((hex, i) => { const s = document.createElement('div'); s.className = 'sw' + (d.color === i ? ' sel' : ''); s.style.background = hex; s.onclick = () => ctxColor(i); box.appendChild(s); });
   }
-  async function nodeStyle(patch) { if (!ctxNode || !SERVER) return; const j = await api('/api/node-style', Object.assign({ path: repoRel(ctxNode.url) }, patch)); if (j.ok) applyMaps(j.maps); else alert(j.error); }
-  async function ctxType(t) { if (!ctxNode || !SERVER) return; const p = repoRel(ctxNode.url); closeCtx(); const j = await api('/api/type', { path: p, type: t }); if (j.ok) applyMaps(j.maps); else alert(j.error); }
+  async function nodeStyle(patch) { if (!ctxNode || !SERVER) return; const id = ctxNode.id; const j = await api('/api/node-style', Object.assign({ path: repoRel(ctxNode.url) }, patch)); if (j.ok) { applyMaps(j.maps); pulseNode(id); } else alert(j.error); }
+  async function ctxType(t) { if (!ctxNode || !SERVER) return; const p = repoRel(ctxNode.url), id = ctxNode.id; closeCtx(); const j = await api('/api/type', { path: p, type: t }); if (j.ok) { applyMaps(j.maps); pulseNode(id); } else alert(j.error); }
   function ctxSize(dir) { if (!ctxNode) return; const s = Math.max(0.5, Math.min(2.5, (ctxNode.scale || 1) * (dir > 0 ? 1.15 : 1 / 1.15))); document.getElementById('ctx-size').textContent = Math.round(s * 100) + '%'; ctxNode.scale = s; nodeStyle({ scale: +s.toFixed(3) }); }
   function ctxHighlight() { if (!ctxNode) return; const hl = !ctxNode.hl; ctxNode.hl = hl; document.getElementById('ctx-hl').classList.toggle('on', hl); nodeStyle({ hl }); }
   function ctxColor(i) { if (!ctxNode) return; ctxNode.color = i; fillSwatches(ctxNode); nodeStyle({ color: i }); }
@@ -717,7 +726,15 @@
   // ---- map switching + breadcrumb + hash ----
   let suppressHash = false;
   function setHash(slug) { suppressHash = true; location.hash = 'map=' + slug; setTimeout(() => suppressHash = false, 0); }
-  function switchMap(slug, noHash) { if (!MAPS.maps[slug]) return; if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; } cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug); render(); setTimeout(fit, 40); }
+  function switchMap(slug, noHash) {
+    if (!MAPS.maps[slug]) return;
+    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+    selection.clear(); dragId = null; portArmed = false;                              // don't leak gesture/selection state into the next map
+    if (wire) { wirePath.attr('d', '').style('stroke', ''); wire = null; }
+    if (marqueeRect) { marqueeRect.remove(); marqueeRect = null; } marqueeStart = null;
+    cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug);
+    fit(true); render();   // instant-fit the new map, then render — no inter-map flash
+  }
   function jumpMap(slug) { trail = []; switchMap(slug); }
   function drillTo(slug) { if (!MAPS.maps[slug]) { alert('Linked map "' + slug + '" not found.'); return; } trail.push(cur); switchMap(slug); }
 
@@ -749,13 +766,14 @@
     dragPip(win, win.querySelector('.pip-resize'), true);
   }
   function raisePip(win) { win.style.zIndex = ++pipZ; }
-  function closePip(slug) { const w = openPips[slug]; if (w) { w.remove(); delete openPips[slug]; } }
+  function closePip(slug) { const w = openPips[slug]; if (!w) return; if (motionAllowed() && !w.classList.contains('closing')) { w.classList.add('closing'); setTimeout(() => { w.remove(); delete openPips[slug]; }, 200); } else { w.remove(); delete openPips[slug]; } }
 
   // ---- auto-tidy: lay nodes out left-to-right by flow order (longest-path layering) ----
   async function tidyLayout() {
     if (!SERVER) return;
     const m = map(); if (!m || !m.nodes.length) return;
     const nodes = m.nodes, edges = (m.edges || []).filter(e => e.from !== e.to);
+    const oldPos = {}; nodes.forEach(n => oldPos[n.id] = { x: n.x, y: n.y });   // FLIP: remember where they were before re-layout
     const byid = {}; nodes.forEach(n => byid[n.id] = n);
     const out = {}, indeg = {}; nodes.forEach(n => { out[n.id] = []; indeg[n.id] = 0; });
     edges.forEach(e => { if (byid[e.from] && byid[e.to]) { out[e.from].push(e.to); indeg[e.to]++; } });
@@ -770,8 +788,19 @@
     Object.keys(cols).map(Number).sort((a, b) => a - b).forEach(L => {
       cols[L].forEach((n, i) => { n.x = X0 + L * COLGAP; n.y = CY + (i - (cols[L].length - 1) / 2) * ROWGAP; });
     });
-    render(); setTimeout(fit, 60);
-    api('/api/poslist', { map: cur, positions: nodes.map(n => ({ path: repoRel(n.url), x: Math.round(n.x), y: Math.round(n.y) })) }).then(flushPending);
+    const target = {}; nodes.forEach(n => target[n.id] = { x: n.x, y: n.y });   // the new tidy positions
+    if (motionAllowed()) {
+      nodes.forEach(n => { n.x = oldPos[n.id].x; n.y = oldPos[n.id].y; });        // rewind to old, then glide
+      const dur = 480, t0 = performance.now();
+      const step = now => {
+        const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);      // easeOutCubic
+        nodes.forEach(n => { n.x = oldPos[n.id].x + (target[n.id].x - oldPos[n.id].x) * e; n.y = oldPos[n.id].y + (target[n.id].y - oldPos[n.id].y) * e; });
+        render();                                                                 // nodes AND edges redraw from interpolated positions → they glide together
+        if (p < 1) requestAnimationFrame(step); else { nodes.forEach(n => { n.x = target[n.id].x; n.y = target[n.id].y; }); render(); fit(true); }
+      };
+      requestAnimationFrame(step);
+    } else { render(); fit(true); }
+    api('/api/poslist', { map: cur, positions: nodes.map(n => ({ path: repoRel(n.url), x: Math.round(target[n.id].x), y: Math.round(target[n.id].y) })) }).then(flushPending);
   }
   function dragPip(win, handle, resize) {
     handle.addEventListener('pointerdown', e => {
@@ -822,14 +851,16 @@
   }
   function fillLinkSelect() { const s = document.getElementById('ctx-linkmap'); s.innerHTML = ''; const o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Link to map…'; s.appendChild(o0); MAPS.order.filter(sl => sl !== cur).forEach(slug => { const o = document.createElement('option'); o.value = slug; o.textContent = '→ ' + ((MAPS.maps[slug] || {}).title || slug); s.appendChild(o); }); }
 
-  function fit() {
-    if (!map() || !map().nodes.length) return;
+  function fit(instant) {
+    if (!map() || !map().nodes.length || !window.innerWidth) return;   // bail if the viewport isn't laid out yet (iframe reports 0×0 pre-paint)
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     map().nodes.forEach(n => { const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); maxY = Math.max(maxY, n.y + hh); });
     const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.6, Math.min(w / (maxX - minX + 200), h / (maxY - minY + 220)));
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     if (!isFinite(k) || k <= 0 || !isFinite(cx) || !isFinite(cy)) return;   // never push a NaN/degenerate transform
-    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * cx, h / 2 - k * cy).scale(k));
+    const t = d3.zoomIdentity.translate(w / 2 - k * cx, h / 2 - k * cy).scale(k);
+    if (instant) { svgN.__zoom = t; canvas.attr('transform', t); updateZoomHud(); document.body.classList.toggle('lod-far', t.k < 0.55); }   // set d3 zoom state directly (reliable, synchronous) so the very next render() culls to the fitted viewport
+    else svg.transition().duration(400).call(zoom.transform, t);   // animated for the Fit button
   }
   function zoomTo(scale) {   // zoom to an absolute level, keeping the current viewport center
     const w = window.innerWidth, h = window.innerHeight, t = d3.zoomTransform(svgN);
@@ -1136,5 +1167,6 @@
 
   const boot = (location.hash.match(/map=([^&]+)/) || [])[1];
   if (boot && MAPS.maps[boot]) cur = boot;
-  fillMapSelect(); fillLinkSelect(); render(); setTimeout(fit, 60);
+  fillMapSelect(); fillLinkSelect(); render();
+  requestAnimationFrame(() => { fit(true); render(); });   // defer fit one frame so the iframe has real dimensions, then instant-fit + re-cull (no flash, no missed-transition)
 })();

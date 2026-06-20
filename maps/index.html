@@ -139,7 +139,7 @@
   /* node hover lift + glow — transform is GPU-composited (smooth); the glow SNAPS (animating drop-shadow blur = jank) */
   .node-inner{transition:transform .24s var(--spring);transform-box:fill-box;transform-origin:center;will-change:transform}
   .node:hover{will-change:transform}
-  .node:hover .node-inner{transform:translateY(-4px) scale(1.05)}
+  .node:hover .node-inner{transform:translateY(-4px) scale(1.05);transition-delay:55ms}   /* hover-intent: a fast skim-over (under ~55ms) never fires the lift */
   .node:hover .shape{filter:drop-shadow(0 9px 18px rgba(65,64,76,.20)) drop-shadow(0 0 9px var(--accent))}
   .node .sheen{pointer-events:none}
   body.dragging .node-inner{transition:none}
@@ -364,6 +364,13 @@
     background:linear-gradient(135deg,transparent 50%,rgba(65,64,76,.35) 50%);border-radius:0 0 8px 0}
   .pip-cover{position:absolute;inset:0;z-index:9;display:none}        /* covers the iframe during drag/resize so it can't swallow the pointer */
   .pip.busy .pip-cover{display:block}
+  /* PiP open/close motion (item 42) */
+  @keyframes pip-open{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+  @keyframes pip-close{to{opacity:0;transform:scale(.92)}}
+  .pip{transform-origin:center;animation:pip-open .26s var(--spring) both}
+  .pip.closing{animation:pip-close .2s ease forwards;pointer-events:none}
+  @media (prefers-reduced-motion: reduce){.pip,.pip.closing{animation:none}}
+  body.calm .pip,body.calm .pip.closing{animation:none}
 
   /* ---- liquid glass: real backdrop-filter on HTML chrome (last in sheet so it wins the cascade) ---- */
   .drawer,.ctx{background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(24px) saturate(150%) brightness(1.03);backdrop-filter:blur(24px) saturate(150%) brightness(1.03);

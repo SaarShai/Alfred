@@ -129,7 +129,34 @@ Master plan = 9 deconflicted batches (fleet output w6a3wlw6j). Status:
       label stable). Wrote clean merged pointermove/endWire/addEdge (authors' 23/24/25 code was
       self-contradictory). Wire interactions (drag-out, magnetic, branch prompt) not synth-tested
       (d3 pointer-capture won't engage headless + they mutate data); handler merge reviewed.
-- [ ] Batch 6 (motion on node chain) — 39,38,41,43,42,44
+### Troubleshooting pass (after Batch 5) — 8 fixes, all verified
+7-agent read-only audit (w4v3y63zu) → 6 confirmed bugs (40 candidates, most debunked). Fixed:
+- [x] serve.js renameNode dropped edge bend/color/route (DATA LOSS) → spread `...e` (unit-verified)
+- [x] edges with one off-screen endpoint left controls unreachable → skip ctrl group when mid off-viewport
+- [x] minimap full-rebuilt every zoom tick (destroyed drag-rect mid-drag) → split updateMinimap (render)
+      vs updateMinimapViewport (cheap, per-tick)
+- [x] switchMap leaked selection/dragId/wire/marquee into next map → clear them (verified selRing=0)
+- [x] sel-toolbar offsetWidth=0 on first frame → rAF re-position
+- [x] FIRST-LOAD root cause: iframe reports window 0×0 pre-paint, so boot fit computed k=0 + culling
+      hid all nodes. Fixed: cull-guard skips culling at 0×0 (all render), boot fit deferred to rAF +
+      instant (direct __zoom set, no missed transition). Verified: all maps render all nodes headless;
+      painted view fits correctly.
+- [x] BONUS: dev server sent NO cache headers → browser served stale app.js (likely source of some
+      "issues" seen). Added `Cache-Control: no-store`.
+Test-method finding: d3.drag/wire gestures don't engage via synthetic Mouse/PointerEvents; need real
+OS input (computer-use) or a window test handle. Marquee/click/keydown/contextmenu DO work synthetically.
+
+- [x] **Batch 6** (motion) — 38 state-pulse (reused ripple/gWire, not author's render-wiped class) ·
+      39 hover-intent (light CSS transition-delay 55ms, not author's render-wiped .hovering JS) ·
+      43 FLIP tidy (glide node DATA positions + per-frame render so edges follow — author's CSS-transform
+      approach would clobber the SVG transform attr) · 42 PiP pop-in/out (lighter than author's
+      node-origin container-transform). DEFERRED by design: 41 true-spring drag (marginal over CSS
+      spring), 44 radial menu (synthesis flagged as over-engineering; ⌘K covers it). VERIFIED: PiP
+      open=pip-open anim, close=closing→remove@200ms; no errors; illustrator map clean.
+- [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47
+- [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49
+- [ ] Batch 9 (validation lint panel) — 17
+- [ ] Orphaned (fold in): 16 ctx-sectioning, 31 coachmark (40 spring-linear already present)
 - [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47
 - [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49
 - [ ] Batch 9 (validation lint panel) — 17

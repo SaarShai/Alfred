@@ -179,7 +179,7 @@ function renameNode(rel, title) {
   // update the map index: nodes list + any edges referencing the old slug
   let it = fs.readFileSync(idx, 'utf8');
   it = setList(it, 'nodes', getList(it, 'nodes').map(s => s === oldSlug ? newSlug : s));
-  it = setEdges(it, getEdges(it).map(e => ({ from: e.from === oldSlug ? newSlug : e.from, to: e.to === oldSlug ? newSlug : e.to, label: e.label })));
+  it = setEdges(it, getEdges(it).map(e => ({ ...e, from: e.from === oldSlug ? newSlug : e.from, to: e.to === oldSlug ? newSlug : e.to })));   // keep bend/color/route on rename
   fs.writeFileSync(idx, it);
   return path.relative(ROOT, path.join(dir, newSlug + '.md'));
 }
@@ -430,7 +430,7 @@ http.createServer((req, res) => {
   if (!file.startsWith(DASH)) { res.writeHead(403); return res.end('forbidden'); }
   fs.readFile(file, (err, buf) => {
     if (err) { res.writeHead(404); return res.end('not found'); }
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });   // dev server: never cache, so edits always load fresh
     res.end(buf);
   });
 }).listen(PORT, () => rebuild(() => {
