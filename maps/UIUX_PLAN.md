@@ -106,7 +106,13 @@ Master plan = 9 deconflicted batches (fleet output w6a3wlw6j). Status:
 - [x] **Batch 2** (conn-status chip + SSE throttle + viewport culling) — 2, 48. VERIFIED: "● Live"
       chip renders; SSE coalesced (80ms debounce); cull predicate proven (visible@origin, culled@+5000,
       restored); zoom handler now re-renders so culling re-applies on pan. No errors.
-- [ ] Batch 3 (zoom HUD + minimap + LOD) — 33, 34, 37
+- [x] **Batch 3** (zoom HUD + minimap + LOD) — 33, 34, 37. VERIFIED: HUD live % (wheel→152%/29%),
+      LOD toggles `lod-far` at k<0.55, minimap renders node rects + draggable viewport rect.
+      TWO BUGS CAUGHT + FIXED: (a) the new minimap `<svg>` became the FIRST svg so `d3.select('svg')`
+      grabbed it (main canvas blank) — fixed by id-ing the main svg `#map-svg` + scoping its CSS/selection;
+      (b) per-tick `scheduleRender()` in the zoom handler stormed render and fought programmatic zoom
+      transitions (fit/zoomTo) → moved reculling to the zoom `'end'` event. NOTE: rAF transitions don't
+      tick in headless preview eval (harness limit), so Fit/preset buttons verified by code, not eval.
 - [ ] Batch 4 (editing spine: marquee, toolbar, align, resize, snap, empty-state) — 6,8,9,12,10,13
 - [ ] Batch 5 (connections + server changes) — 4,22,23,25,24,5,14,15  ← only batch touching serve.js/build.js
 - [ ] Batch 6 (motion on node chain) — 39,38,41,43,42,44

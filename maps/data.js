@@ -421,8 +421,8 @@ window.MAPS = {
           "type": "step",
           "refs": [],
           "refsCollapsed": false,
-          "x": 369,
-          "y": 466,
+          "x": 157,
+          "y": 326,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -432,7 +432,15 @@ window.MAPS = {
           "url": "../maps-data/layers/back-layer.md"
         }
       ],
-      "edges": [],
+      "edges": [
+        {
+          "from": "ne7nyc",
+          "to": "nxp98d",
+          "label": "",
+          "bend": 0,
+          "color": null
+        }
+      ],
       "frames": []
     }
   }

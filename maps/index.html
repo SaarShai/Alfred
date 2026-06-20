@@ -48,8 +48,8 @@
   button.primary:hover{filter:brightness(1.08)}
   button.on{color:#fff;background:var(--link);border-color:transparent}
   body:not(.server) .needserver{display:none}
-  svg{width:100vw;height:100vh;display:block;cursor:grab}
-  svg:active{cursor:grabbing}
+  #map-svg{width:100vw;height:100vh;display:block;cursor:grab}
+  #map-svg:active{cursor:grabbing}
 
   /* edges */
   .edge{fill:none;stroke:var(--edge);stroke-width:2.2px;stroke-linecap:round;stroke-linejoin:round}
@@ -92,7 +92,7 @@
   .kp-item .kp-name{font-weight:600;color:var(--ink)}
   .kp-item .kp-map{color:var(--muted);font-size:11px;margin-left:auto}
   .kp-foot{font-size:10.5px;color:var(--muted)}
-  body.libmap svg{background:repeating-linear-gradient(135deg,rgba(107,114,128,.035) 0 14px,transparent 14px 28px)}
+  body.libmap #map-svg{background:repeating-linear-gradient(135deg,rgba(107,114,128,.035) 0 14px,transparent 14px 28px)}
 
   /* lane bands */
   .laneband{opacity:.07;pointer-events:none}
@@ -170,6 +170,12 @@
   /* calm mode — user-initiated motion off (mirrors prefers-reduced-motion). EVERY new animated item must join this list. */
   body.calm,body.calm .node.enter .node-inner,body.calm .edge.flow,body.calm .edge-trace,body.calm .ripple,body.calm .gatebadge.pulse circle,body.calm .node.drop-ok .shape,body.calm .ctx.exiting,body.calm .drawer.exiting,body.calm .kp.exiting{animation:none!important}
   body.calm .node-inner,body.calm .node:hover .node-inner,body.calm .node.grabbing .node-inner,body.calm .node .port,body.calm .node:hover .port{transition:none!important;transform:none!important}
+  /* level-of-detail — survey zoom (k<0.55): hide secondary detail for a clean, cheap canvas */
+  body.lod-far .ghost-label,body.lod-far .ghost-sub,body.lod-far .tray-title,body.lod-far .tray-name,body.lod-far .tray-home,body.lod-far .tray-caret,body.lod-far .typeglyph,body.lod-far .gatebadge circle{display:none}
+  body.lod-far .node text.label{font-size:10px;font-weight:600}
+  body.lod-far .ref-conn{opacity:0}
+  body.lod-far .tray-box{fill:rgba(107,114,128,.02);stroke-opacity:.15}
+  body.lod-far .ghost-shape{opacity:.4}
 
   .hint{position:fixed;bottom:12px;left:18px;color:var(--muted);font-size:11px;z-index:10;max-width:62vw}
   #bcrumb{position:fixed;top:54px;left:18px;z-index:9;display:flex;gap:6px;align-items:center;font-size:var(--fs-2);color:var(--muted);font-weight:600}
@@ -197,6 +203,22 @@
   @media (prefers-reduced-motion: reduce){#connstatus.reconnecting::before{animation:none;opacity:.6}}
   body.calm #connstatus.reconnecting::before{animation:none;opacity:.6}
   body.embed #connstatus{display:none}
+  /* zoom HUD + minimap — bottom-right stack (top-right would collide with header buttons) */
+  #zoom-hud{position:fixed;bottom:170px;right:20px;z-index:11;display:flex;gap:5px;align-items:center;
+    background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);
+    border:1px solid rgba(65,64,76,.14);border-radius:10px;padding:6px 9px;box-shadow:inset 1px 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(65,64,76,.06)}
+  #zoom-hud .zl{font-size:var(--fs-1);font-weight:700;color:var(--muted);min-width:34px;text-align:right}
+  #zoom-hud button{padding:5px 7px;font-size:var(--fs-1);white-space:nowrap}
+  #minimap{position:fixed;bottom:20px;right:20px;z-index:11;display:flex;flex-direction:column;gap:6px;align-items:flex-end;
+    background:rgba(255,255,255,.6);border:1px solid rgba(65,64,76,.14);border-radius:10px;padding:7px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(65,64,76,.06);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  #minimap-svg{display:block;border:1px solid rgba(65,64,76,.18);border-radius:6px;background:rgba(255,255,255,.55);cursor:default}
+  #minimap-toggle{padding:2px 8px;font-size:var(--fs-1);color:var(--muted);line-height:1.4}
+  #minimap.minimized #minimap-svg{display:none}
+  .minimap-node{fill:rgba(148,163,184,.22);stroke:rgba(148,163,184,.5);stroke-width:.8}
+  .minimap-viewport{fill:rgba(115,197,171,.10);stroke:var(--link);stroke-width:1.4;cursor:grab}
+  .minimap-viewport:active{cursor:grabbing}
+  body.embed #zoom-hud,body.embed #minimap{display:none}
 
   /* notes drawer */
   .drawer{position:fixed;top:0;right:0;bottom:0;z-index:60;width:min(560px,95vw);
@@ -345,6 +367,19 @@
   </div>
 </header>
 
+<div id="zoom-hud">
+  <span class="zl" id="zoom-pct">100%</span>
+  <button id="zoom-fit" title="Fit all nodes (Shift+1)">Fit</button>
+  <button id="zoom-50" title="50% zoom">50%</button>
+  <button id="zoom-100" title="100% zoom">100%</button>
+  <button id="zoom-200" title="200% zoom">200%</button>
+  <button id="zoom-sel" title="Zoom to selection">Sel</button>
+</div>
+<div id="minimap">
+  <svg id="minimap-svg" width="160" height="120" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg"></svg>
+  <button id="minimap-toggle" title="Collapse / expand minimap">−</button>
+</div>
+
 <div id="knowpick" class="kp" hidden role="dialog" aria-modal="true">
   <div class="kp-head"><span>Link a source of truth</span><button id="kp-x" title="Close">✕</button></div>
   <input id="kp-search" placeholder="Search nodes by name or map…" autocomplete="off" spellcheck="false">
@@ -357,7 +392,7 @@
 <div id="offline">Read-only — editing needs the app. Run <code>node maps/serve.js</code>, then open the printed URL.</div>
 <div id="pips"></div>
 
-<svg></svg>
+<svg id="map-svg"></svg>
 <div id="status-msg" aria-live="polite" aria-atomic="true" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden"></div>
 
 <div id="editor" class="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="ed-title">

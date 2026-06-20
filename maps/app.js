@@ -27,7 +27,7 @@
   const PAL_HEX = ['#0d9488', '#4f46e5', '#64748b', '#d97706', '#a855f7', '#0ea5e9', '#e11d48',   // matches --l0..--l6
     '#16a34a', '#111827', '#eab308', '#d946ef'];   // + green, black, yellow, magenta
 
-  const svg = d3.select('svg').attr('role', 'application').attr('aria-label', 'Process map editor');
+  const svg = d3.select('#map-svg').attr('role', 'application').attr('aria-label', 'Process map editor');
   const svgN = svg.node();
   const canvas = svg.append('g');
   const gFrame = canvas.append('g');                  // background boxes (behind everything)
@@ -45,8 +45,9 @@
         svgN.__zoom = t;
       }
       canvas.attr('transform', t);
-      scheduleRender();   // re-cull to the new viewport (coalesced to one render/frame) so panning never leaves stale culled-out nodes
-    });
+      updateZoomHud(); document.body.classList.toggle('lod-far', t.k < 0.55); updateMinimap();   // live zoom % + LOD + minimap viewport — all cheap, NO full render
+    })
+    .on('end', () => scheduleRender());   // re-cull to the SETTLED viewport once the pan/zoom/transition completes (per-tick render storms fight programmatic zoom transitions)
   svg.call(zoom);
   const defs = svg.append('defs');
   const edgeCol = getComputedStyle(document.documentElement).getPropertyValue('--edge').trim();
@@ -79,6 +80,25 @@
   function scheduleRender() { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; render(); }); }
   let sseBounceTimer = null, ssePending = null;        // coalesce SSE bursts into one applyMaps (large maps re-render is heavy)
   function debounceSse(fn, delay) { clearTimeout(sseBounceTimer); sseBounceTimer = setTimeout(fn, delay); }
+  function updateZoomHud() { const el = document.getElementById('zoom-pct'); if (el) el.textContent = Math.round(d3.zoomTransform(svgN).k * 100) + '%'; }
+  let minimapCollapsed = false;
+  function updateMinimap() {   // bottom-right thumbnail: all node bboxes + a draggable viewport rect (cheap: rects only, no labels/edges)
+    const mm = document.getElementById('minimap-svg'); if (!mm || minimapCollapsed) return;
+    const mmg = d3.select(mm); mmg.selectAll('*').remove();
+    const ns = (map() ? map().nodes : []); if (!ns.length) return;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    ns.forEach(n => { const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); maxY = Math.max(maxY, n.y + hh); });
+    if (!isFinite(minX)) return;
+    const W = 160, H = 120, pad = 5, iw = W - pad * 2, ih = H - pad * 2, bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
+    const scale = Math.min(iw / bw, ih / bh, 1), ox = pad - minX * scale + (iw - bw * scale) / 2, oy = pad - minY * scale + (ih - bh * scale) / 2;
+    ns.forEach(n => { const { hw, hh } = halfExt(n); mmg.append('rect').attr('class', 'minimap-node').attr('x', ox + (n.x - hw) * scale).attr('y', oy + (n.y - hh) * scale).attr('width', hw * 2 * scale).attr('height', hh * 2 * scale).attr('rx', 2); });
+    const t = d3.zoomTransform(svgN);
+    const vx = (window.innerWidth / 2 - t.x) / t.k, vy = (window.innerHeight / 2 - t.y) / t.k, vw = window.innerWidth / t.k, vh = window.innerHeight / t.k;
+    const vr = mmg.append('rect').attr('class', 'minimap-viewport').attr('x', ox + (vx - vw / 2) * scale).attr('y', oy + (vy - vh / 2) * scale).attr('width', vw * scale).attr('height', vh * scale);
+    vr.call(d3.drag().container(() => mm)                                   // drag the viewport rect to pan the canvas there
+      .on('start', e => e.sourceEvent.stopPropagation())
+      .on('drag', e => { const nx = (e.x - ox) / scale, ny = (e.y - oy) / scale, k = d3.zoomTransform(svgN).k, W2 = window.innerWidth, H2 = window.innerHeight; svg.call(zoom.transform, d3.zoomIdentity.translate(W2 / 2 - k * nx, H2 / 2 - k * ny).scale(k)); }));
+  }
 
   // ---- geometry ----
   const isDiamond = n => n.type === 'decision';
@@ -338,6 +358,7 @@
 
     updateBreadcrumb();
     syncLibToggle();
+    updateMinimap();
   }
 
   function ripple(x, y, col) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
@@ -605,6 +626,21 @@
     if (!isFinite(k) || k <= 0 || !isFinite(cx) || !isFinite(cy)) return;   // never push a NaN/degenerate transform
     svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * cx, h / 2 - k * cy).scale(k));
   }
+  function zoomTo(scale) {   // zoom to an absolute level, keeping the current viewport center
+    const w = window.innerWidth, h = window.innerHeight, t = d3.zoomTransform(svgN);
+    const cx = (w / 2 - t.x) / t.k, cy = (h / 2 - t.y) / t.k;
+    svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - scale * cx, h / 2 - scale * cy).scale(scale));
+  }
+  function zoomToSelection() {
+    if (!selection.size) { fit(); return; }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    selection.forEach(id => { const n = byId(id); if (!n) return; const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); maxY = Math.max(maxY, n.y + hh); });
+    if (!isFinite(minX)) return;
+    const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.6, Math.min(w / (maxX - minX + 200), h / (maxY - minY + 220)));
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    if (!isFinite(k) || k <= 0) return;
+    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * cx, h / 2 - k * cy).scale(k));
+  }
   function viewCenter() { const t = d3.zoomTransform(svgN); return { x: (window.innerWidth / 2 - t.x) / t.k, y: (window.innerHeight / 2 - t.y) / t.k }; }
 
   // ---- background boxes (frames) ----
@@ -802,6 +838,12 @@
   // ---- wire UI ----
   document.getElementById('mapsel').onchange = e => jumpMap(e.target.value);
   document.getElementById('fit').onclick = fit;
+  document.getElementById('zoom-fit').onclick = fit;
+  document.getElementById('zoom-50').onclick = () => zoomTo(0.5);
+  document.getElementById('zoom-100').onclick = () => zoomTo(1);
+  document.getElementById('zoom-200').onclick = () => zoomTo(2);
+  document.getElementById('zoom-sel').onclick = zoomToSelection;
+  document.getElementById('minimap-toggle').onclick = () => { minimapCollapsed = !minimapCollapsed; document.getElementById('minimap').classList.toggle('minimized', minimapCollapsed); document.getElementById('minimap-toggle').textContent = minimapCollapsed ? '+' : '−'; if (!minimapCollapsed) updateMinimap(); };
   document.getElementById('tidy').onclick = tidyLayout;
   document.getElementById('addnode').onclick = () => { const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); };
   document.getElementById('addmap').onclick = addMapPrompt;
@@ -844,6 +886,7 @@
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; clearSelection(); }
+    if (e.shiftKey && (e.key === '1' || e.code === 'Digit1')) { const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable); if (!typing) { e.preventDefault(); fit(); } }   // Shift+1 = fit
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
