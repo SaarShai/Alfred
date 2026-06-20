@@ -153,10 +153,12 @@ OS input (computer-use) or a window test handle. Marquee/click/keydown/contextme
       node-origin container-transform). DEFERRED by design: 41 true-spring drag (marginal over CSS
       spring), 44 radial menu (synthesis flagged as over-engineering; ⌘K covers it). VERIFIED: PiP
       open=pip-open anim, close=closing→remove@200ms; no errors; illustrator map clean.
-- [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47
+- [x] **Batch 7** (keyboard/command) — 28 ⌘K palette · 32 ⌘F//​ find-fly · 7 keyboard ops · 3 undo
+      toast · 30 ? cheat-sheet. ONE consolidated keydown handler (typing-guards + early-returns). Fixed
+      author bugs: item 3 missing `await r.json()` (toast never fired), item 28 qs-scope + highlight
+      mismatch, item 7 dup-title slug collision (→" copy"). DEFERRED: 11 copy/paste, 47 touch. VERIFIED:
+      palette (31 cmds+nodes+maps, fuzzy-highlighted), ? sheet (16 rows), ⌘A select-all, N-add, undo
+      toast "Added X"→Undo reverts CLEAN (disk-checked). No errors.
 - [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49
 - [ ] Batch 9 (validation lint panel) — 17
 - [ ] Orphaned (fold in): 16 ctx-sectioning, 31 coachmark (40 spring-linear already present)
-- [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47
-- [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49
-- [ ] Batch 9 (validation lint panel) — 17

@@ -100,6 +100,35 @@
   .kp-item .kp-name{font-weight:600;color:var(--ink)}
   .kp-item .kp-map{color:var(--muted);font-size:11px;margin-left:auto}
   .kp-foot{font-size:10.5px;color:var(--muted)}
+  /* undo toast (item 3) */
+  .toast{position:fixed;bottom:16px;left:18px;z-index:70;max-width:320px;padding:9px 12px;border-radius:10px;display:flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+    border:1px solid rgba(65,64,76,.12);box-shadow:inset 1px 1px 0 rgba(255,255,255,.7),0 8px 22px rgba(65,64,76,.16);font-size:var(--fs-2);color:var(--ink);
+    animation:toast-in .2s var(--spring) both}
+  .toast[hidden]{display:none}
+  .toast #toast-msg{flex:1;font-weight:600}
+  .toast button{padding:4px 9px;font-size:var(--fs-1);white-space:nowrap}
+  .toast #toast-undo-btn{background:var(--step);color:#fff;border-color:transparent;font-weight:700}
+  @keyframes toast-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes toast-out{to{opacity:0;transform:translateY(8px)}}
+  .toast.exiting{animation:toast-out .13s ease forwards}
+  @media (prefers-reduced-motion: reduce){.toast,.toast.exiting{animation:none}}
+  body.calm .toast,body.calm .toast.exiting{animation:none}
+  /* shortcuts cheat-sheet (item 30) */
+  .shortcuts-overlay{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(40,38,50,.28)}
+  .shortcuts-overlay[hidden]{display:none}
+  .shortcuts-overlay.exiting{animation:menu-out .13s ease forwards}
+  .shortcuts-modal{background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(24px) saturate(150%);backdrop-filter:blur(24px) saturate(150%);
+    border:1px solid rgba(65,64,76,.12);border-radius:14px;box-shadow:0 20px 60px rgba(65,64,76,.25);display:flex;flex-direction:column;max-height:80vh;width:min(460px,92vw);animation:pop .28s var(--spring) both}
+  .shortcuts-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(65,64,76,.1);font-size:var(--fs-4);font-weight:700;color:var(--ink)}
+  .shortcuts-head button{padding:4px 9px}
+  .shortcuts-body{flex:1;overflow:auto;padding:8px 18px 14px}
+  .shortcuts-row{display:grid;grid-template-columns:148px 1fr;gap:12px;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(65,64,76,.06);font-size:var(--fs-2)}
+  .shortcuts-row:last-child{border-bottom:none}
+  .shortcuts-key{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--step);background:rgba(138,143,230,.1);padding:3px 7px;border-radius:5px;justify-self:start}
+  .shortcuts-desc{color:var(--ink)}
+  @media (prefers-reduced-motion: reduce){.shortcuts-modal,.shortcuts-overlay.exiting{animation:none}}
+  body.calm .shortcuts-modal,body.calm .shortcuts-overlay.exiting{animation:none}
   body.libmap #map-svg{background:repeating-linear-gradient(135deg,rgba(107,114,128,.035) 0 14px,transparent 14px 28px)}
 
   /* lane bands */
@@ -509,6 +538,24 @@
 
 <input id="name-input" class="inlabel" hidden autocomplete="off" placeholder="title…">
 <input id="edge-label-input" class="inlabel" hidden autocomplete="off" placeholder="label…">
+
+<div id="cmdpal" class="kp" hidden role="dialog" aria-modal="true">
+  <div class="kp-head"><span>Command palette</span><button id="cmdpal-x" title="Close">✕</button></div>
+  <input id="cmdpal-search" placeholder="Search commands or jump to a node… (⌘K)" autocomplete="off" spellcheck="false">
+  <div id="cmdpal-list" class="kp-list"></div>
+  <div class="kp-foot">↑↓ navigate · Enter run · Esc close</div>
+</div>
+<div id="toast-undo" class="toast" hidden>
+  <span id="toast-msg"></span>
+  <button id="toast-undo-btn" title="Undo (⌘Z)">Undo</button>
+  <button id="toast-close" title="Dismiss">✕</button>
+</div>
+<div id="shortcuts" class="shortcuts-overlay" hidden>
+  <div class="shortcuts-modal">
+    <div class="shortcuts-head"><span>Keyboard shortcuts</span><button id="shortcuts-close" title="Close">✕</button></div>
+    <div class="shortcuts-body"></div>
+  </div>
+</div>
 
 <script src="./vendor/d3.min.js"></script>
 <script src="./data.js"></script>

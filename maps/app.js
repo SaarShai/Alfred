@@ -17,6 +17,9 @@
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
   const seen = new Set();                            // node ids already animated-in (so enter fires once)
   let selection = new Set();                          // currently-selected node ids (re-applied each render, like dragId; foundation for marquee/batch ops)
+  let cmdpalReg = [], cmdpalSel = 0;                  // command-palette registry + highlighted row
+  let toastTimeout = null, nudgeTimer = null;
+  const SHORTCUTS = [['⌘K', 'Command palette'], ['⌘F  /  /', 'Find & fly to a node'], ['N', 'Add a node'], ['Double-click node', 'Open notes'], ['Right-click node', 'Context menu'], ['Drag from port', 'Connect (drop on canvas = create)'], ['Shift-drag', 'Marquee multi-select'], ['Backspace / Delete', 'Archive selection'], ['⌘D', 'Duplicate selection'], ['⌘A', 'Select all'], ['Arrows', 'Nudge selection (⇧ = bigger)'], ['Shift+1', 'Fit to view'], ['⌘Z', 'Undo'], ['⌘S', 'Save notes'], ['Esc', 'Close / deselect'], ['?', 'This help']];
   const EMBED = new URLSearchParams(location.search).has('embed');   // true when shown inside a floating sub-map window
   if (EMBED) document.body.classList.add('embed');
 
@@ -62,9 +65,12 @@
   const repoRel = u => (u || '').replace(/^(\.\.\/)+/, '');
   const inputOpen = () => !document.getElementById('name-input').hidden || !document.getElementById('edge-label-input').hidden;
 
+  const TOASTY = { '/api/archive': b => 'Archived "' + ((b.path || '').split('/').pop().replace(/\.md$/, '')) + '"', '/api/add': b => 'Added "' + (b.title || 'node') + '"', '/api/edge': b => b.remove ? 'Deleted connection' : null, '/api/frame': b => b.op === 'del' ? 'Deleted box' : null };
   async function api(path, b) {
     const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
-    return r.json();
+    const j = await r.json();
+    if (j && j.ok && TOASTY[path]) { const label = TOASTY[path](b); if (label) showUndoToast(label); }   // surface undo for destructive/creative actions
+    return j;
   }
   function applyMaps(m) {
     clearTimeout(sseBounceTimer); ssePending = null;     // a direct apply supersedes any queued SSE snapshot
@@ -1071,6 +1077,70 @@
   }
   async function copyText(t, what) { try { await navigator.clipboard.writeText(t); document.getElementById('ex-msg').textContent = 'Copied ' + what + ' ✓'; } catch (_) { document.getElementById('ex-msg').textContent = 'Copy failed — select the text manually'; } }
 
+  // ---- command palette (⌘K): fuzzy-search every action + jump to any node/map ----
+  function buildCmdpalReg() {
+    cmdpalReg = [];
+    if (SERVER) {
+      cmdpalReg.push({ type: 'cmd', label: 'Add node', q: 'add node new', fn: () => { const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } });
+      cmdpalReg.push({ type: 'cmd', label: 'Add map', q: 'add map new', fn: addMapPrompt });
+      cmdpalReg.push({ type: 'cmd', label: 'Add box', q: 'add box frame group', fn: addFrame });
+      cmdpalReg.push({ type: 'cmd', label: 'Tidy layout', q: 'tidy arrange layout', fn: tidyLayout });
+      cmdpalReg.push({ type: 'cmd', label: 'Export workflow', q: 'export workflow loop spec', fn: openExport });
+      cmdpalReg.push({ type: 'cmd', label: 'Undo', q: 'undo revert', fn: doUndo });
+    }
+    cmdpalReg.push({ type: 'cmd', label: 'Toggle lanes', q: 'lanes bands swimlanes', fn: () => { showLanes = !showLanes; document.getElementById('lanes').classList.toggle('on', showLanes); render(); } });
+    cmdpalReg.push({ type: 'cmd', label: 'Fit to view', q: 'fit zoom view', fn: () => fit() });
+    cmdpalReg.push({ type: 'cmd', label: 'Keyboard shortcuts', q: 'help shortcuts keys', fn: showShortcutsOverlay });
+    MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return;
+      cmdpalReg.push({ type: 'map', label: m.title || slug, sub: 'Map', q: (m.title || slug), fn: () => jumpMap(slug) });
+      (m.nodes || []).forEach(n => cmdpalReg.push({ type: 'node', label: n.name, sub: (m.title || slug), q: n.name + ' ' + (m.title || slug), fn: () => flyToNode(slug, n.id) }));
+    });
+  }
+  function flyToNode(slug, id) { const go = () => { const n = byId(id); if (n) focusNode(n); }; if (slug !== cur) { trail = []; switchMap(slug, true); setTimeout(go, 90); } else go(); }
+  function openCmdpal(nodesOnly) {
+    buildCmdpalReg();
+    if (nodesOnly) cmdpalReg = cmdpalReg.filter(it => it.type === 'node');
+    cmdpalSel = 0;
+    document.getElementById('cmdpal-search').value = ''; renderCmdpalList('');
+    const cp = document.getElementById('cmdpal'); cp.classList.remove('exiting'); cp.hidden = false;
+    setTimeout(() => document.getElementById('cmdpal-search').focus(), 0);
+  }
+  function openFind() { openCmdpal(true); }
+  function closeCmdpal() { fadeOut(document.getElementById('cmdpal')); }
+  function renderCmdpalList(q) {
+    const box = document.getElementById('cmdpal-list'); box.innerHTML = '';
+    const qs = (q || '').trim();
+    const results = cmdpalReg.map(it => { const m = fuzzyScore(it.q || it.label, qs), disp = fuzzyScore(it.label, qs); return Object.assign({}, it, { score: m.score, highlighted: disp.score > 0 ? disp.highlighted : it.label }); })
+      .filter(it => !qs || it.score > 0).sort((a, b) => b.score - a.score).slice(0, 40);
+    cmdpalSel = Math.max(0, Math.min(cmdpalSel, results.length - 1));
+    if (!results.length) { const e = document.createElement('div'); e.className = 'kp-foot'; e.textContent = 'No matches.'; box.appendChild(e); return; }
+    results.forEach((it, i) => {
+      const row = document.createElement('div'); row.className = 'kp-item' + (i === cmdpalSel ? ' on' : '');
+      const col = it.type === 'map' ? 'var(--step)' : it.type === 'node' ? 'var(--link)' : 'var(--edge)';
+      const g = document.createElement('span'); g.className = 'kp-glyph'; g.style.background = col; g.textContent = it.type === 'cmd' ? '⌘' : it.type === 'map' ? '▦' : '◯';
+      const nm = document.createElement('span'); nm.className = 'kp-name'; nm.innerHTML = it.highlighted || it.label;
+      const sub = document.createElement('span'); sub.className = 'kp-map'; sub.textContent = it.sub || '';
+      row.append(g, nm, sub); row.onclick = () => { closeCmdpal(); it.fn(); };
+      box.appendChild(row);
+    });
+  }
+  function cmdpalMove(dir) { const items = document.querySelectorAll('#cmdpal-list .kp-item'); if (!items.length) return; cmdpalSel = (cmdpalSel + dir + items.length) % items.length; items.forEach((el, i) => el.classList.toggle('on', i === cmdpalSel)); items[cmdpalSel].scrollIntoView({ block: 'nearest' }); }
+  function cmdpalRun() { const items = document.querySelectorAll('#cmdpal-list .kp-item'); const el = items[cmdpalSel] || items[0]; if (el) el.click(); }
+  // ---- shortcuts cheat-sheet (?) ----
+  function showShortcutsOverlay() {
+    const ov = document.getElementById('shortcuts'), body = ov.querySelector('.shortcuts-body'); body.innerHTML = '';
+    SHORTCUTS.forEach(([k, d]) => { const row = document.createElement('div'); row.className = 'shortcuts-row'; const ke = document.createElement('div'); ke.className = 'shortcuts-key'; ke.textContent = k; const de = document.createElement('div'); de.className = 'shortcuts-desc'; de.textContent = d; row.append(ke, de); body.appendChild(row); });
+    ov.classList.remove('exiting'); ov.hidden = false;
+  }
+  function closeShortcutsOverlay() { fadeOut(document.getElementById('shortcuts')); }
+  // ---- undo toast (makes the existing server undo visible) ----
+  function showUndoToast(label) {
+    const toast = document.getElementById('toast-undo'); if (!toast) return;
+    document.getElementById('toast-msg').textContent = label;
+    toast.classList.remove('exiting'); toast.hidden = false;
+    clearTimeout(toastTimeout); toastTimeout = setTimeout(() => fadeOut(toast), 4500);
+  }
+
   // ---- wire UI ----
   document.getElementById('mapsel').onchange = e => jumpMap(e.target.value);
   document.getElementById('fit').onclick = fit;
@@ -1098,6 +1168,12 @@
   document.getElementById('ed-text').addEventListener('input', e => renderRefs(e.target.value));   // live-update reference chips as you type [[…]]
   document.getElementById('libtoggle').onclick = toggleLibrary;
   document.getElementById('kp-x').onclick = closeKnowPick;
+  document.getElementById('cmdpal-x').onclick = closeCmdpal;
+  document.getElementById('cmdpal-search').addEventListener('input', e => { cmdpalSel = 0; renderCmdpalList(e.target.value); });
+  document.getElementById('shortcuts-close').onclick = closeShortcutsOverlay;
+  document.getElementById('shortcuts').onclick = e => { if (e.target.id === 'shortcuts') closeShortcutsOverlay(); };
+  document.getElementById('toast-undo-btn').onclick = () => { clearTimeout(toastTimeout); fadeOut(document.getElementById('toast-undo')); doUndo(); };
+  document.getElementById('toast-close').onclick = () => { clearTimeout(toastTimeout); fadeOut(document.getElementById('toast-undo')); };
   document.getElementById('kp-search').addEventListener('input', e => renderKpList(e.target.value));
   document.getElementById('ctx-linkknow').onclick = () => { if (ctxNode) openKnowPick(ctxNode); };
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
@@ -1122,18 +1198,32 @@
     const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx();
     const kp = document.getElementById('knowpick');                                    // dismiss the picker on an outside click (ignoring the click that opened it)
     if (!kp.hidden && !kp.contains(e.target) && !e.target.closest('#ctx-linkknow')) closeKnowPick();
+    const cp = document.getElementById('cmdpal'); if (!cp.hidden && !cp.contains(e.target)) closeCmdpal();
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; clearSelection(); }
-    if (e.shiftKey && (e.key === '1' || e.code === 'Digit1')) { const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable); if (!typing) { e.preventDefault(); fit(); } }   // Shift+1 = fit
-    if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !e.shiftKey) { const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable); if (!typing && SERVER) { e.preventDefault(); const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } }   // N = add a node at view center
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-      const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
-      if (!typing) { e.preventDefault(); doUndo(); }   // let the browser do native text-undo inside fields
+    const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable), cmd = e.metaKey || e.ctrlKey;
+    if (!document.getElementById('cmdpal').hidden) {   // palette navigation wins while it's open
+      if (e.key === 'ArrowDown') { e.preventDefault(); cmdpalMove(1); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); cmdpalMove(-1); return; }
+      if (e.key === 'Enter') { e.preventDefault(); cmdpalRun(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); closeCmdpal(); return; }
     }
+    if (cmd && e.key.toLowerCase() === 'k') { e.preventDefault(); const cp = document.getElementById('cmdpal'); if (cp.hidden) openCmdpal(); else closeCmdpal(); return; }
+    if (cmd && e.key.toLowerCase() === 'f' && !typing) { e.preventDefault(); openFind(); return; }
+    if (e.key === '/' && !typing) { e.preventDefault(); openFind(); return; }
+    if (e.key === '?' && !typing) { e.preventDefault(); showShortcutsOverlay(); return; }
+    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); closeCmdpal(); closeShortcutsOverlay(); document.getElementById('exportpanel').hidden = true; clearSelection(); return; }
+    if (cmd && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); return; }
+    if (cmd && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); doUndo(); return; }   // redo deferred: server has single-level undo only
+    if (typing) return;   // everything below is canvas-only
+    if (e.shiftKey && (e.key === '1' || e.code === 'Digit1')) { e.preventDefault(); fit(); return; }   // Shift+1 = fit
+    if ((e.key === 'n' || e.key === 'N') && !cmd && !e.shiftKey) { if (SERVER) { e.preventDefault(); const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } return; }   // N = add a node
+    if (cmd && e.key.toLowerCase() === 'a' && map()) { e.preventDefault(); map().nodes.forEach(n => selection.add(n.id)); render(); return; }   // select all
+    if (cmd && e.key.toLowerCase() === 'd' && selection.size && SERVER) { e.preventDefault(); selNodes().forEach(n => api('/api/add', { map: cur, title: n.name + ' copy', type: n.type, x: n.x + 28, y: n.y + 28, note: '', scale: n.scale, color: n.color, gate: n.gate, hl: n.hl, link_map: n.link_map }).then(flushPending)); return; }   // duplicate
+    if ((e.key === 'Backspace' || e.key === 'Delete') && selection.size && SERVER) { e.preventDefault(); if (!confirm('Archive ' + selection.size + ' node' + (selection.size === 1 ? '' : 's') + '?')) return; selNodes().forEach(n => api('/api/archive', { path: repoRel(n.url) }).then(flushPending)); selection.clear(); render(); return; }   // archive selection
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && selection.size) { e.preventDefault(); const d = e.shiftKey ? 24 : 4, dx = e.key === 'ArrowRight' ? d : e.key === 'ArrowLeft' ? -d : 0, dy = e.key === 'ArrowDown' ? d : e.key === 'ArrowUp' ? -d : 0; selNodes().forEach(n => { n.x += dx; n.y += dy; }); scheduleRender(); clearTimeout(nudgeTimer); nudgeTimer = setTimeout(() => persistPos(selNodes()), 350); return; }   // nudge selection (debounced persist)
   });
-  ['ctx', 'editor', 'knowpick', 'exportpanel'].forEach(id => {   // a11y focus-trap — keep Tab within an open dialog (attached once, inert while hidden)
+  ['ctx', 'editor', 'knowpick', 'exportpanel', 'cmdpal'].forEach(id => {   // a11y focus-trap — keep Tab within an open dialog (attached once, inert while hidden)
     const dlg = document.getElementById(id); if (!dlg) return;
     dlg.addEventListener('keydown', e => {
       if (e.key !== 'Tab' || dlg.hidden) return;
