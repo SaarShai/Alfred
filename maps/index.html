@@ -183,6 +183,25 @@
   .ex-hint{font-weight:500;opacity:.8}
   #exportpanel pre{background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:var(--ink);max-height:30vh;overflow:auto}
 
+  /* embed mode: this app shown inside a floating sub-map window — hide the top chrome */
+  body.embed header, body.embed #bcrumb, body.embed #offline{display:none!important}
+
+  /* floating sub-map windows (picture-in-picture over the top-level map) */
+  #pips{position:fixed;inset:0;z-index:55;pointer-events:none}
+  .pip{position:absolute;pointer-events:auto;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;
+    background:rgba(255,255,255,.7);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(65,64,76,.16);box-shadow:0 18px 50px rgba(65,64,76,.28),inset 1px 1px 0 rgba(255,255,255,.6)}
+  .pip-bar{display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:move;user-select:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.12));border-bottom:1px solid rgba(65,64,76,.1)}
+  .pip-title{flex:1;font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pip-bar button{padding:3px 9px;font-size:13px;line-height:1}
+  .pip-body{flex:1;position:relative;background:var(--bg1)}
+  .pip-body iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+  .pip-resize{position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;
+    background:linear-gradient(135deg,transparent 50%,rgba(65,64,76,.35) 50%);border-radius:0 0 8px 0}
+  .pip-cover{position:absolute;inset:0;z-index:9;display:none}        /* covers the iframe during drag/resize so it can't swallow the pointer */
+  .pip.busy .pip-cover{display:block}
+
   /* ---- liquid glass: real backdrop-filter on HTML chrome (last in sheet so it wins the cascade) ---- */
   .drawer,.ctx{background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(24px) saturate(150%) brightness(1.03);backdrop-filter:blur(24px) saturate(150%) brightness(1.03);
     border:1px solid rgba(65,64,76,.12);
@@ -221,6 +240,7 @@
 
 <div id="bcrumb" hidden></div>
 <div id="offline">Read-only — editing needs the app. Run <code>node maps/serve.js</code>, then open the printed URL.</div>
+<div id="pips"></div>
 
 <svg></svg>
 

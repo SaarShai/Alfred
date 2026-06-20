@@ -14,6 +14,8 @@
   let clickTimer = null;                             // single-click debounced against dblclick
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
   const seen = new Set();                            // node ids already animated-in (so enter fires once)
+  const EMBED = new URLSearchParams(location.search).has('embed');   // true when shown inside a floating sub-map window
+  if (EMBED) document.body.classList.add('embed');
 
   const NS = 'http://www.w3.org/2000/svg';
   const TYPE_COLOR = { step: 'var(--step)', decision: 'var(--decision)', 'subprocess-link': 'var(--link)' };
@@ -234,7 +236,7 @@
 
   function onNodeClick(d) {
     ripple(d.x, d.y);
-    if (d.link_map) { drillTo(d.link_map); return; }
+    if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); return; }   // top level: float a window; inside a window: drill in place
     openEditor(d);
   }
 
@@ -359,6 +361,49 @@
   function switchMap(slug, noHash) { if (!MAPS.maps[slug]) return; cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug); render(); setTimeout(fit, 40); }
   function jumpMap(slug) { trail = []; switchMap(slug); }
   function drillTo(slug) { if (!MAPS.maps[slug]) { alert('Linked map "' + slug + '" not found.'); return; } trail.push(cur); switchMap(slug); }
+
+  // ---- floating sub-map windows (picture-in-picture): a link node opens its map as a draggable/resizable iframe over the top map ----
+  let pipZ = 0, pipCount = 0;
+  const openPips = {};                                // slug -> window el (one window per map; re-focus if already open)
+  function openPip(slug) {
+    if (!MAPS.maps[slug]) { alert('Linked map "' + slug + '" not found.'); return; }
+    if (openPips[slug]) { raisePip(openPips[slug]); return; }
+    const host = document.getElementById('pips');
+    const win = document.createElement('div'); win.className = 'pip';
+    const off = (pipCount++ % 6) * 26, w = 480, h = 340;
+    win.style.left = Math.max(16, (window.innerWidth - w) / 2 + off) + 'px';
+    win.style.top = Math.max(64, (window.innerHeight - h) / 2 - 30 + off) + 'px';
+    win.style.width = w + 'px'; win.style.height = h + 'px'; win.style.zIndex = ++pipZ;
+    win.innerHTML =
+      '<div class="pip-bar"><span class="pip-title"></span>' +
+      '<button class="pip-max" title="Maximize — open this map full-screen">⤢</button>' +
+      '<button class="pip-close" title="Close">✕</button></div>' +
+      '<div class="pip-body"><iframe></iframe><div class="pip-cover"></div></div>' +
+      '<div class="pip-resize"></div>';
+    win.querySelector('.pip-title').textContent = (MAPS.maps[slug] || {}).title || slug;
+    win.querySelector('iframe').src = '?embed=1#map=' + encodeURIComponent(slug);
+    host.appendChild(win); openPips[slug] = win;
+    win.addEventListener('pointerdown', () => raisePip(win), true);
+    win.querySelector('.pip-close').onclick = () => closePip(slug);
+    win.querySelector('.pip-max').onclick = () => { closePip(slug); drillTo(slug); };
+    dragPip(win, win.querySelector('.pip-bar'), false);
+    dragPip(win, win.querySelector('.pip-resize'), true);
+  }
+  function raisePip(win) { win.style.zIndex = ++pipZ; }
+  function closePip(slug) { const w = openPips[slug]; if (w) { w.remove(); delete openPips[slug]; } }
+  function dragPip(win, handle, resize) {
+    handle.addEventListener('pointerdown', e => {
+      if (!resize && e.target.closest('button')) return;
+      e.preventDefault(); e.stopPropagation(); raisePip(win); win.classList.add('busy');
+      const sx = e.clientX, sy = e.clientY, ox = win.offsetLeft, oy = win.offsetTop, ow = win.offsetWidth, oh = win.offsetHeight;
+      const mv = ev => {
+        if (resize) { win.style.width = Math.max(240, ow + ev.clientX - sx) + 'px'; win.style.height = Math.max(170, oh + ev.clientY - sy) + 'px'; }
+        else { win.style.left = Math.max(0, ox + ev.clientX - sx) + 'px'; win.style.top = Math.max(0, oy + ev.clientY - sy) + 'px'; }
+      };
+      const up = () => { win.classList.remove('busy'); window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+      window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+    });
+  }
   window.addEventListener('hashchange', () => { if (suppressHash) return; const m = (location.hash.match(/map=([^&]+)/) || [])[1]; if (m && MAPS.maps[m] && m !== cur) { trail = []; switchMap(m, true); } });
   function updateBreadcrumb() {
     const bc = document.getElementById('bcrumb');
