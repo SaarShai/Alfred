@@ -615,6 +615,7 @@
   document.querySelectorAll('#ctx-types button').forEach(b => b.onclick = () => ctxType(b.dataset.t));
   // double-click empty canvas → quick add
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
+  svg.on('contextmenu.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; e.preventDefault(); closeCtx(); const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   document.addEventListener('click', e => { const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeEditor(); closeCtx(); document.getElementById('exportpanel').hidden = true; }

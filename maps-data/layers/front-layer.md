@@ -1,4 +1,5 @@
 ---
+color: 8
 nid: nxp98d
 title: "front layer"
 type: step
