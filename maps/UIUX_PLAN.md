@@ -189,3 +189,43 @@ OS input (computer-use) or a window test handle. Marquee/click/keydown/contextme
 ## FINAL: 50/51 items built (44 radial intentionally skipped) + 8 troubleshooting fixes. All
 ## preview-verified, no console errors on any map, no data corruption (every mutating test reverted).
 ## Server port 3000, no-cache. Canonical in Alfred `dashboard` branch.
+
+## TROUBLESHOOT + STRESS PASS (2026-06-20) — 9 bugs found & fixed
+Method: live stress (203-node injected map, keyboard/palette storm, malformed edges: self-loop /
+dangling target / zero-length / null-coord) → 0 NaN, 0 errors. Adversarial code-audit workflow
+(6 regions, find→verify) → 8 real bugs, 0 debunked. +1 live-found (focus trap). All 9 fixed +
+end-to-end verified; maps-data SHA returned to baseline bbe259c after every mutating test.
+
+- [#1 data-loss] serve.js setField/setList: user value containing $&/$$/$`/$' was interpreted as a
+      regex replace-pattern (`.replace(re, line)`) → frontmatter corruption on rename / gate edit.
+      Fix: `() => line` function replacer (both branches) + `[^\n]*` (CRLF-tolerant). VERIFIED literal.
+- [#2 data-loss] build.js fmBlock/ensureNid: CRLF file → whole frontmatter unparseable → nid churns
+      every build, all fields null. Fix: `/^---\r?\n/` in both + /api/save normalizes CRLF→LF.
+      VERIFIED: nid n-oi01 preserved under CRLF rebuild.
+- [#3 wrong-result] Duplicate/paste dropped color/scale/hl/gate/lane (addNode ignored them).
+      Fix: addNode accepts a style obj + writes them. VERIFIED color/scale/hl/gate persisted.
+- [#4 wrong-result] Repeat paste / dup-twice silently dropped nodes on slug collision (addNode threw,
+      client swallowed 400). Fix: addNode auto-uniquifies (" 2", " 3"…). VERIFIED → zbatchtest-2.md.
+- [#5 wrong-result] Breadcrumb ancestor click went to Home (off-by-one: `trail.slice(0,i)` emptied
+      trail[i] before read). Fix: capture tgt first. VERIFIED Illustrator crumb → #map=illustrator.
+- [#6 wrong-result] Broken-ref repair didn't update edContentHash → false save-conflict next save.
+      Fix: `edContentHash = simpleHash(content)` after repair (mirrors saveDoc:981).
+- [#7 visual] Hover-preview popover orphaned if its node removed during the 320ms delay.
+      Fix: `hideGhostPopover()` at render() top.
+- [#8 minor] Multi-node dup/paste = N undo snapshots (⌘Z reverted only one). Fix: new atomic
+      /api/add-batch (one pushUndo, one rebuild). VERIFIED 1 undo reverts the whole batch.
+- [#9 ux, live-found] Closing ⌘K palette left focus on the hidden #cmdpal-search → typing-guard killed
+      /, ?, Delete, arrows until a canvas click. Fix: blur search in closeCmdpal. VERIFIED activeElement
+      returns to BODY, / works immediately after close.
+- [#10 wrong-result, live-found while verifying #6] Broken-ref repair self-dismissed: clicking "Relink"
+      ran ov.remove()+showBrokenRefPicker(), then the SAME click bubbled to the doc outside-click
+      handler which — the button now detached — closed the just-opened picker (brokenRefPicker nulled).
+      Repair was UNUSABLE. Fix: e.stopPropagation() on the Relink onclick (app.js:1158). VERIFIED:
+      picker stays open, zzbroken→n-hand01 actually written to disk, msg 'Fixed ✓'. The static audit
+      missed this (pure runtime event-propagation, not visible in code-read); the live verify caught it.
+NOTE: #6's first verify was hollow — the repair never executed (blocked by #10), so the no-conflict
+      result was vacuous. After fixing #10, #6 re-verified with the repair actually changing disk
+      content → next save shows 'Saved ✓', conflictBar 0 (a stale edContentHash would have false-conflicted).
+Files touched: maps/serve.js, maps/build.js, maps/app.js (no commit — per standing rule).
+All 10 fixes verified end-to-end via live HTTP + DOM; maps-data SHA returned to baseline bbe259c after
+every mutating test. Server port 3000, no-cache. Canonical in Alfred `dashboard` branch.

@@ -205,6 +205,7 @@
 
   function render() {
     LANE_COLORS = laneColorMap();
+    hideGhostPopover();   // a rebuild (SSE refresh, drag end, map switch) can remove the hovered node mid-delay → cancel its armed timer / stray popover
     gFrame.selectAll('*').remove(); gLane.selectAll('*').remove(); gEdge.selectAll('*').remove(); gNode.selectAll('*').remove();
     if (!map()) { updateBreadcrumb(); return; }
     const edges = map().edges;
@@ -452,14 +453,12 @@
     const edges = (map() ? map().edges : []).filter(e => ids.has(e.from) && ids.has(e.to));
     clipboard = { nodes: ns.map(n => ({ name: n.name, type: n.type, scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map, x: n.x, y: n.y })), edges: edges.map(e => ({ from: ns.findIndex(n => n.id === e.from), to: ns.findIndex(n => n.id === e.to), label: e.label, bend: e.bend, color: e.color, route: e.route })) };
   }
-  async function pasteSelection() {   // re-create nodes (preserving relative layout) then re-wire internal edges
+  async function pasteSelection() {   // re-create nodes (preserving relative layout) then re-wire internal edges — one atomic batch: single undo, single rebuild, styling preserved
     if (!clipboard || !clipboard.nodes.length || !cur || !SERVER) return;
     const cn = clipboard.nodes, minX = Math.min(...cn.map(n => n.x)), minY = Math.min(...cn.map(n => n.y));
-    const center = viewCenter(), dx = center.x - minX + 30, dy = center.y - minY + 30, slugs = [];
-    for (let i = 0; i < cn.length; i++) {
-      const n = cn[i], j = await api('/api/add', { map: cur, title: n.name + ' copy', type: n.type, x: Math.round(n.x + dx), y: Math.round(n.y + dy), note: '', scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map });
-      slugs[i] = (j.ok && j.created) ? j.created.split('/').pop().replace(/\.md$/, '') : null;
-    }
+    const center = viewCenter(), dx = center.x - minX + 30, dy = center.y - minY + 30;
+    const j = await api('/api/add-batch', { map: cur, nodes: cn.map(n => ({ title: n.name + ' copy', type: n.type, x: Math.round(n.x + dx), y: Math.round(n.y + dy), note: '', scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map })) });
+    const slugs = (j.ok && j.created) ? j.created.map(c => c.split('/').pop().replace(/\.md$/, '')) : [];
     for (const e of clipboard.edges) { const fs = slugs[e.from], ts = slugs[e.to]; if (fs && ts) await api('/api/edge', { map: cur, from: fs, to: ts, label: e.label, bend: e.bend, color: e.color, route: e.route }); }
     flushPending();
   }
@@ -861,7 +860,7 @@
     const homeBtn = document.createElement('a'); homeBtn.textContent = '⌂ Home'; homeBtn.onclick = () => { trail = []; jumpMap(MAPS.order[0] || null); }; bc.appendChild(homeBtn);
     if (trail.length || cur) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; bc.appendChild(s); }
     trail.forEach((slug, i) => {
-      const a = document.createElement('a'); a.textContent = (MAPS.maps[slug] || {}).title || slug; a.onclick = () => { trail = trail.slice(0, i); switchMap(trail[i] || MAPS.order[0] || null); }; bc.appendChild(a);
+      const a = document.createElement('a'); a.textContent = (MAPS.maps[slug] || {}).title || slug; a.onclick = () => { const tgt = trail[i]; trail = trail.slice(0, i); switchMap(tgt || MAPS.order[0] || null); }; bc.appendChild(a);   // capture tgt BEFORE the slice empties trail[i], else every ancestor click lands on Home
       if (i < trail.length - 1 || cur) { const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; bc.appendChild(s); }
     });
     if (cur) { const span = document.createElement('span'); span.textContent = (map() || {}).title || cur; bc.appendChild(span); }
@@ -1121,7 +1120,7 @@
       const esc = tgt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const content = ta.value.replace(new RegExp('\\[\\[' + esc + '(\\|[^\\]]*)?\\]\\]'), '[[' + it.id + '|' + it.name + ']]');
       const msg = document.getElementById('ed-msg'); msg.textContent = 'Fixing…';
-      const j = await api('/api/save', { path: edPath, content }); if (j.ok) { ta.value = content; renderRefs(content); msg.textContent = 'Fixed ✓'; if (j.maps) applyMaps(j.maps); } else msg.textContent = 'Error: ' + j.error;
+      const j = await api('/api/save', { path: edPath, content }); if (j.ok) { ta.value = content; edContentHash = simpleHash(content); renderRefs(content); msg.textContent = 'Fixed ✓'; if (j.maps) applyMaps(j.maps); } else msg.textContent = 'Error: ' + j.error;   // resync hash to the saved body, else the next manual save sees a false conflict
       return;
     }
     if (!kpCiting || !SERVER) return;
@@ -1156,7 +1155,7 @@
     document.querySelectorAll('.broken-overlay').forEach(el => el.remove());
     const ov = document.createElement('div'); ov.className = 'broken-overlay';
     const h = document.createElement('div'); h.className = 'bo-head'; h.textContent = 'Fix broken references'; ov.appendChild(h);
-    broken.forEach(br => { const row = document.createElement('div'); row.className = 'bo-row'; const lab = document.createElement('span'); lab.className = 'bo-lab'; lab.textContent = '[[' + br.target + ']]'; const btn = document.createElement('button'); btn.className = 'primary'; btn.textContent = 'Relink'; btn.onclick = () => { ov.remove(); showBrokenRefPicker(br.target); }; row.append(lab, btn); ov.appendChild(row); });
+    broken.forEach(br => { const row = document.createElement('div'); row.className = 'bo-row'; const lab = document.createElement('span'); lab.className = 'bo-lab'; lab.textContent = '[[' + br.target + ']]'; const btn = document.createElement('button'); btn.className = 'primary'; btn.textContent = 'Relink'; btn.onclick = e => { e.stopPropagation(); ov.remove(); showBrokenRefPicker(br.target); }; row.append(lab, btn); ov.appendChild(row); });   // stopPropagation: else this same click bubbles to the doc 'outside-click' handler, which (the button now detached) treats it as outside the just-opened picker and dismisses it
     const x = document.createElement('button'); x.className = 'bo-x'; x.textContent = '✕'; x.onclick = () => ov.remove(); ov.appendChild(x);
     document.body.appendChild(ov);
   }
@@ -1249,7 +1248,7 @@
     setTimeout(() => document.getElementById('cmdpal-search').focus(), 0);
   }
   function openFind() { openCmdpal(true); }
-  function closeCmdpal() { fadeOut(document.getElementById('cmdpal')); }
+  function closeCmdpal() { const s = document.getElementById('cmdpal-search'); if (s) s.blur(); fadeOut(document.getElementById('cmdpal')); }   // blur the (about-to-be-hidden) search so activeElement returns to body — else 'typing' stays true and /, ?, Delete, arrows go dead until a canvas click
   function renderCmdpalList(q) {
     const box = document.getElementById('cmdpal-list'); box.innerHTML = '';
     const qs = (q || '').trim();
@@ -1433,7 +1432,7 @@
     if (e.shiftKey && (e.key === '1' || e.code === 'Digit1')) { e.preventDefault(); fit(); return; }   // Shift+1 = fit
     if ((e.key === 'n' || e.key === 'N') && !cmd && !e.shiftKey) { if (SERVER) { e.preventDefault(); const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } return; }   // N = add a node
     if (cmd && e.key.toLowerCase() === 'a' && map()) { e.preventDefault(); map().nodes.forEach(n => selection.add(n.id)); render(); return; }   // select all
-    if (cmd && e.key.toLowerCase() === 'd' && selection.size && SERVER) { e.preventDefault(); selNodes().forEach(n => api('/api/add', { map: cur, title: n.name + ' copy', type: n.type, x: n.x + 28, y: n.y + 28, note: '', scale: n.scale, color: n.color, gate: n.gate, hl: n.hl, link_map: n.link_map }).then(flushPending)); return; }   // duplicate
+    if (cmd && e.key.toLowerCase() === 'd' && selection.size && SERVER) { e.preventDefault(); api('/api/add-batch', { map: cur, nodes: selNodes().map(n => ({ title: n.name + ' copy', type: n.type, x: n.x + 28, y: n.y + 28, note: '', scale: n.scale, color: n.color, gate: n.gate, hl: n.hl, lane: n.lane, link_map: n.link_map })) }).then(flushPending); return; }   // duplicate (atomic batch → one undo, styling preserved)
     if (cmd && e.key.toLowerCase() === 'c' && selection.size) { e.preventDefault(); copySelection(); return; }   // copy
     if (cmd && e.key.toLowerCase() === 'v' && clipboard && clipboard.nodes.length) { e.preventDefault(); pasteSelection(); return; }   // paste (across maps)
     if ((e.key === 'Backspace' || e.key === 'Delete') && selection.size && SERVER) { e.preventDefault(); if (!confirm('Archive ' + selection.size + ' node' + (selection.size === 1 ? '' : 's') + '?')) return; selNodes().forEach(n => api('/api/archive', { path: repoRel(n.url) }).then(flushPending)); selection.clear(); render(); return; }   // archive selection

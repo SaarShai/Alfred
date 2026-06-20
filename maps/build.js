@@ -22,7 +22,7 @@ let nodeCount = 0;
 function clean(s) { if (s == null) return null; s = String(s).trim(); if (/^".*"$/s.test(s)) { try { return JSON.parse(s); } catch (_) {} } return s.replace(/^["']|["']$/g, ''); }
 // decode a label group captured WITH its surrounding quotes (JSON string); tolerates legacy/hand-edited values.
 function jparse(s) { if (s == null) return ''; try { return JSON.parse(s); } catch (_) { return String(s).replace(/^"|"$/g, ''); } }
-function fmBlock(txt) { const m = txt.match(/^---\n([\s\S]*?)\n---/); return m ? m[1] : ''; }
+function fmBlock(txt) { const m = txt.match(/^---\r?\n([\s\S]*?)\r?\n---/); return m ? m[1] : ''; }   // \r? tolerates CRLF: else the whole block fails to parse and nid/title/x/y all read null
 function field(fm, key) { const m = fm.match(new RegExp('^' + key + ':\\s*(.+)$', 'm')); return m ? clean(m[1]) : null; }
 function listField(fm, key) {
   const m = fm.match(new RegExp('^' + key + ':\\s*\\[(.*)\\]\\s*$', 'm'));
@@ -62,7 +62,7 @@ function ensureNid(file, fm, prefix) {
   const existing = field(fm, 'nid');
   if (existing) { usedIds.add(existing); return existing; }
   const nid = genId(prefix);
-  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/^---\n/, '---\nnid: ' + nid + '\n'));
+  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/^---\r?\n/, () => '---\nnid: ' + nid + '\n'));   // \r? so the write-back actually lands on CRLF files (else the nid churns every build)
   return nid;
 }
 

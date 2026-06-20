@@ -61,8 +61,8 @@ function inFrontmatter(txt, mutate) {
   return mutate(txt.slice(0, fmEnd)) + txt.slice(fmEnd);
 }
 function setField(txt, key, val) {
-  const line = key + ': ' + val, re = new RegExp('^' + key + ':.*$', 'm');
-  return inFrontmatter(txt, head => re.test(head) ? head.replace(re, line) : head.replace(/^---\n/, '---\n' + line + '\n'));
+  const line = key + ': ' + val, re = new RegExp('^' + key + ':[^\\n]*', 'm');   // [^\n]* (not .*$) tolerates a trailing \r on CRLF lines
+  return inFrontmatter(txt, head => re.test(head) ? head.replace(re, () => line) : head.replace(/^---\r?\n/, () => '---\n' + line + '\n'));   // () => line replacer: a literal $ in val is never treated as a $&/$`/$$ replace-pattern
 }
 function removeField(txt, key) {
   const re = new RegExp('^' + key + ':.*\\n', 'm');
@@ -73,8 +73,8 @@ function getList(txt, key) {
   return l ? l.split(',').map(s => s.trim()).filter(Boolean) : [];
 }
 function setList(txt, key, arr) {
-  const line = key + ': [' + arr.join(', ') + ']', re = new RegExp('^' + key + ':\\s*\\[.*\\]\\s*$', 'm');
-  return inFrontmatter(txt, head => re.test(head) ? head.replace(re, line) : head.replace(/^---\n/, '---\n' + line + '\n'));
+  const line = key + ': [' + arr.join(', ') + ']', re = new RegExp('^' + key + ':\\s*\\[[^\\n]*\\]', 'm');
+  return inFrontmatter(txt, head => re.test(head) ? head.replace(re, () => line) : head.replace(/^---\r?\n/, () => '---\n' + line + '\n'));
 }
 function getEdges(txt) {
   const out = [];
@@ -146,16 +146,24 @@ function setMapKind(mapSlug, kind) {
 }
 
 // ---- node ops ----
-function addNode(mapSlug, title, type, x, y, note, linkMap) {
+function addNode(mapSlug, title, type, x, y, note, linkMap, style) {
   const idx = mapIndex(mapSlug);
   if (!fs.existsSync(idx)) throw new Error('unknown map');
   const dir = path.dirname(idx);
-  const slug = slugify(title);
+  let base = (title || '').trim() || 'Untitled', slug = slugify(base);
   if (!slug) throw new Error('title has no usable slug characters');
-  if (fs.existsSync(path.join(dir, slug + '.md'))) throw new Error('a node named "' + slug + '" already exists in this map');
+  for (let n = 2; fs.existsSync(path.join(dir, slug + '.md')); n++) { base = ((title || '').trim() || 'Untitled') + ' ' + n; slug = slugify(base); }   // auto-uniquify instead of failing → repeated paste/duplicate keep working
+  title = base;
   let fm = '---\ntitle: ' + JSON.stringify(title) + '\ntype: ' + (type || 'step') +
     '\nx: ' + Math.round(x || 120) + '\ny: ' + Math.round(y || 120) + '\n';
   if (linkMap) fm += 'link_map: ' + linkMap + '\n';
+  if (style) {   // carry styling on duplicate/paste so the copy isn't reset to a plain default node
+    if (style.lane) fm += 'lane: ' + style.lane + '\n';
+    if (style.scale != null && +style.scale && +style.scale !== 1) fm += 'scale: ' + (+style.scale) + '\n';
+    if (style.hl) fm += 'hl: true\n';
+    if (style.color != null && style.color !== '') fm += 'color: ' + (+style.color) + '\n';
+    if (style.gate && String(style.gate).trim()) fm += 'gate: ' + JSON.stringify(String(style.gate).trim()) + '\n';
+  }
   fm += '---\n\n# ' + title + '\n\n' + (note && note.trim() ? note.trim() + '\n' : '_(empty node — edit me)_\n');
   fs.writeFileSync(path.join(dir, slug + '.md'), fm);
   let it = fs.readFileSync(idx, 'utf8');
@@ -406,9 +414,10 @@ http.createServer((req, res) => {
     const abs = safeSrc(d.path);
     if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
     if (typeof d.content !== 'string') return json(res, { ok: false, error: 'no content' }, 400);
-    pushUndo(umap(d)); fs.writeFileSync(abs, d.content); rebuildAndReply(res, { title: titleOf(d.content) });
+    pushUndo(umap(d)); fs.writeFileSync(abs, d.content.replace(/\r\n/g, '\n')); rebuildAndReply(res, { title: titleOf(d.content) });   // normalize CRLF→LF so the build's frontmatter regexes (bare \n) never break
   })) return;
-  if (POST('/api/add', d => { pushUndo(d.map); const created = addNode(d.map, d.title, d.type, d.x, d.y, d.note, d.link_map); rebuildAndReply(res, { created }); })) return;
+  if (POST('/api/add', d => { pushUndo(d.map); const created = addNode(d.map, d.title, d.type, d.x, d.y, d.note, d.link_map, d); rebuildAndReply(res, { created }); })) return;
+  if (POST('/api/add-batch', d => { pushUndo(d.map); const created = (d.nodes || []).map(n => addNode(d.map, n.title, n.type, n.x, n.y, n.note, n.link_map, n)); rebuildAndReply(res, { created }); })) return;   // duplicate/paste N nodes atomically: ONE undo snapshot, ONE rebuild
   if (POST('/api/rename', d => { pushUndo(umap(d)); const np = renameNode(d.path, d.title); rebuildAndReply(res, { path: np }); })) return;
   if (POST('/api/archive', d => { pushUndo(umap(d)); archiveNode(d.path); rebuildAndReply(res); })) return;
   if (POST('/api/pos', d => { pushUndo(umap(d)); setPos(d.path, d.x, d.y); rebuildAndReply(res); })) return;
