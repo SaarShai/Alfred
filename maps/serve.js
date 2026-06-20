@@ -78,8 +78,8 @@ function setList(txt, key, arr) {
 }
 function getEdges(txt) {
   const out = [];
-  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*("(?:[^"\\]|\\.)*"))?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
-  let m; while ((m = re.exec(txt))) out.push({ from: m[1].trim(), to: m[2].trim(), label: jparse(m[3]), bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*("(?:[^"\\]|\\.)*"))?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*(?:,\s*route:\s*([a-z]+))?\s*\}/g;
+  let m; while ((m = re.exec(txt))) out.push({ from: m[1].trim(), to: m[2].trim(), label: jparse(m[3]), bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null, route: m[6] || 'bezier' });
   return out;
 }
 function setEdges(txt, arr) {
@@ -88,6 +88,7 @@ function setEdges(txt, arr) {
     let s = '  - {from: ' + e.from + ', to: ' + e.to + ', label: ' + JSON.stringify(e.label || '');
     if (e.bend) s += ', bend: ' + Math.round(e.bend);
     if (e.color != null && e.color !== '') s += ', color: ' + e.color;
+    if (e.route && e.route !== 'bezier') s += ', route: ' + e.route;
     return s + '}';
   }).join('\n') + '\n';
   const close = txt.indexOf('\n---', 3);                            // before closing fence
@@ -315,7 +316,7 @@ function editEdge(mapSlug, d) {
   const { from, to, remove } = d;
   const idx = mapIndex(mapSlug);
   if (!fs.existsSync(idx)) throw new Error('unknown map');
-  if (!remove && from === to) throw new Error('cannot connect a node to itself');
+  // self-loops are allowed (feedback / retry steps — common in process & agent-loop maps)
   let it = fs.readFileSync(idx, 'utf8');
   const all = getEdges(it);
   const ex = all.find(e => e.from === from && e.to === to);
@@ -325,6 +326,7 @@ function editEdge(mapSlug, d) {
     label: (d.label !== undefined && d.label !== null) ? d.label : ((ex && ex.label) || ''),  // omitted ⇒ keep on reconnect
     bend: d.bend !== undefined ? d.bend : (ex ? ex.bend : 0) || 0,
     color: d.color !== undefined ? d.color : (ex ? ex.color : null),
+    route: d.route !== undefined ? d.route : (ex ? ex.route : 'bezier'),
   });
   fs.writeFileSync(idx, setEdges(it, edges));
 }

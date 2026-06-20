@@ -51,17 +51,17 @@ window.MAPS = {
           "id": "n-shp01",
           "slug": "shipping",
           "name": "Shipping & close",
-          "type": "step",
+          "type": "subprocess-link",
           "refs": [],
           "refsCollapsed": false,
-          "x": 845,
-          "y": 64,
+          "x": 1027,
+          "y": 188,
           "lane": null,
           "link_map": null,
           "gate": null,
           "scale": 1,
           "hl": false,
-          "color": null,
+          "color": 3,
           "url": "../maps-data/orders-operations/shipping.md"
         }
       ],
@@ -71,14 +71,16 @@ window.MAPS = {
           "to": "n-jt01",
           "label": "log job",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-jt01",
           "to": "n-shp01",
           "label": "completed",
           "bend": 3,
-          "color": null
+          "color": null,
+          "route": "bezier"
         }
       ],
       "frames": []
@@ -233,49 +235,56 @@ window.MAPS = {
           "to": "n-col01",
           "label": "breakdown frozen",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-col01",
           "to": "n-hand01",
           "label": "colour OK",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-hand01",
           "to": "n-sch01",
           "label": "schedule",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-sch01",
           "to": "n-prod01",
           "label": "start production",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-prod01",
           "to": "n-rec01",
           "label": "sheets used",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-rec01",
           "to": "n-ship01",
           "label": "",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         },
         {
           "from": "n-conf01",
           "to": "n-open01",
           "label": "open row + files",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         }
       ],
       "frames": []
@@ -438,7 +447,8 @@ window.MAPS = {
           "to": "nxp98d",
           "label": "",
           "bend": 0,
-          "color": null
+          "color": null,
+          "route": "bezier"
         }
       ],
       "frames": []

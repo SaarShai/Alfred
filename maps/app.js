@@ -132,6 +132,23 @@
     return { d: 'M' + p1.x + ',' + p1.y + ' C' + c1.x + ',' + c1.y + ' ' + c2.x + ',' + c2.y + ' ' + p2.x + ',' + p2.y, c1, c2 };
   }
   const cubicMid = (p1, c1, c2, p2) => ({ x: .125 * p1.x + .375 * c1.x + .375 * c2.x + .125 * p2.x, y: .125 * p1.y + .375 * c1.y + .375 * c2.y + .125 * p2.y });
+  function orthStepPath(p1, p2) {   // rounded right-angle "smoothstep" routing — reads as a clean flowchart in dense maps
+    const dx = p2.x - p1.x, dy = p2.y - p1.y, r = 12;
+    const bendX = Math.max(p1.x + r, Math.min((p1.x + p2.x) / 2, p2.x - r));
+    const sy = Math.sign(dy || 1), sx = Math.sign(dx || 1);
+    const d = 'M' + p1.x + ',' + p1.y + ' L' + (bendX - r) + ',' + p1.y +
+      ' Q' + bendX + ',' + p1.y + ' ' + bendX + ',' + (p1.y + sy * r) +
+      ' L' + bendX + ',' + (p2.y - sy * r) +
+      ' Q' + bendX + ',' + p2.y + ' ' + (bendX + r * sx) + ',' + p2.y +
+      ' L' + p2.x + ',' + p2.y;
+    return { d, c1: { x: bendX, y: p1.y }, c2: { x: bendX, y: p2.y } };
+  }
+  function selfLoopPath(n, bend) {   // teardrop loop off the node's right side (feedback / retry edge)
+    const { hw, hh } = halfExt(n), sx = n.x + hw, sy = n.y;
+    const w = Math.max(46, hh * 2), h = (Math.abs(bend) || hh * 2.2), dir = bend < 0 ? 1 : -1;
+    const d = 'M' + sx + ',' + sy + ' C' + (sx + w) + ',' + (sy + dir * h) + ' ' + (sx + w) + ',' + (sy + dir * h) + ' ' + sx + ',' + (sy + dir * 12);
+    return { d, c1: { x: sx + w * 0.72, y: sy + dir * h }, c2: { x: sx + w * 0.72, y: sy + dir * h } };
+  }
 
   // lane → stable color (sorted distinct lanes in current map)
   function laneColorMap() {
@@ -184,6 +201,7 @@
     const culled = d => { const h = halfExt(d); return d.x - h.hw - cullPad > vpR || d.x + h.hw + cullPad < vpL || d.y - h.hh - cullPad > vpB || d.y + h.hh + cullPad < vpT; };
     const allNodes = map().nodes, nodes = allNodes.filter(n => !culled(n)), visibleNodeIds = new Set(nodes.map(n => n.id));
     const hasOut = new Set(edges.filter(e => e.from !== e.to).map(e => e.from));   // node ids that are a stage (have an outgoing edge) — used for gate-status badges (computed over ALL edges)
+    const hasIn = new Set(edges.filter(e => e.from !== e.to).map(e => e.to));      // node ids with an incoming edge → for START/END terminal rings
 
     // ---- background boxes (frames) — drawn first, behind everything; body is click-through ----
     (map().frames || []).forEach(f => {
@@ -225,34 +243,44 @@
 
     // ---- edges ----
     edges.forEach(e => {
-      if (e.from === e.to) return;                       // skip degenerate self-loop (server also rejects these)
       const a = byId(e.from), b = byId(e.to); if (!a || !b) return;
       if (!visibleNodeIds.has(a.id) && !visibleNodeIds.has(b.id)) return;   // cull edges with both endpoints off-screen
-      const p1 = rightPort(a), p2 = leftPort(b);
-      const hasReverse = edges.some(o => o.from === e.to && o.to === e.from);
-      const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);   // manual bend overrides the auto bidirectional bow
-      const { d, c1, c2 } = edgePath(p1, p2, bow);
+      const selfLoop = e.from === e.to;
+      let p1, p2, c1, c2, d, mid;
+      if (selfLoop) { ({ d, c1, c2 } = selfLoopPath(a, e.bend)); mid = c1; p1 = mid; p2 = mid; }   // feedback / retry edge
+      else {
+        p1 = rightPort(a); p2 = leftPort(b);
+        const hasReverse = edges.some(o => o.from === e.to && o.to === e.from);
+        const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);   // manual bend overrides the auto bidirectional bow
+        ({ d, c1, c2 } = (e.route === 'smooth') ? orthStepPath(p1, p2) : edgePath(p1, p2, bow));
+        mid = cubicMid(p1, c1, c2, p2);
+      }
       const stroke = e.color != null ? PAL_HEX[e.color % PAL_HEX.length] : null;
       const g = gEdge.append('g').attr('class', 'edgegrp');
-      const vis = g.append('path').attr('class', 'edge').attr('d', d).attr('marker-end', e.color != null ? 'url(#ah' + (e.color % PAL_HEX.length) + ')' : 'url(#ah)');
+      const vis = g.append('path').attr('class', 'edge' + (selfLoop ? ' self-loop' : '')).attr('d', d).attr('marker-end', e.color != null ? 'url(#ah' + (e.color % PAL_HEX.length) + ')' : 'url(#ah)');
       if (stroke) vis.style('stroke', stroke);
-      if (!stroke) g.append('path').attr('class', 'edge flow').attr('d', d);   // gradient marching-ants only on default-color edges
+      if (e.color != null) { const dp = ['', '8,4', '4,6', '12,3', '3,8', '6,5', '10,3', '5,5', '9,3', '2,6', '7,4'], pat = dp[e.color % dp.length]; if (pat) vis.style('stroke-dasharray', pat); }   // colorblind / mono-export redundancy
+      if (!stroke && !selfLoop) g.append('path').attr('class', 'edge flow').attr('d', d);   // gradient marching-ants only on default-color edges
       g.append('path').attr('class', 'edge hit').attr('d', d).on('dblclick', (ev) => { ev.stopPropagation(); editEdgeLabel(e, p1, c1, c2, p2); });
-      const mid = cubicMid(p1, c1, c2, p2);
       if (e.label) {
         const t = g.append('text').attr('class', 'elabel').attr('x', mid.x).attr('y', mid.y).text(e.label);
         const bb = t.node().getBBox();
         g.insert('rect', 'text.elabel').attr('class', 'elabel-bg').attr('x', bb.x - 6).attr('y', bb.y - 3).attr('width', bb.width + 12).attr('height', bb.height + 6).attr('rx', 6);
       }
-      // hover controls: bend grab (at midpoint), color cycle (above), delete (below)
+      // hover controls: bend grab (at midpoint), color cycle + route toggle (above), delete (below)
       const ctrl = g.append('g').attr('class', 'edge-ctrl');
       ctrl.append('circle').attr('class', 'edge-bend').attr('cx', mid.x).attr('cy', mid.y).attr('r', 9)
         .call(d3.drag().container(() => canvas.node())     // canvas persists across render()
           .on('start', ev => ev.sourceEvent.stopPropagation())
           .on('drag', ev => { e.bend = (e.bend || 0) + ev.dy; scheduleRender(); })
           .on('end', () => { if (SERVER) { const n = nidSlug(); api('/api/edge', { map: cur, from: n[e.from], to: n[e.to], bend: Math.round(e.bend || 0) }).then(flushPending); } }));
-      const cyc = ctrl.append('g').attr('transform', 'translate(' + mid.x + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeColor(e); });
+      const cyc = ctrl.append('g').attr('transform', 'translate(' + (mid.x - (selfLoop ? 0 : 11)) + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeColor(e); });
       cyc.append('circle').attr('r', 7).attr('fill', stroke || 'var(--edge)').attr('stroke', '#fff').attr('stroke-opacity', .4);
+      if (!selfLoop) {   // route toggle (bezier ↔ smoothstep) — not meaningful for a self-loop
+        const rte = ctrl.append('g').attr('class', 'edge-route').attr('transform', 'translate(' + (mid.x + 11) + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeRoute(e); });
+        rte.append('circle').attr('r', 7).attr('fill', 'var(--edge)').attr('stroke', '#fff').attr('stroke-opacity', .4);
+        rte.append('text').attr('class', 'typeglyph').attr('font-size', '9px').attr('text-anchor', 'middle').attr('dy', '.34em').attr('fill', '#fff').text(e.route === 'smooth' ? '⌐' : '⤳');
+      }
       const del = ctrl.append('g').attr('transform', 'translate(' + mid.x + ',' + (mid.y + 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); deleteEdge(e); });
       del.append('circle').attr('r', 7).attr('fill', '#e11d48');
       del.append('path').attr('d', 'M-2.5,-2.5 L2.5,2.5 M2.5,-2.5 L-2.5,2.5').attr('stroke', '#fff').attr('stroke-width', 1.5).attr('stroke-linecap', 'round');
@@ -260,7 +288,7 @@
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : ''))   // enter fires once; start/end = flow terminals
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
       .attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => 'Node: ' + d.name + ' (' + d.type + ')')   // a11y: focusable + labelled
@@ -309,6 +337,9 @@
           .on('drag', e => { const delta = (Math.abs(e.dx) > Math.abs(e.dy) ? e.dx : e.dy) * 0.01; d.scale = Math.max(0.5, Math.min(2.5, (d.scale || 1) + delta)); const sz = document.getElementById('ctx-size'); if (sz) sz.textContent = Math.round(d.scale * 100) + '%'; scheduleRender(); })
           .on('end', () => { dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/node-style', { path: repoRel(d.url), scale: +(d.scale || 1).toFixed(3) }).then(flushPending); }));
       }
+      // BPMN terminal rings — START (green, left edge) · END (slate, thicker, right edge); derived from flow topology
+      if (hasOut.has(d.id) && !hasIn.has(d.id)) g.append('circle').attr('class', 'terminal start').attr('cx', -hw - 12).attr('cy', 0).attr('r', 6).append('title').text('START — no incoming edge');
+      if (hasIn.has(d.id) && !hasOut.has(d.id)) g.append('circle').attr('class', 'terminal end').attr('cx', hw + 12).attr('cy', 0).attr('r', 7).append('title').text('END — no outgoing edge');
       // connection port (right edge) — on the outer group so the hover lift doesn't move the wire anchor
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
       g.append('circle').attr('class', 'port-hit').attr('cx', hw).attr('cy', 0).attr('r', 14)
@@ -529,21 +560,45 @@
     const [mx, my] = d3.pointer(e, canvas.node());
     if (!wire.moved && Math.hypot(mx - wire.x0, my - wire.y0) < 4) return;   // threshold
     wire.active = true; wire.moved = true;
+    wire.dropX = mx; wire.dropY = my; wire.screenX = e.clientX; wire.screenY = e.clientY;   // remember drop coords for create-and-connect
     const src = byId(wire.fromId); if (!src) return;
-    wirePath.attr('d', edgePath(rightPort(src), { x: mx, y: my }, 0).d);
-    const tgt = dropTarget(e); gNode.selectAll('g.node').classed('drop-ok', dd => tgt && tgt.id === dd.id && dd.id !== wire.fromId);
+    const edges = map() ? map().edges : [];
+    const dup = id => edges.some(ed => (ed.from === wire.fromId && ed.to === id) || (ed.from === id && ed.to === wire.fromId));
+    const MAG = 60; let nearest = null, nd = Infinity;   // magnetic: snap to the nearest valid target within radius
+    (map() ? map().nodes : []).forEach(n => { if (n.id === wire.fromId) return; const lp = leftPort(n), dist = Math.hypot(mx - lp.x, my - lp.y); if (dist < MAG && dist < nd && !dup(n.id)) { nearest = n; nd = dist; } });
+    const pointed = dropTarget(e), tgt = nearest || pointed;
+    let col = 'var(--link)', valid = true;
+    if (tgt) {
+      if (tgt.id === wire.fromId) valid = !edges.some(ed => ed.from === tgt.id && ed.to === tgt.id);   // self-loop ok if none exists yet
+      else valid = !dup(tgt.id);
+      if (!valid) col = '#e11d48';
+    }
+    const endPt = nearest ? leftPort(nearest) : { x: mx, y: my };
+    wirePath.attr('d', edgePath(rightPort(src), endPt, 0).d).style('stroke', col);   // green = valid · red = self/duplicate
+    wire.targetId = tgt ? tgt.id : null; wire.valid = valid;
+    gNode.selectAll('g.node').classed('attracting', d => nearest && d.id === nearest.id).classed('drop-ok', d => tgt && d.id === tgt.id && valid);
   });
   function endWire(e, cancelled) {
     if (!wire) return;
-    const tgt = cancelled ? null : dropTarget(e);
-    const fromId = wire.fromId, was = wire;
-    wirePath.attr('d', ''); gNode.selectAll('g.node').classed('drop-ok', false);
+    const was = wire, fromId = wire.fromId, dropX = wire.dropX, dropY = wire.dropY;
+    wirePath.attr('d', '').style('stroke', ''); gNode.selectAll('g.node').classed('drop-ok', false).classed('attracting', false);
     try { svgN.releasePointerCapture(e.pointerId); } catch (_) {}
     portArmed = false;                                    // pointerup precedes any click; a finished/aborted wire never swallows the next tap
     wire = null;                                          // clear BEFORE addEdge/flushPending so guards release
-    if (!cancelled && was.active && tgt && tgt.id !== fromId) {
-      const ns = nidSlug(), fs = ns[fromId], ts = ns[tgt.id];
-      if (fs && ts) { const src = byId(fromId); ripple(tgt.x, tgt.y, accent(tgt)); if (src) traceEdge(src, tgt); addEdge(fs, ts); } else flushPending();
+    if (cancelled || !was.active) { flushPending(); return; }
+    const fs = nidSlug()[fromId]; if (!fs) { flushPending(); return; }
+    if (was.targetId && was.valid) {                      // connect to an existing node (or self-loop)
+      const ts = nidSlug()[was.targetId], tgt = byId(was.targetId), src = byId(fromId);
+      if (ts) { if (tgt && tgt.id !== fromId) { ripple(tgt.x, tgt.y, accent(tgt)); if (src) traceEdge(src, tgt); } addEdge(fs, ts); } else flushPending();
+    } else if (!was.targetId && dropX != null) {          // drop on empty canvas → create a node here + wire it in one step
+      showNameInput(was.screenX || window.innerWidth / 2, was.screenY || window.innerHeight / 2, '', async title => {
+        if (!title) { flushPending(); return; }
+        const j = await api('/api/add', { map: cur, title, type: 'step', x: Math.round(dropX), y: Math.round(dropY), note: '' });
+        if (!j.ok) { alert('Add: ' + j.error); flushPending(); return; }
+        const newSlug = j.created ? j.created.split('/').pop().replace(/\.md$/, '') : null;
+        applyMaps(j.maps);
+        if (newSlug) addEdge(fs, newSlug); else flushPending();
+      });
     } else flushPending();
   }
   svgN.addEventListener('pointerup', e => endWire(e, false));
@@ -556,7 +611,33 @@
   }
 
   // ---- edge ops ----
-  async function addEdge(fromSlug, toSlug) { if (!SERVER || !fromSlug || !toSlug) { flushPending(); return; } const j = await api('/api/edge', { map: cur, from: fromSlug, to: toSlug }); if (j.ok) applyMaps(j.maps); else alert('Edge: ' + j.error); flushPending(); }   // omit label → server keeps existing on reconnect
+  async function addEdge(fromSlug, toSlug) {   // omit label → server keeps existing on reconnect
+    if (!SERVER || !fromSlug || !toSlug) { flushPending(); return; }
+    const j = await api('/api/edge', { map: cur, from: fromSlug, to: toSlug });
+    if (!j.ok) { alert('Edge: ' + j.error); flushPending(); return; }
+    applyMaps(j.maps);
+    const src = (map() ? map().nodes : []).find(n => n.slug === fromSlug);
+    if (src && src.type === 'decision' && fromSlug !== toSlug) promptDecisionLabel(fromSlug, toSlug);   // a decision branch needs a Yes/No label
+    else flushPending();
+  }
+  function promptDecisionLabel(fromSlug, toSlug) {   // inline overlay: type a label, or press Y (Yes/green) / N (No/red)
+    const inp = document.getElementById('edge-label-input');
+    inp.style.left = (window.innerWidth / 2) + 'px'; inp.style.top = (window.innerHeight / 2 - 40) + 'px';
+    inp.value = ''; inp.placeholder = 'branch label — or Y = Yes · N = No'; inp.hidden = false; inp.focus();
+    const apply = async (label, color) => {
+      inp.onkeydown = null; inp.onblur = null; inp.hidden = true; inp.placeholder = 'label…';
+      if (SERVER && label) { const k = await api('/api/edge', { map: cur, from: fromSlug, to: toSlug, label, color }); if (k.ok) applyMaps(k.maps); }
+      flushPending();
+    };
+    inp.onkeydown = ev => {
+      if (ev.key === 'Enter') apply(inp.value.trim(), null);
+      else if (ev.key === 'Escape') { inp.onkeydown = null; inp.onblur = null; inp.hidden = true; inp.placeholder = 'label…'; flushPending(); }
+      else if (ev.key.toLowerCase() === 'y' && !inp.value) { ev.preventDefault(); apply('Yes', 7); }   // PAL_HEX[7] = green
+      else if (ev.key.toLowerCase() === 'n' && !inp.value) { ev.preventDefault(); apply('No', 6); }    // PAL_HEX[6] = red
+    };
+    inp.onblur = () => apply(inp.value.trim(), null);
+  }
+  async function cycleEdgeRoute(e) { if (!SERVER) return; const next = (e.route || 'bezier') === 'bezier' ? 'smooth' : 'bezier'; const ns = nidSlug(); const j = await api('/api/edge', { map: cur, from: ns[e.from], to: ns[e.to], route: next }); if (j.ok) applyMaps(j.maps); }
   async function deleteEdge(e) { if (!SERVER) return; if (!confirm('Delete this connection?')) return; const ns = nidSlug(); const j = await api('/api/edge', { map: cur, from: ns[e.from], to: ns[e.to], remove: true }); if (j.ok) applyMaps(j.maps); }
   async function cycleEdgeColor(e) { if (!SERVER) return; const next = e.color == null ? 0 : (e.color + 1 >= PAL_HEX.length ? null : e.color + 1); const ns = nidSlug(); const j = await api('/api/edge', { map: cur, from: ns[e.from], to: ns[e.to], color: next }); if (j.ok) applyMaps(j.maps); }
   function editEdgeLabel(e, p1, c1, c2, p2) {

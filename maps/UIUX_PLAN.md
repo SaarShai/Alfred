@@ -120,7 +120,15 @@ Master plan = 9 deconflicted batches (fleet output w6a3wlw6j). Status:
       nodeStyle). Added group-drag (drag a member moves all selected) + zoom-filter shift-guard
       (shift-drag = marquee, not pan) + marquee trailing-click guard. align/distribute/resize NOT run
       live (they persist x/y/scale — won't mutate real positions in a test); logic reviewed.
-- [ ] Batch 5 (connections + server changes) — 4,22,23,25,24,5,14,15  ← only batch touching serve.js/build.js
+- [x] **Batch 5** (connections + server) — 4 drag-out create+connect · 22 valid/invalid wire color ·
+      23 magnetic snap · 25 self-loop arcs · 24 smoothstep route · 5 Yes/No branch labels · 14 terminal
+      rings · 15 color-redundant dash. VERIFIED: terminal rings render correct (green START left / slate
+      END right / none for mid-flow) on Orders Operations; route field flows build.js→data.js; SERVER
+      RESTARTED (new code loaded) and API-tested: self-loop accepted (old threw) + route:smooth persists,
+      then both reverted — index.md byte-for-byte restored. Round-trip test passed (route+self-loop+quoted
+      label stable). Wrote clean merged pointermove/endWire/addEdge (authors' 23/24/25 code was
+      self-contradictory). Wire interactions (drag-out, magnetic, branch prompt) not synth-tested
+      (d3 pointer-capture won't engage headless + they mutate data); handler merge reviewed.
 - [ ] Batch 6 (motion on node chain) — 39,38,41,43,42,44
 - [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47
 - [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49

@@ -61,6 +61,14 @@
   .edge-bend{fill:var(--edge);fill-opacity:.7;stroke:#41404c;stroke-opacity:.35;cursor:ns-resize}
   g.edgegrp:hover .edge:not(.flow){stroke-width:2.8px}
   #wire-preview{fill:none;stroke:var(--link);stroke-width:2.4px;stroke-dasharray:6 5;opacity:.9;pointer-events:none}
+  /* connections (batch 5): terminals · self-loop · route toggle · magnetic target */
+  .terminal{fill:none;pointer-events:none;opacity:.8}
+  .terminal.start{stroke:#16a34a;stroke-width:2.4}
+  .terminal.end{stroke:#64748b;stroke-width:3.4}
+  .edge.self-loop{stroke-dasharray:5 4;opacity:.85}
+  .edge-route{cursor:pointer}
+  .node.attracting .shape{stroke-width:3.6px!important;filter:drop-shadow(0 0 7px var(--link)) drop-shadow(0 0 14px var(--link))}
+  body.dragging .node.attracting .shape{filter:none}
   /* knowledge trays — a node's [[…]] citations rendered below it (bottom = knowledge axis) */
   .ref-conn{fill:none;stroke:var(--ref);stroke-width:1.6px;stroke-dasharray:4 4;opacity:.6}
   g.ghost{cursor:pointer}

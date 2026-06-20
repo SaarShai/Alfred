@@ -31,9 +31,9 @@ function listField(fm, key) {
 // parse the `edges:` block: a sequence of `- {from: a, to: b, label: "..."}` lines
 function edgesField(fm) {
   const out = [];
-  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*("(?:[^"\\]|\\.)*"))?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*("(?:[^"\\]|\\.)*"))?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*(?:,\s*route:\s*([a-z]+))?\s*\}/g;
   let m;
-  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: jparse(m[3]), bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
+  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: jparse(m[3]), bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null, route: m[6] || 'bezier' });
   return out;
 }
 // citations in a node body: [[nid|label]] — same syntax as the wiki. Skips [[?stub]] (not-yet-written).
@@ -113,7 +113,7 @@ function readMap(mapSlug) {
     const from = bySlug[e.from], to = bySlug[e.to];
     if (!from) warnings.push('edge from unknown node: ' + mapSlug + '/' + e.from);
     if (!to) warnings.push('edge to unknown node: ' + mapSlug + '/' + e.to);
-    return (from && to) ? { from, to, label: e.label || '', bend: e.bend || 0, color: e.color != null ? e.color : null } : null;
+    return (from && to) ? { from, to, label: e.label || '', bend: e.bend || 0, color: e.color != null ? e.color : null, route: e.route || 'bezier' } : null;
   }).filter(Boolean);
   const frames = framesField(fm);
   const kind = field(fm, 'kind') || 'process';   // 'reference' = a SoT library map (no flow / workflow)
