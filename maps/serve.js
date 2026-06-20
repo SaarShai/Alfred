@@ -47,39 +47,45 @@ const mapDirOf = absNode => path.dirname(absNode);
 const mapSlugOf = absNode => path.basename(path.dirname(absNode));
 
 // ---- frontmatter helpers (regex, matches build.js) ----
+function jparse(s) { if (s == null) return ''; try { return JSON.parse(s); } catch (_) { return String(s).replace(/^"|"$/g, ''); } }   // decode a label captured WITH quotes
 function titleOf(txt) {
   const t = (txt.match(/^title:\s*(.+)$/m) || [])[1];
-  if (t) return t.trim().replace(/^["']|["']$/g, '');
+  if (t) { const s = t.trim(); if (/^".*"$/s.test(s)) { try { return JSON.parse(s); } catch (_) {} } return s.replace(/^["']|["']$/g, ''); }
   const h = (txt.match(/^#\s+(.+)$/m) || [])[1];
   return h ? h.trim() : null;
 }
-function setField(txt, key, val) {
-  const line = key + ': ' + val;
-  const re = new RegExp('^' + key + ':.*$', 'm');
-  if (re.test(txt)) return txt.replace(re, line);
-  return txt.replace(/^---\n/, '---\n' + line + '\n');        // insert at top of frontmatter
+// scope a mutation to the frontmatter block only, so a body line starting with the same key is never touched
+function inFrontmatter(txt, mutate) {
+  const fmEnd = txt.indexOf('\n---', 3);                       // newline before the closing fence
+  if (fmEnd === -1) return mutate(txt);                        // fence-less file → whole-file fallback
+  return mutate(txt.slice(0, fmEnd)) + txt.slice(fmEnd);
 }
-function removeField(txt, key) { return txt.replace(new RegExp('^' + key + ':.*\\n', 'm'), ''); }
+function setField(txt, key, val) {
+  const line = key + ': ' + val, re = new RegExp('^' + key + ':.*$', 'm');
+  return inFrontmatter(txt, head => re.test(head) ? head.replace(re, line) : head.replace(/^---\n/, '---\n' + line + '\n'));
+}
+function removeField(txt, key) {
+  const re = new RegExp('^' + key + ':.*\\n', 'm');
+  return inFrontmatter(txt, head => head.replace(re, ''));
+}
 function getList(txt, key) {
   const l = (txt.match(new RegExp('^' + key + ':\\s*\\[(.*)\\]\\s*$', 'm')) || [])[1];
   return l ? l.split(',').map(s => s.trim()).filter(Boolean) : [];
 }
 function setList(txt, key, arr) {
-  const line = key + ': [' + arr.join(', ') + ']';
-  const re = new RegExp('^' + key + ':\\s*\\[.*\\]\\s*$', 'm');
-  if (re.test(txt)) return txt.replace(re, line);
-  return txt.replace(/^---\n/, '---\n' + line + '\n');
+  const line = key + ': [' + arr.join(', ') + ']', re = new RegExp('^' + key + ':\\s*\\[.*\\]\\s*$', 'm');
+  return inFrontmatter(txt, head => re.test(head) ? head.replace(re, line) : head.replace(/^---\n/, '---\n' + line + '\n'));
 }
 function getEdges(txt) {
   const out = [];
-  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
-  let m; while ((m = re.exec(txt))) out.push({ from: m[1].trim(), to: m[2].trim(), label: m[3] || '', bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*("(?:[^"\\]|\\.)*"))?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  let m; while ((m = re.exec(txt))) out.push({ from: m[1].trim(), to: m[2].trim(), label: jparse(m[3]), bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
   return out;
 }
 function setEdges(txt, arr) {
   txt = txt.replace(/^edges:[^\n]*(?:\n[ \t]+[^\n]*)*\n?/m, '');   // strip old block
   const block = 'edges:\n' + arr.map(e => {
-    let s = '  - {from: ' + e.from + ', to: ' + e.to + ', label: "' + (e.label || '') + '"';
+    let s = '  - {from: ' + e.from + ', to: ' + e.to + ', label: ' + JSON.stringify(e.label || '');
     if (e.bend) s += ', bend: ' + Math.round(e.bend);
     if (e.color != null && e.color !== '') s += ', color: ' + e.color;
     return s + '}';
@@ -91,13 +97,13 @@ function setEdges(txt, arr) {
 // background-box frames (same block idiom as edges)
 function getFrames(txt) {
   const out = [];
-  const re = /\{\s*id:\s*([^,}]+?)\s*,\s*label:\s*"([^"]*)"\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
-  let m; while ((m = re.exec(txt))) out.push({ id: m[1].trim(), label: m[2], x: +m[3], y: +m[4], w: +m[5], h: +m[6], color: m[7] != null ? +m[7] : 0 });
+  const re = /\{\s*id:\s*([^,}]+?)\s*,\s*label:\s*("(?:[^"\\]|\\.)*")\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  let m; while ((m = re.exec(txt))) out.push({ id: m[1].trim(), label: jparse(m[2]), x: +m[3], y: +m[4], w: +m[5], h: +m[6], color: m[7] != null ? +m[7] : 0 });
   return out;
 }
 function setFrames(txt, arr) {
   txt = txt.replace(/^frames:[^\n]*(?:\n[ \t]+[^\n]*)*\n?/m, '');
-  const block = 'frames:\n' + arr.map(f => '  - {id: ' + f.id + ', label: "' + (f.label || '') + '", x: ' + Math.round(f.x) + ', y: ' + Math.round(f.y) + ', w: ' + Math.round(f.w) + ', h: ' + Math.round(f.h) + ', color: ' + (f.color || 0) + '}').join('\n') + '\n';
+  const block = 'frames:\n' + arr.map(f => '  - {id: ' + f.id + ', label: ' + JSON.stringify(f.label || '') + ', x: ' + Math.round(f.x) + ', y: ' + Math.round(f.y) + ', w: ' + Math.round(f.w) + ', h: ' + Math.round(f.h) + ', color: ' + (f.color || 0) + '}').join('\n') + '\n';
   const close = txt.indexOf('\n---', 3);
   if (close === -1) return txt;
   return txt.slice(0, close + 1) + (arr.length ? block : '') + txt.slice(close + 1);
@@ -246,7 +252,7 @@ function readMaps() {
 function nodeBody(url) {                       // the stage's prose (file body, minus frontmatter + H1)
   try {
     const abs = path.resolve(DASH, url);
-    if (!abs.startsWith(SRC)) return '';
+    if (abs !== SRC && !abs.startsWith(SRC + path.sep)) return '';   // contain to maps-data/ (sibling-prefix safe)
     let t = fs.readFileSync(abs, 'utf8').replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^#\s+.*\n?/, '').trim();
     return t.length > 360 ? t.slice(0, 360) + '…' : t;
   } catch (_) { return ''; }
@@ -341,7 +347,7 @@ function body(req, cb) { let b = ''; req.on('data', c => b += c); req.on('end', 
 
 // ---- undo: snapshot a map's whole .md file set before each mutation; /api/undo restores the top ----
 const undoStack = [];
-const umap = d => d.map || (d.path ? mapSlugOf(safeSrc(d.path)) : null);
+const umap = d => { const a = d.path && safeSrc(d.path); return d.map || (a ? mapSlugOf(a) : null); };   // null (not throw) on a rejected path
 function snapshotMap(mapSlug) {
   if (!mapSlug) return null;
   const dir = path.join(SRC, mapSlug);

@@ -12,6 +12,8 @@
   let showLanes = false;
   let pendingMaps = null;                            // SSE queued during a gesture
   let clickTimer = null;                             // single-click debounced against dblclick
+  let portArmed = false;                             // true only while a port actually started a wire — so a plain port tap doesn't swallow the node click
+  let dragId = null;                                 // id of the node currently being dragged (re-applies the 'grabbing' lift across render()'s per-tick rebuild)
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
   const seen = new Set();                            // node ids already animated-in (so enter fires once)
   const EMBED = new URLSearchParams(location.search).has('embed');   // true when shown inside a floating sub-map window
@@ -47,7 +49,7 @@
   const defs = svg.append('defs');
   const edgeCol = getComputedStyle(document.documentElement).getPropertyValue('--edge').trim();
   const mk = (id, fill) => '<marker id="' + id + '" markerWidth="13" markerHeight="13" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 L3,5 Z" fill="' + fill + '"/></marker>';
-  defs.html(mk('ah', edgeCol) + mk('ahref', '#6b7280') + PAL_HEX.map((h, i) => mk('ah' + i, h)).join('') +   // default + reference + per-palette colored arrowheads
+  defs.html(mk('ah', edgeCol) + PAL_HEX.map((h, i) => mk('ah' + i, h)).join('') +   // default + per-palette colored arrowheads
     '<linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#10b981"/></linearGradient>' +
     '<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0.08"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>');
 
@@ -95,7 +97,9 @@
   // smooth HORIZONTAL-tangent cubic bezier — big horizontal control handles = pronounced S-curve.
   // bow = vertical offset that separates a bidirectional A<->B pair.
   function edgePath(p1, p2, bow) {
-    const k = Math.max(45, Math.abs(p2.x - p1.x) * 0.5);     // handle length scales with horizontal gap
+    const dx = Math.abs(p2.x - p1.x), dy = Math.abs(p2.y - p1.y);
+    const taper = dx / (dx + dy * 0.6 + 1);                  // →1 for a normal L→R run (full S), →small for a mostly-vertical/reversed edge (kills the backward loop)
+    const k = Math.max(24, Math.max(45, dx * 0.5) * taper + 24);
     const c1 = { x: p1.x + k, y: p1.y + (bow || 0) };
     const c2 = { x: p2.x - k, y: p2.y + (bow || 0) };
     return { d: 'M' + p1.x + ',' + p1.y + ' C' + c1.x + ',' + c1.y + ' ' + c2.x + ',' + c2.y + ' ' + p2.x + ',' + p2.y, c1, c2 };
@@ -109,6 +113,21 @@
   }
   let LANE_COLORS = {};
   const accent = n => (n.color != null ? PAL_HEX[n.color % PAL_HEX.length] : null) || (n.lane && LANE_COLORS[n.lane]) || TYPE_COLOR[n.type] || TYPE_COLOR.step;
+  const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function fadeOut(el) {   // play the .exiting menu-out animation, then hide — state resets stay synchronous at the call site
+    if (!el || el.hidden) return;
+    if (reduceMotion()) { el.hidden = true; return; }
+    el.classList.add('exiting');
+    const fin = () => { if (!el.classList.contains('exiting')) return; el.classList.remove('exiting'); el.hidden = true; };   // a reopen clears 'exiting' first, cancelling this hide
+    el.addEventListener('animationend', fin, { once: true });
+    setTimeout(fin, 220);
+  }
+  function fitText(sel, maxW) {   // trim an SVG <text> with an ellipsis so it never overruns maxW (px)
+    const node = sel.node(); if (!node || maxW <= 0) return;
+    if (node.getComputedTextLength() <= maxW) return;
+    let t = sel.text();
+    while (t.length > 1 && node.getComputedTextLength() > maxW) { t = t.slice(0, -1); sel.text(t + '…'); }
+  }
 
   function render() {
     LANE_COLORS = laneColorMap();
@@ -191,16 +210,16 @@
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
       .on('click', (e, d) => { clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // defer so dblclick can cancel
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; closeEditor(); openRename(d); })
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e) { if (wire && wire.active) return; dragging = true; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); })
+        .on('start', function (e, d) { if (wire && wire.active) return; dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
         .on('drag', function (e, d) { if (wire && wire.active) return; d.x = e.x; d.y = e.y; render(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
+        .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -223,7 +242,7 @@
       // reference nodes are source-of-truth, not stages — never flag them for a missing gate
       const gated = d.gate && String(d.gate).trim();
       if (gated || (hasOut.has(d.id) && d.type !== 'reference')) {
-        const gb = inner.append('g').attr('class', 'gatebadge').attr('transform', 'translate(' + (hw - 2) + ',' + (-hh + 2) + ')');
+        const gb = inner.append('g').attr('class', 'gatebadge' + (gated ? '' : ' pulse')).attr('transform', 'translate(' + (hw - 2) + ',' + (-hh + 2) + ')');
         gb.append('circle').attr('r', 8).attr('fill', gated ? 'var(--link)' : 'var(--decision)');
         gb.append('text').attr('class', 'typeglyph').attr('font-size', '11px').text(gated ? '✓' : '!');
         gb.append('title').text(gated ? 'gate: ' + gated : 'stage has no gate — add one (right-click → Gate) before the workflow can run');
@@ -232,8 +251,14 @@
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
       g.append('circle').attr('class', 'port-hit').attr('cx', hw).attr('cy', 0).attr('r', 14)
         .on('pointerdown', (e) => beginWire(e, d))
-        .on('click', (e) => e.stopPropagation());        // a stationary port tap must not bubble to the node
+        .on('click', (e) => { if (portArmed) e.stopPropagation(); portArmed = false; });   // only swallow the click that began a wire; otherwise let it reach the node
     });
+    // staggered deal-in: freshly-entering nodes pop left→right in a wave (delay only; reuses the pop keyframe, capped so 30 nodes stay snappy)
+    const entering = sel.filter(d => !dragging && !seen.has(d.id));
+    if (!entering.empty()) {
+      const rank = new Map(entering.data().slice().sort((a, b) => a.x - b.x).map((d, i) => [d.id, i]));
+      entering.select('.node-inner').style('animation-delay', d => Math.min((rank.get(d.id) || 0) * 38, 380) + 'ms');
+    }
     nodes.forEach(n => seen.add(n.id));   // mark animated so a re-render (drag/SSE) won't replay enter
 
     // ---- knowledge trays: a node's [[…]] citations hang BELOW it (bottom = the knowledge axis, distinct from L→R flow) ----
@@ -248,7 +273,7 @@
         tray.append('path').attr('class', 'ref-conn').attr('d', 'M' + ax + ',' + ay + ' L' + ax + ',' + (cy - gh));
         const g = tray.append('g').attr('class', 'ghost').attr('transform', 'translate(' + ax + ',' + cy + ')').on('click', e => { e.stopPropagation(); gotoRef(r.ref); });
         g.append('rect').attr('class', 'ghost-shape').attr('x', -gw).attr('y', -gh).attr('width', gw * 2).attr('height', gh * 2).attr('rx', 10);
-        g.append('text').attr('class', 'ghost-label').text(r.name);
+        fitText(g.append('text').attr('class', 'ghost-label').text(r.name), gw * 2 - 20);
         g.append('text').attr('class', 'ghost-sub').attr('y', gh + 11).text('↗ ' + r.home);
         const bd = g.append('g').attr('transform', 'translate(' + (-gw + 2) + ',' + (-gh + 2) + ')');
         bd.append('circle').attr('r', 8).attr('fill', 'var(--ref)'); bd.append('text').attr('class', 'typeglyph').attr('font-size', '10px').text('§');
@@ -268,8 +293,9 @@
           row.append('rect').attr('class', 'tray-row').attr('width', boxW).attr('height', rowH);
           row.append('circle').attr('cx', 16).attr('cy', rowH / 2).attr('r', 7).attr('fill', 'var(--ref)');
           row.append('text').attr('class', 'typeglyph').attr('x', 16).attr('y', rowH / 2).attr('font-size', '9px').text('§');
-          row.append('text').attr('class', 'tray-name').attr('x', 30).attr('y', rowH / 2).text(r.name);
-          row.append('text').attr('class', 'tray-home').attr('x', boxW - 10).attr('y', rowH / 2).text('↗ ' + r.home);
+          const nameSel = row.append('text').attr('class', 'tray-name').attr('x', 30).attr('y', rowH / 2).text(r.name);
+          const homeSel = row.append('text').attr('class', 'tray-home').attr('x', boxW - 10).attr('y', rowH / 2).text('↗ ' + r.home);
+          fitText(nameSel, boxW - 30 - homeSel.node().getComputedTextLength() - 12);   // never overrun the home label / box edge
         });
       }
     });
@@ -278,15 +304,25 @@
     syncLibToggle();
   }
 
-  function ripple(x, y) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
+  function ripple(x, y, col) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
     const c = gWire.append('circle').attr('class', 'ripple').attr('cx', x).attr('cy', y).attr('r', 8);
+    if (col) c.style('stroke', col);
     const node = c.node();
     node.addEventListener('animationend', () => c.remove());
     setTimeout(() => { try { c.remove(); } catch (_) {} }, 800);   // fallback so they never accumulate
   }
+  function traceEdge(a, b) {   // one-shot tracer that draws itself along a new edge's curve on a successful connect (gWire = never cleared)
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const p = gWire.append('path').attr('class', 'edge-trace').attr('d', edgePath(rightPort(a), leftPort(b), 0).d);
+    const L = p.node().getTotalLength();
+    p.style('stroke-dasharray', L).style('stroke-dashoffset', L).style('stroke', accent(b));
+    p.node().addEventListener('animationend', () => p.remove());
+    setTimeout(() => { try { p.remove(); } catch (_) {} }, 900);
+  }
 
   function onNodeClick(d) {
-    ripple(d.x, d.y);
+    const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
+    ripple(d.x, d.y, accent(d));
     if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); return; }   // top level: float a window; inside a window: drill in place
     openEditor(d);
   }
@@ -298,6 +334,7 @@
     try { svgN.setPointerCapture(e.pointerId); } catch (_) {}
     const { hw } = halfExt(d);
     wire = { fromId: d.id, x0: d.x + hw, y0: d.y, moved: false };
+    portArmed = true;
   }
   svgN.addEventListener('pointermove', e => {
     if (!wire || !wire.active && !wire.fromId) return;
@@ -314,10 +351,11 @@
     const fromId = wire.fromId, was = wire;
     wirePath.attr('d', ''); gNode.selectAll('g.node').classed('drop-ok', false);
     try { svgN.releasePointerCapture(e.pointerId); } catch (_) {}
+    portArmed = false;                                    // pointerup precedes any click; a finished/aborted wire never swallows the next tap
     wire = null;                                          // clear BEFORE addEdge/flushPending so guards release
     if (!cancelled && was.active && tgt && tgt.id !== fromId) {
       const ns = nidSlug(), fs = ns[fromId], ts = ns[tgt.id];
-      if (fs && ts) { ripple(tgt.x, tgt.y); addEdge(fs, ts); } else flushPending();
+      if (fs && ts) { const src = byId(fromId); ripple(tgt.x, tgt.y, accent(tgt)); if (src) traceEdge(src, tgt); addEdge(fs, ts); } else flushPending();
     } else flushPending();
   }
   svgN.addEventListener('pointerup', e => endWire(e, false));
@@ -409,7 +447,7 @@
   // ---- map switching + breadcrumb + hash ----
   let suppressHash = false;
   function setHash(slug) { suppressHash = true; location.hash = 'map=' + slug; setTimeout(() => suppressHash = false, 0); }
-  function switchMap(slug, noHash) { if (!MAPS.maps[slug]) return; cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug); render(); setTimeout(fit, 40); }
+  function switchMap(slug, noHash) { if (!MAPS.maps[slug]) return; if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; } cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug); render(); setTimeout(fit, 40); }
   function jumpMap(slug) { trail = []; switchMap(slug); }
   function drillTo(slug) { if (!MAPS.maps[slug]) { alert('Linked map "' + slug + '" not found.'); return; } trail.push(cur); switchMap(slug); }
 
@@ -560,13 +598,13 @@
     document.getElementById('exportpanel').hidden = true;
     edPath = repoRel(d.url); edNode = d;
     document.getElementById('ed-title').textContent = d.name; document.getElementById('ed-path').textContent = edPath;
-    document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; document.getElementById('editor').hidden = false;
+    document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; }
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
       document.getElementById('ed-text').value = j.content; document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
-  function closeEditor() { document.getElementById('editor').hidden = true; edPath = null; edNode = null; document.getElementById('ed-refs').hidden = true; }
+  function closeEditor() { edPath = null; edNode = null; document.getElementById('ed-refs').hidden = true; fadeOut(document.getElementById('editor')); }
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
     if (!edPath) return;
     const node = (map() ? map().nodes : []).find(n => repoRel(n.url) === edPath);
@@ -588,7 +626,7 @@
   }
   function focusNode(n) {   // center the viewport on one node (supersedes fit's transition since it starts later)
     const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.4, d3.zoomTransform(svgN).k || 1);
-    svg.transition().duration(450).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * n.x, h / 2 - k * n.y).scale(k));
+    svg.transition().duration(420).ease(d3.easeCubicOut).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * n.x, h / 2 - k * n.y).scale(k));   // leap-then-settle: 'brought the node to you'
   }
   function toggleRefs(n) {   // collapse/expand a node's knowledge tray (persists via refs_collapsed frontmatter)
     const v = !n.refsCollapsed; n.refsCollapsed = v; render();   // optimistic
@@ -628,7 +666,7 @@
     MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => { if (n.id === d.id) return; kpAll.push({ id: n.id, name: n.name, type: n.type, mapTitle: m.title || slug }); }); });
     kpAll.sort((a, b) => (a.type === 'reference' ? 0 : 1) - (b.type === 'reference' ? 0 : 1) || a.name.localeCompare(b.name));   // SoT nodes first
     document.getElementById('kp-search').value = ''; renderKpList('');
-    document.getElementById('knowpick').hidden = false;
+    { const kp = document.getElementById('knowpick'); kp.classList.remove('exiting'); kp.hidden = false; }
     setTimeout(() => document.getElementById('kp-search').focus(), 0);
   }
   function renderKpList(q) {
@@ -651,7 +689,7 @@
     const j = await api('/api/link-knowledge', { map: cur, path: repoRel(d.url), ref: it.id, label: it.name });   // ghost auto-appears in d's tray
     if (j.ok) applyMaps(j.maps); else alert('Link: ' + j.error);
   }
-  function closeKnowPick() { document.getElementById('knowpick').hidden = true; kpCiting = null; }
+  function closeKnowPick() { kpCiting = null; fadeOut(document.getElementById('knowpick')); }
   // mark/unmark the current map as a SoT library (kind: reference)
   function syncLibToggle() { const m = map(), on = !!(m && m.kind === 'reference'); document.getElementById('libtoggle').classList.toggle('on', on); document.body.classList.toggle('libmap', on); }
   async function toggleLibrary() {
@@ -747,7 +785,11 @@
   // double-click empty canvas → quick add
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   svg.on('contextmenu.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; e.preventDefault(); closeCtx(); const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
-  document.addEventListener('click', e => { const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx(); });
+  document.addEventListener('click', e => {
+    const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx();
+    const kp = document.getElementById('knowpick');                                    // dismiss the picker on an outside click (ignoring the click that opened it)
+    if (!kp.hidden && !kp.contains(e.target) && !e.target.closest('#ctx-linkknow')) closeKnowPick();
+  });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }

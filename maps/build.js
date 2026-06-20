@@ -18,7 +18,10 @@ const OUT = path.join(MAPS, 'data.js');
 const warnings = [];
 let nodeCount = 0;
 
-function clean(s) { return s == null ? null : String(s).trim().replace(/^["']|["']$/g, ''); }
+// unquote a frontmatter scalar. JSON.stringify'd values (title:/gate:) decode via JSON.parse; bare values strip one quote pair.
+function clean(s) { if (s == null) return null; s = String(s).trim(); if (/^".*"$/s.test(s)) { try { return JSON.parse(s); } catch (_) {} } return s.replace(/^["']|["']$/g, ''); }
+// decode a label group captured WITH its surrounding quotes (JSON string); tolerates legacy/hand-edited values.
+function jparse(s) { if (s == null) return ''; try { return JSON.parse(s); } catch (_) { return String(s).replace(/^"|"$/g, ''); } }
 function fmBlock(txt) { const m = txt.match(/^---\n([\s\S]*?)\n---/); return m ? m[1] : ''; }
 function field(fm, key) { const m = fm.match(new RegExp('^' + key + ':\\s*(.+)$', 'm')); return m ? clean(m[1]) : null; }
 function listField(fm, key) {
@@ -28,9 +31,9 @@ function listField(fm, key) {
 // parse the `edges:` block: a sequence of `- {from: a, to: b, label: "..."}` lines
 function edgesField(fm) {
   const out = [];
-  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*"([^"]*)")?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  const re = /\{\s*from:\s*([^,}]+?)\s*,\s*to:\s*([^,}]+?)\s*(?:,\s*label:\s*("(?:[^"\\]|\\.)*"))?\s*(?:,\s*bend:\s*(-?\d+))?\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
   let m;
-  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: m[3] || '', bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
+  while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: jparse(m[3]), bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
   return out;
 }
 // citations in a node body: [[nid|label]] — same syntax as the wiki. Skips [[?stub]] (not-yet-written).
@@ -46,9 +49,9 @@ function refsOf(body) {
 // parse the `frames:` block: `- {id: f1, label: "..", x: N, y: N, w: N, h: N, color: N}` (background boxes)
 function framesField(fm) {
   const out = [];
-  const re = /\{\s*id:\s*([^,}]+?)\s*,\s*label:\s*"([^"]*)"\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
+  const re = /\{\s*id:\s*([^,}]+?)\s*,\s*label:\s*("(?:[^"\\]|\\.)*")\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*,\s*w:\s*(\d+)\s*,\s*h:\s*(\d+)\s*(?:,\s*color:\s*(\d+))?\s*\}/g;
   let m;
-  while ((m = re.exec(fm))) out.push({ id: clean(m[1]), label: m[2], x: +m[3], y: +m[4], w: +m[5], h: +m[6], color: m[7] != null ? +m[7] : 0 });
+  while ((m = re.exec(fm))) out.push({ id: clean(m[1]), label: jparse(m[2]), x: +m[3], y: +m[4], w: +m[5], h: +m[6], color: m[7] != null ? +m[7] : 0 });
   return out;
 }
 
