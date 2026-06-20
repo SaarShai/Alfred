@@ -14,6 +14,11 @@
     --font: ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     /* damped-spring easing (overshoot → settle); falls back to a spring-ish bezier on older engines below */
     --spring:linear(0,.18,.5,.83,1.08,1.16,1.13,1.06,.99,.97,.99,1.01,1.005,1);
+    /* design tokens (adopted incrementally) — elevation · duration · spacing · type scale */
+    --e1:0 1px 3px rgba(65,64,76,.10); --e2:0 6px 16px rgba(65,64,76,.16); --e3:0 16px 46px rgba(65,64,76,.20);
+    --dur-1:.13s; --dur-2:.22s;
+    --s1:4px; --s2:8px; --s3:12px; --s4:18px;
+    --fs-1:10.5px; --fs-2:11.5px; --fs-3:13px; --fs-4:15px; --fs-5:18px;
   }
   @supports not (transition-timing-function:linear(0,1)){:root{--spring:cubic-bezier(.34,1.56,.64,1)}}
   *{box-sizing:border-box}
@@ -112,6 +117,8 @@
   .node .typeglyph{font-size:11px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
   .node.linkable .shape{stroke-dasharray:2 3}
   .node.drop-ok .shape{stroke:var(--link)!important;stroke-width:3.4px!important}
+  /* selection state — an offset accent ring; distinct from hover (lift) and .hl (glow) */
+  .selring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.95;pointer-events:none;stroke-dasharray:none}
   /* connection port */
   .node .port{fill:var(--accent);opacity:.4;cursor:crosshair;transform-box:fill-box;transform-origin:center;transition:opacity .14s,transform .18s var(--spring)}
   .node .port-hit{fill:transparent;cursor:crosshair}

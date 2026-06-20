@@ -16,6 +16,7 @@
   let dragId = null;                                 // id of the node currently being dragged (re-applies the 'grabbing' lift across render()'s per-tick rebuild)
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
   const seen = new Set();                            // node ids already animated-in (so enter fires once)
+  let selection = new Set();                          // currently-selected node ids (re-applied each render, like dragId; foundation for marquee/batch ops)
   const EMBED = new URLSearchParams(location.search).has('embed');   // true when shown inside a floating sub-map window
   if (EMBED) document.body.classList.add('embed');
 
@@ -215,7 +216,7 @@
       .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : ''))   // enter fires once per node
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
-      .on('click', (e, d) => { ripple(d.x, d.y, accent(d)); clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // ripple immediately; defer the navigation so a dblclick can cancel it
+      .on('click', (e, d) => { ripple(d.x, d.y, accent(d)); selectClick(e, d.id); render(); clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // ripple + select immediately; defer the navigation so a dblclick can cancel it
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d); })   // double-click opens the edit panel (n8n / Miro / Figma convention)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
@@ -248,6 +249,10 @@
         gb.append('circle').attr('r', 8).attr('fill', gated ? 'var(--link)' : 'var(--decision)');
         gb.append('text').attr('class', 'typeglyph').attr('font-size', '11px').text(gated ? '✓' : '!');
         gb.append('title').text(gated ? 'gate: ' + gated : 'stage has no gate — add one (right-click → Gate) before the workflow can run');
+      }
+      if (selection.has(d.id)) {   // selection ring on the outer g (stable under the hover lift); base extents +5px
+        if (isDiamond(d)) g.append('polygon').attr('class', 'selring').attr('points', [[0, -(hh + 5)], [hw + 5, 0], [0, hh + 5], [-(hw + 5), 0]].map(p => p.join(',')).join(' '));
+        else g.append('rect').attr('class', 'selring').attr('x', -(hw + 5)).attr('y', -(hh + 5)).attr('width', (hw + 5) * 2).attr('height', (hh + 5) * 2).attr('rx', 14);
       }
       // connection port (right edge) — on the outer group so the hover lift doesn't move the wire anchor
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
@@ -322,6 +327,11 @@
     setTimeout(() => { try { p.remove(); } catch (_) {} }, 900);
   }
 
+  function selectClick(e, id) {   // shift/cmd/ctrl-click extends the selection; a plain click replaces it
+    if (e && (e.shiftKey || e.metaKey || e.ctrlKey)) { if (selection.has(id)) selection.delete(id); else selection.add(id); }
+    else { selection.clear(); selection.add(id); }
+  }
+  function clearSelection() { if (!selection.size) return; selection.clear(); render(); }
   function onNodeClick(d) {   // single-click (deferred): a link node navigates into its sub-map; a plain node already got its ripple
     const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
     if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); }   // top level: float a window; inside a window: drill in place
@@ -794,13 +804,14 @@
   // double-click empty canvas → quick add
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   svg.on('contextmenu.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; e.preventDefault(); closeCtx(); const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
+  svg.on('click.sel', e => { if (!e.target.closest('.node') && !e.target.closest('.edgegrp') && !e.target.closest('.frame-grab')) clearSelection(); });   // click empty canvas → deselect
   document.addEventListener('click', e => {
     const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx();
     const kp = document.getElementById('knowpick');                                    // dismiss the picker on an outside click (ignoring the click that opened it)
     if (!kp.hidden && !kp.contains(e.target) && !e.target.closest('#ctx-linkknow')) closeKnowPick();
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; }
+    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; clearSelection(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
