@@ -37,7 +37,7 @@
   const gWire = canvas.append('g');                   // NEVER cleared by render()
   const wirePath = gWire.append('path').attr('id', 'wire-preview').attr('d', '');
   const FRAME_PAL = ['--l0', '--l1', '--l2', '--l3', '--l4', '--l5', '--l6'];
-  const zoom = d3.zoom().scaleExtent([0.2, 2.5]).filter(e => !e.target.closest('.node') && !e.target.closest('.frame-grab'))
+  const zoom = d3.zoom().scaleExtent([0.2, 2.5]).filter(e => (e.type === 'wheel' || !e.shiftKey) && !e.target.closest('.node') && !e.target.closest('.frame-grab'))   // shift-drag is reserved for marquee select, not pan
     .on('zoom', e => {
       let t = e.transform;
       if (!isFinite(t.x) || !isFinite(t.y) || !isFinite(t.k)) {   // self-heal a corrupted (NaN) transform so pan never dies
@@ -269,9 +269,9 @@
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d); })   // double-click opens the edit panel (n8n / Miro / Figma convention)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e, d) { if (wire && wire.active) return; dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
-        .on('drag', function (e, d) { if (wire && wire.active) return; d.x = e.x; d.y = e.y; scheduleRender(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
+        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
+        .on('drag', function (e, d) { if (wire && wire.active) return; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
+        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (!group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -302,6 +302,12 @@
       if (selection.has(d.id)) {   // selection ring on the outer g (stable under the hover lift); base extents +5px
         if (isDiamond(d)) g.append('polygon').attr('class', 'selring').attr('points', [[0, -(hh + 5)], [hw + 5, 0], [0, hh + 5], [-(hw + 5), 0]].map(p => p.join(',')).join(' '));
         else g.append('rect').attr('class', 'selring').attr('x', -(hw + 5)).attr('y', -(hh + 5)).attr('width', (hw + 5) * 2).attr('height', (hh + 5) * 2).attr('rx', 14);
+        const rh = g.append('g').attr('class', 'node-resize').attr('transform', 'translate(' + (hw + 5) + ',' + (hh + 5) + ')');   // corner grip → drag to scale
+        rh.append('circle').attr('r', 6).attr('fill', col).attr('opacity', .7);
+        rh.call(d3.drag().container(() => canvas.node())
+          .on('start', e => { e.sourceEvent.stopPropagation(); dragging = true; document.body.classList.add('dragging'); })
+          .on('drag', e => { const delta = (Math.abs(e.dx) > Math.abs(e.dy) ? e.dx : e.dy) * 0.01; d.scale = Math.max(0.5, Math.min(2.5, (d.scale || 1) + delta)); const sz = document.getElementById('ctx-size'); if (sz) sz.textContent = Math.round(d.scale * 100) + '%'; scheduleRender(); })
+          .on('end', () => { dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/node-style', { path: repoRel(d.url), scale: +(d.scale || 1).toFixed(3) }).then(flushPending); }));
       }
       // connection port (right edge) — on the outer group so the hover lift doesn't move the wire anchor
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
@@ -359,6 +365,8 @@
     updateBreadcrumb();
     syncLibToggle();
     updateMinimap();
+    positionSelToolbar();
+    { const eb = document.getElementById('empty-state'); if (eb) eb.hidden = !(map() && !map().nodes.length); }   // first-run hint on an empty map
   }
 
   function ripple(x, y, col) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
@@ -382,6 +390,122 @@
     else { selection.clear(); selection.add(id); }
   }
   function clearSelection() { if (!selection.size) return; selection.clear(); render(); }
+  function selNodes() { return (map() ? map().nodes : []).filter(n => selection.has(n.id)); }
+  function persistPos(nodes) { if (SERVER) api('/api/poslist', { map: cur, positions: nodes.map(n => ({ path: repoRel(n.url), x: Math.round(n.x), y: Math.round(n.y) })) }).then(flushPending); }
+
+  // ---- marquee (shift-drag empty canvas) → multi-select ----
+  let marqueeStart = null, marqueeRect = null;
+  function startMarquee(e) {
+    if (!e.shiftKey || e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return;
+    const [mx, my] = d3.pointer(e, canvas.node());
+    selection.clear();
+    marqueeStart = { x: mx, y: my };
+    marqueeRect = gWire.append('rect').attr('class', 'marquee').attr('x', mx).attr('y', my).attr('width', 0).attr('height', 0);
+  }
+  function updateMarquee(e) {
+    if (!marqueeStart || !marqueeRect) return;
+    const [mx, my] = d3.pointer(e, canvas.node());
+    marqueeRect.attr('x', Math.min(marqueeStart.x, mx)).attr('y', Math.min(marqueeStart.y, my)).attr('width', Math.abs(mx - marqueeStart.x)).attr('height', Math.abs(my - marqueeStart.y));
+  }
+  function endMarquee(e) {
+    if (!marqueeStart) return;
+    const [mx, my] = d3.pointer(e, canvas.node());
+    const x1 = Math.min(marqueeStart.x, mx), x2 = Math.max(marqueeStart.x, mx), y1 = Math.min(marqueeStart.y, my), y2 = Math.max(marqueeStart.y, my);
+    (map() ? map().nodes : []).forEach(n => { if (n.x >= x1 && n.x <= x2 && n.y >= y1 && n.y <= y2) selection.add(n.id); });
+    if (marqueeRect) { marqueeRect.remove(); marqueeRect = null; }
+    marqueeStart = null; render();
+  }
+
+  // ---- contextual mini-toolbar over the selection (items 8/9) ----
+  let selToolbar = null;
+  function positionSelToolbar() {
+    if (dragging || !selection.size || !map()) { if (selToolbar) selToolbar.hidden = true; return; }
+    const nodes = selNodes(); if (!nodes.length) { if (selToolbar) selToolbar.hidden = true; return; }
+    if (!selToolbar) createSelToolbar();
+    selToolbar.classList.toggle('multi', nodes.length >= 2);
+    let minX = Infinity, maxX = -Infinity, minY = Infinity;
+    nodes.forEach(n => { const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); });
+    const pt = d3.zoomTransform(svgN).apply([(minX + maxX) / 2, minY]);
+    const w = selToolbar.offsetWidth || 240;
+    selToolbar.hidden = false;
+    selToolbar.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, pt[0] - w / 2)) + 'px';
+    selToolbar.style.top = Math.max(48, pt[1] - 52) + 'px';
+  }
+  function createSelToolbar() {
+    selToolbar = document.createElement('div'); selToolbar.id = 'sel-toolbar';
+    selToolbar.innerHTML = '<div class="sel-bar">' +
+      '<button data-a="color" title="Cycle color">⬤</button>' +
+      '<button data-a="type" title="Cycle type / shape">◇</button>' +
+      '<button data-a="gate" title="Set gate for all selected">✓</button>' +
+      '<button data-a="link" title="Link knowledge">§</button>' +
+      '<span class="sel-sep"></span>' +
+      '<span class="sel-align">' +
+        '<button data-a="al" title="Align left">⇤</button><button data-a="ac" title="Align center (x)">↔</button><button data-a="ar" title="Align right">⇥</button>' +
+        '<button data-a="at" title="Align top">⤒</button><button data-a="am" title="Align middle (y)">↕</button><button data-a="ab" title="Align bottom">⤓</button>' +
+        '<button data-a="dx" title="Distribute horizontally">⇿</button><button data-a="dy" title="Distribute vertically">⤧</button>' +
+      '</span>' +
+      '<span class="sel-sep"></span>' +
+      '<button data-a="archive" class="arch" title="Archive selection">−</button>' +
+      '</div>';
+    document.body.appendChild(selToolbar);
+    selToolbar.querySelectorAll('button').forEach(b => b.onclick = () => selAction(b.dataset.a));
+  }
+  function selAction(a) {
+    const nodes = selNodes(); if (!nodes.length) return;
+    if (a === 'color') { const nx = nodes[0].color == null ? 0 : (nodes[0].color + 1 >= PAL_HEX.length ? null : nodes[0].color + 1); nodes.forEach(n => { n.color = nx; if (SERVER) api('/api/node-style', { path: repoRel(n.url), color: nx }).then(flushPending); }); render(); }
+    else if (a === 'type') { const order = ['step', 'decision', 'subprocess-link', 'reference']; const nx = order[(order.indexOf(nodes[0].type) + 1) % order.length]; nodes.forEach(n => { n.type = nx; if (SERVER) api('/api/type', { path: repoRel(n.url), type: nx }).then(flushPending); }); render(); }
+    else if (a === 'gate') { const pt = d3.zoomTransform(svgN).apply([nodes[0].x, nodes[0].y - halfExt(nodes[0]).hh]); showNameInput(pt[0], pt[1], nodes[0].gate || '', v => { nodes.forEach(n => { n.gate = v; if (SERVER) api('/api/node-style', { path: repoRel(n.url), gate: v }).then(flushPending); }); render(); }); }
+    else if (a === 'link') openKnowPick(nodes[0]);
+    else if (a === 'archive') archiveSel(nodes);
+    else if (a[0] === 'a') alignSel(a);
+    else if (a[0] === 'd') distributeSel(a === 'dx' ? 'x' : 'y');
+  }
+  async function archiveSel(nodes) {
+    if (!SERVER || !nodes.length) return;
+    if (!confirm('Archive ' + nodes.length + ' node' + (nodes.length === 1 ? '' : 's') + '?')) return;
+    for (const n of nodes) { const j = await api('/api/archive', { path: repoRel(n.url) }); if (j.ok) applyMaps(j.maps); }
+    selection.clear(); render();
+  }
+  function alignSel(a) {
+    const nodes = selNodes(); if (nodes.length < 2) return;
+    const avg = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+    if (a === 'al') { const r = Math.min(...nodes.map(n => n.x - halfExt(n).hw)); nodes.forEach(n => n.x = r + halfExt(n).hw); }
+    else if (a === 'ac') { const r = avg(nodes.map(n => n.x)); nodes.forEach(n => n.x = r); }
+    else if (a === 'ar') { const r = Math.max(...nodes.map(n => n.x + halfExt(n).hw)); nodes.forEach(n => n.x = r - halfExt(n).hw); }
+    else if (a === 'at') { const r = Math.min(...nodes.map(n => n.y - halfExt(n).hh)); nodes.forEach(n => n.y = r + halfExt(n).hh); }
+    else if (a === 'am') { const r = avg(nodes.map(n => n.y)); nodes.forEach(n => n.y = r); }
+    else if (a === 'ab') { const r = Math.max(...nodes.map(n => n.y + halfExt(n).hh)); nodes.forEach(n => n.y = r - halfExt(n).hh); }
+    persistPos(nodes); render();
+  }
+  function distributeSel(axis) {
+    const nodes = selNodes().sort((p, q) => axis === 'x' ? p.x - q.x : p.y - q.y); if (nodes.length < 3) return;
+    const key = axis === 'x' ? 'x' : 'y';
+    const mn = Math.min(...nodes.map(n => n[key])), mx = Math.max(...nodes.map(n => n[key])), gap = (mx - mn) / (nodes.length - 1);
+    nodes.forEach((n, i) => n[key] = mn + gap * i);
+    persistPos(nodes); render();
+  }
+
+  // ---- snap-on-drag + alignment guides (item 10) ----
+  let snapGuide = null; const SNAP_DIST = 16;
+  function checkSnap(d) {
+    const k = d3.zoomTransform(svgN).k, thr = SNAP_DIST / k, dhw = halfExt(d).hw;
+    let bestX = null, bestY = null;
+    (map() ? map().nodes : []).forEach(n => {
+      if (n.id === d.id) return; const nhw = halfExt(n).hw;
+      if (Math.abs(d.x - n.x) < thr) bestX = n.x;
+      else if (Math.abs((d.x + dhw) - (n.x - nhw)) < thr) bestX = n.x - nhw - dhw;
+      else if (Math.abs((d.x - dhw) - (n.x + nhw)) < thr) bestX = n.x + nhw + dhw;
+      if (Math.abs(d.y - n.y) < thr) bestY = n.y;
+    });
+    if (snapGuide) { snapGuide.remove(); snapGuide = null; }
+    if (bestX === null && bestY === null) return null;
+    if (motionAllowed()) {
+      snapGuide = gWire.append('g').attr('class', 'snap-guides');
+      if (bestX !== null) snapGuide.append('line').attr('x1', bestX).attr('y1', d.y - 60).attr('x2', bestX).attr('y2', d.y + 60);
+      if (bestY !== null) snapGuide.append('line').attr('x1', d.x - 60).attr('y1', bestY).attr('x2', d.x + 60).attr('y2', bestY);
+    }
+    return { x: bestX !== null ? bestX : d.x, y: bestY !== null ? bestY : d.y };
+  }
   function onNodeClick(d) {   // single-click (deferred): a link node navigates into its sub-map; a plain node already got its ripple
     const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
     if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); }   // top level: float a window; inside a window: drill in place
@@ -878,7 +1002,10 @@
   // double-click empty canvas → quick add
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   svg.on('contextmenu.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; e.preventDefault(); closeCtx(); const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
-  svg.on('click.sel', e => { if (!e.target.closest('.node') && !e.target.closest('.edgegrp') && !e.target.closest('.frame-grab')) clearSelection(); });   // click empty canvas → deselect
+  svg.on('click.sel', e => { if (e.shiftKey) return; if (!e.target.closest('.node') && !e.target.closest('.edgegrp') && !e.target.closest('.frame-grab')) clearSelection(); });   // click empty canvas → deselect (ignore the trailing click after a shift-marquee)
+  svg.on('mousedown.marquee', startMarquee);
+  window.addEventListener('mousemove', updateMarquee);
+  window.addEventListener('mouseup', endMarquee);
   document.addEventListener('click', e => {
     const m = document.getElementById('ctx'); if (!m.hidden && !m.contains(e.target)) closeCtx();
     const kp = document.getElementById('knowpick');                                    // dismiss the picker on an outside click (ignoring the click that opened it)
@@ -887,6 +1014,7 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); document.getElementById('exportpanel').hidden = true; clearSelection(); }
     if (e.shiftKey && (e.key === '1' || e.code === 'Digit1')) { const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable); if (!typing) { e.preventDefault(); fit(); } }   // Shift+1 = fit
+    if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !e.shiftKey) { const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable); if (!typing && SERVER) { e.preventDefault(); const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } }   // N = add a node at view center
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       const a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);

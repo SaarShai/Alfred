@@ -113,7 +113,13 @@ Master plan = 9 deconflicted batches (fleet output w6a3wlw6j). Status:
       (b) per-tick `scheduleRender()` in the zoom handler stormed render and fought programmatic zoom
       transitions (fit/zoomTo) → moved reculling to the zoom `'end'` event. NOTE: rAF transitions don't
       tick in headless preview eval (harness limit), so Fit/preset buttons verified by code, not eval.
-- [ ] Batch 4 (editing spine: marquee, toolbar, align, resize, snap, empty-state) — 6,8,9,12,10,13
+- [x] **Batch 4** (editing spine) — 6 marquee · 8 contextual toolbar · 9 align/distribute · 12 resize
+      grip · 10 snap-on-drag + group-drag · 13 empty-state. VERIFIED: click→ring+grip+toolbar; shift-
+      marquee→multi-select (2 nodes)→toolbar `.multi` + align cluster visible; Esc clears; N opens add
+      input (cancellable). Rewrote 8/9 (author bugs: Math.avg, random type-change, non-batching
+      nodeStyle). Added group-drag (drag a member moves all selected) + zoom-filter shift-guard
+      (shift-drag = marquee, not pan) + marquee trailing-click guard. align/distribute/resize NOT run
+      live (they persist x/y/scale — won't mutate real positions in a test); logic reviewed.
 - [ ] Batch 5 (connections + server changes) — 4,22,23,25,24,5,14,15  ← only batch touching serve.js/build.js
 - [ ] Batch 6 (motion on node chain) — 39,38,41,43,42,44
 - [ ] Batch 7 (keyboard/command surfaces) — 28,32,7,11,3,30,47

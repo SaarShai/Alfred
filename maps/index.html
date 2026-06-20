@@ -176,6 +176,34 @@
   body.lod-far .ref-conn{opacity:0}
   body.lod-far .tray-box{fill:rgba(107,114,128,.02);stroke-opacity:.15}
   body.lod-far .ghost-shape{opacity:.4}
+  /* marquee (shift-drag select) + snap-on-drag guides */
+  .marquee{fill:rgba(138,143,230,.10);stroke:var(--step);stroke-width:1.2;stroke-dasharray:4 3;pointer-events:none}
+  .snap-guides line{stroke:var(--link);stroke-width:1.6;stroke-dasharray:3 3;opacity:.75;pointer-events:none}
+  /* node resize grip (selected nodes) */
+  .node-resize{cursor:nwse-resize}
+  .node-resize circle{transition:opacity .14s var(--spring)}
+  .node:hover .node-resize circle{opacity:1!important}
+  body.lod-far .node-resize{display:none}
+  /* contextual selection toolbar (floats above the selection bbox) */
+  #sel-toolbar{position:fixed;z-index:65}
+  #sel-toolbar[hidden]{display:none}
+  #sel-toolbar .sel-bar{display:flex;align-items:center;gap:5px;padding:6px 8px;border-radius:11px;
+    background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(22px) saturate(150%);backdrop-filter:blur(22px) saturate(150%);
+    border:1px solid rgba(65,64,76,.12);box-shadow:inset 1px 1px 0 rgba(255,255,255,.7),0 12px 30px rgba(65,64,76,.18)}
+  #sel-toolbar button{padding:5px 7px;font-size:var(--fs-2);min-width:28px;border-radius:7px;line-height:1}
+  #sel-toolbar button.arch{color:#f87171;border-color:rgba(248,113,113,.3)}
+  #sel-toolbar .sel-sep{width:1px;align-self:stretch;background:rgba(65,64,76,.12);margin:2px 1px}
+  #sel-toolbar .sel-align{display:none;gap:4px}
+  #sel-toolbar.multi .sel-align{display:inline-flex}
+  #sel-toolbar:not(.multi) .sel-sep{display:none}
+  /* first-run empty-state hint */
+  #empty-state{position:fixed;left:50%;top:52%;transform:translate(-50%,-50%);pointer-events:none;z-index:5}
+  #empty-state[hidden]{display:none}
+  #empty-state .empty-card{display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px 30px;border-radius:16px;
+    background:rgba(255,255,255,.5);border:1px dashed rgba(65,64,76,.18);box-shadow:0 8px 24px rgba(65,64,76,.08);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+  #empty-state .empty-icon{font-size:42px;opacity:.35}
+  #empty-state .empty-hint{font-size:var(--fs-3);font-weight:500;color:var(--muted);text-align:center;line-height:1.55}
+  #empty-state .empty-hint kbd{background:rgba(65,64,76,.1);padding:2px 7px;border-radius:5px;font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:.92em}
 
   .hint{position:fixed;bottom:12px;left:18px;color:var(--muted);font-size:11px;z-index:10;max-width:62vw}
   #bcrumb{position:fixed;top:54px;left:18px;z-index:9;display:flex;gap:6px;align-items:center;font-size:var(--fs-2);color:var(--muted);font-weight:600}
@@ -394,6 +422,12 @@
 
 <svg id="map-svg"></svg>
 <div id="status-msg" aria-live="polite" aria-atomic="true" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden"></div>
+<div id="empty-state" hidden>
+  <div class="empty-card">
+    <div class="empty-icon">▭</div>
+    <div class="empty-hint">Right-click anywhere,<br>or press <kbd>N</kbd> to add a node</div>
+  </div>
+</div>
 
 <div id="editor" class="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="ed-title">
   <div class="drawer-head">
