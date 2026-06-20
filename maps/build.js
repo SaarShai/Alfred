@@ -33,13 +33,6 @@ function edgesField(fm) {
   while ((m = re.exec(fm))) out.push({ from: clean(m[1]), to: clean(m[2]), label: m[3] || '', bend: m[4] != null ? +m[4] : 0, color: m[5] != null ? +m[5] : null });
   return out;
 }
-// parse the `ghosts:` block: `- {ref: <nid>, x: N, y: N}` (mirror of a SoT node that lives in another map)
-function ghostsField(fm) {
-  const out = [];
-  const re = /\{\s*ref:\s*([^,}]+?)\s*,\s*x:\s*(-?\d+)\s*,\s*y:\s*(-?\d+)\s*\}/g;
-  let m; while ((m = re.exec(fm))) out.push({ ref: clean(m[1]), x: +m[2], y: +m[3] });
-  return out;
-}
 // citations in a node body: [[nid|label]] — same syntax as the wiki. Skips [[?stub]] (not-yet-written).
 function refsOf(body) {
   const out = [], seen = new Set(), re = /\[\[([^\]]+)\]\]/g;
@@ -86,7 +79,8 @@ function readNode(mapSlug, nodeSlug) {
     slug: nodeSlug,
     name: field(fm, 'title') || (h1 && h1.trim()) || nodeSlug,
     type: field(fm, 'type') || 'step',
-    refs: refsOf(body),                          // [{target,label}] — knowledge this node cites
+    refs: refsOf(body),                          // [{target,label}] — knowledge this node cites (rendered as a tray below it)
+    refsCollapsed: field(fm, 'refs_collapsed') === 'true',   // tray box collapsed?
 
     x: Number.isFinite(x) ? x : null,
     y: Number.isFinite(y) ? y : null,
@@ -119,9 +113,8 @@ function readMap(mapSlug) {
     return (from && to) ? { from, to, label: e.label || '', bend: e.bend || 0, color: e.color != null ? e.color : null } : null;
   }).filter(Boolean);
   const frames = framesField(fm);
-  const ghosts = ghostsField(fm);
   const kind = field(fm, 'kind') || 'process';   // 'reference' = a SoT library map (no flow / workflow)
-  return { slug: mapSlug, id: mid, title: field(fm, 'title') || mapSlug, kind, url: path.relative(MAPS, idx), nodes, edges, frames, ghosts };
+  return { slug: mapSlug, id: mid, title: field(fm, 'title') || mapSlug, kind, url: path.relative(MAPS, idx), nodes, edges, frames };
 }
 
 const registry = path.join(SRC, 'index.md');

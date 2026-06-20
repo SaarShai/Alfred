@@ -236,38 +236,42 @@
     });
     nodes.forEach(n => seen.add(n.id));   // mark animated so a re-render (drag/SSE) won't replay enter
 
-    // ---- knowledge ghosts: mirrors of SoT nodes that live in another map ----
-    // each stored ghost {ref,x,y} resolves (by nid, then slug/name) to a real node elsewhere
-    const ghosts = (map().ghosts || []).map(g => { const hit = resolveRef(g.ref); return hit ? { ref: g.ref, _src: g, x: g.x, y: g.y, name: hit.node.name, type: hit.node.type, color: hit.node.color, homeTitle: (MAPS.maps[hit.map] || {}).title || hit.map, sameMap: hit.map === cur } : null; }).filter(Boolean);
-    const ghostByKey = {}; ghosts.forEach(gh => { const hit = resolveRef(gh.ref); if (hit) ghostByKey[hit.node.id] = gh; ghostByKey[gh.ref] = gh; });
+    // ---- knowledge trays: a node's [[…]] citations hang BELOW it (bottom = the knowledge axis, distinct from L→R flow) ----
+    nodes.forEach(n => {
+      const resolved = (n.refs || []).map(rf => { const hit = resolveRef(rf.target); return hit ? { ref: rf.target, name: hit.node.name, home: (MAPS.maps[hit.map] || {}).title || hit.map } : null; }).filter(Boolean);
+      if (!resolved.length) return;
+      const { hh } = baseHalf(n), ax = n.x, ay = n.y + hh, gap = 16;
+      const tray = gNode.append('g').attr('class', 'tray');
 
-    // dashed reference edges: any node citing [[ref]] → the ghost of that ref in this map (drawn in gEdge, behind nodes)
-    nodes.forEach(n => (n.refs || []).forEach(rf => {
-      const hit = resolveRef(rf.target), gh = ghostByKey[hit ? hit.node.id : rf.target] || ghostByKey[rf.target];
-      if (!gh) return;
-      const p1 = rightPort(n), gb = baseHalf(gh), p2 = { x: gh.x - gb.hw - 2, y: gh.y };
-      const { d } = edgePath(p1, p2, 0);
-      gEdge.append('path').attr('class', 'edge ref').attr('d', d).attr('marker-end', 'url(#ahref)');
-    }));
-
-    // ghost shapes (dashed, grey, § badge, "↗ home-map" subtitle) — click jumps to the real node; drag repositions
-    const gsel = gNode.selectAll('g.ghost').data(ghosts, d => d.ref).enter().append('g')
-      .attr('class', 'ghost').attr('transform', d => 'translate(' + d.x + ',' + d.y + ')')
-      .on('click', (e, d) => { e.stopPropagation(); gotoRef(d.ref); })
-      .on('contextmenu', (e, d) => { e.preventDefault(); openGhostCtx(e, d); })
-      .call(d3.drag().clickDistance(5)
-        .on('start', function (e) { dragging = true; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); })
-        .on('drag', function (e, d) { d._src.x = e.x; d._src.y = e.y; render(); })
-        .on('end', function (e, d) { dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/ghost', { map: cur, op: 'move', ref: d.ref, x: Math.round(d._src.x), y: Math.round(d._src.y) }).then(flushPending); else flushPending(); }));
-    gsel.each(function (d) {
-      const g = d3.select(this), { hw, hh } = baseHalf(d);
-      g.append('rect').attr('class', 'ghost-shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11);
-      g.append('text').attr('class', 'ghost-label').text(d.name);
-      g.append('text').attr('class', 'ghost-sub').attr('y', hh + 12).text('↗ ' + d.homeTitle);
-      const bd = g.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
-      bd.append('circle').attr('r', 9).attr('fill', 'var(--ref)');
-      bd.append('text').attr('class', 'typeglyph').text('§');
-      g.append('title').text('Source of truth — lives in "' + d.homeTitle + '". Click to open · right-click to unpin.');
+      if (resolved.length === 1) {                                  // one source → a lone ghost mirror below the node
+        const r = resolved[0], gw = Math.max(120, Math.min(220, r.name.length * 8 + 56)) / 2, gh = 21, cy = ay + gap + gh;
+        tray.append('path').attr('class', 'ref-conn').attr('d', 'M' + ax + ',' + ay + ' L' + ax + ',' + (cy - gh));
+        const g = tray.append('g').attr('class', 'ghost').attr('transform', 'translate(' + ax + ',' + cy + ')').on('click', e => { e.stopPropagation(); gotoRef(r.ref); });
+        g.append('rect').attr('class', 'ghost-shape').attr('x', -gw).attr('y', -gh).attr('width', gw * 2).attr('height', gh * 2).attr('rx', 10);
+        g.append('text').attr('class', 'ghost-label').text(r.name);
+        g.append('text').attr('class', 'ghost-sub').attr('y', gh + 11).text('↗ ' + r.home);
+        const bd = g.append('g').attr('transform', 'translate(' + (-gw + 2) + ',' + (-gh + 2) + ')');
+        bd.append('circle').attr('r', 8).attr('fill', 'var(--ref)'); bd.append('text').attr('class', 'typeglyph').attr('font-size', '10px').text('§');
+        g.append('title').text('Source of truth — "' + r.name + '" in ' + r.home + '. Click to open.');
+      } else {                                                       // several sources → a collapsible box of ghosts
+        const boxW = 210, boxX = ax - boxW / 2, boxY = ay + gap, headerH = 26, rowH = 24, collapsed = !!n.refsCollapsed;
+        const boxH = headerH + (collapsed ? 0 : resolved.length * rowH + 6);
+        tray.append('path').attr('class', 'ref-conn').attr('d', 'M' + ax + ',' + ay + ' L' + ax + ',' + boxY);
+        const box = tray.append('g').attr('transform', 'translate(' + boxX + ',' + boxY + ')');
+        box.append('rect').attr('class', 'tray-box').attr('width', boxW).attr('height', boxH).attr('rx', 11);
+        const head = box.append('g').style('cursor', 'pointer').on('click', e => { e.stopPropagation(); toggleRefs(n); });
+        head.append('rect').attr('width', boxW).attr('height', headerH).attr('rx', 11).attr('fill', 'transparent');
+        head.append('text').attr('class', 'tray-caret').attr('x', 12).attr('y', headerH / 2).text(collapsed ? '▸' : '▾');
+        head.append('text').attr('class', 'tray-title').attr('x', 26).attr('y', headerH / 2).text('§ ' + resolved.length + ' sources');
+        if (!collapsed) resolved.forEach((r, i) => {
+          const row = box.append('g').attr('transform', 'translate(0,' + (headerH + i * rowH) + ')').style('cursor', 'pointer').on('click', e => { e.stopPropagation(); gotoRef(r.ref); });
+          row.append('rect').attr('class', 'tray-row').attr('width', boxW).attr('height', rowH);
+          row.append('circle').attr('cx', 16).attr('cy', rowH / 2).attr('r', 7).attr('fill', 'var(--ref)');
+          row.append('text').attr('class', 'typeglyph').attr('x', 16).attr('y', rowH / 2).attr('font-size', '9px').text('§');
+          row.append('text').attr('class', 'tray-name').attr('x', 30).attr('y', rowH / 2).text(r.name);
+          row.append('text').attr('class', 'tray-home').attr('x', boxW - 10).attr('y', rowH / 2).text('↗ ' + r.home);
+        });
+      }
     });
 
     updateBreadcrumb();
@@ -586,9 +590,9 @@
     const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.4, d3.zoomTransform(svgN).k || 1);
     svg.transition().duration(450).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * n.x, h / 2 - k * n.y).scale(k));
   }
-  function openGhostCtx(e, d) {   // right-click a ghost → unpin it from this map (citation + SoT node stay; Undo restores)
-    if (!SERVER) return;
-    api('/api/ghost', { map: cur, op: 'del', ref: d.ref }).then(j => { if (j.ok) applyMaps(j.maps); });
+  function toggleRefs(n) {   // collapse/expand a node's knowledge tray (persists via refs_collapsed frontmatter)
+    const v = !n.refsCollapsed; n.refsCollapsed = v; render();   // optimistic
+    if (SERVER) api('/api/node-style', { path: repoRel(n.url), refsCollapsed: v }).then(j => { if (j && j.ok) applyMaps(j.maps); });
   }
   function gotoRef(target) {
     const hit = resolveRef(target); if (!hit) return false;
@@ -643,9 +647,8 @@
   }
   async function pickKnow(it) {
     if (!kpCiting || !SERVER) return;
-    const d = kpCiting, x = Math.round(d.x + halfExt(d).hw + 150), y = Math.round(d.y + 90);
-    closeKnowPick();
-    const j = await api('/api/link-knowledge', { map: cur, path: repoRel(d.url), ref: it.id, label: it.name, x, y });
+    const d = kpCiting; closeKnowPick();
+    const j = await api('/api/link-knowledge', { map: cur, path: repoRel(d.url), ref: it.id, label: it.name });   // ghost auto-appears in d's tray
     if (j.ok) applyMaps(j.maps); else alert('Link: ' + j.error);
   }
   function closeKnowPick() { document.getElementById('knowpick').hidden = true; kpCiting = null; }

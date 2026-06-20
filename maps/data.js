@@ -19,6 +19,7 @@ window.MAPS = {
           "name": "Order intake",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 58,
           "y": 274,
           "lane": null,
@@ -35,6 +36,7 @@ window.MAPS = {
           "name": "Job Tracker",
           "type": "subprocess-link",
           "refs": [],
+          "refsCollapsed": false,
           "x": 414,
           "y": 386,
           "lane": null,
@@ -51,6 +53,7 @@ window.MAPS = {
           "name": "Shipping & close",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 845,
           "y": 64,
           "lane": null,
@@ -78,8 +81,7 @@ window.MAPS = {
           "color": null
         }
       ],
-      "frames": [],
-      "ghosts": []
+      "frames": []
     },
     "screenery-flow": {
       "slug": "screenery-flow",
@@ -94,6 +96,7 @@ window.MAPS = {
           "name": "Confirm the order",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 100,
           "y": 80,
           "lane": "Alicia",
@@ -110,6 +113,7 @@ window.MAPS = {
           "name": "Open job & make files",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 337,
           "y": 217,
           "lane": "Saar",
@@ -126,6 +130,7 @@ window.MAPS = {
           "name": "Check colour vs stock",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 540,
           "y": 80,
           "lane": "Alicia",
@@ -142,6 +147,7 @@ window.MAPS = {
           "name": "Hand off to factory",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 760,
           "y": 220,
           "lane": "Saar",
@@ -158,6 +164,7 @@ window.MAPS = {
           "name": "Schedule the run",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 760,
           "y": 360,
           "lane": "Alan",
@@ -174,6 +181,7 @@ window.MAPS = {
           "name": "Produce & log",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 980,
           "y": 500,
           "lane": "Factory",
@@ -190,6 +198,7 @@ window.MAPS = {
           "name": "Reconcile stock",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 1200,
           "y": 80,
           "lane": "Alicia",
@@ -206,6 +215,7 @@ window.MAPS = {
           "name": "Ship & close",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 1420,
           "y": 80,
           "lane": "Alicia",
@@ -268,8 +278,7 @@ window.MAPS = {
           "color": null
         }
       ],
-      "frames": [],
-      "ghosts": []
+      "frames": []
     },
     "illustrator": {
       "slug": "illustrator",
@@ -285,12 +294,17 @@ window.MAPS = {
           "type": "step",
           "refs": [
             {
-              "target": "nxp98d",
-              "label": "front layer"
+              "target": "ne7nyc",
+              "label": "back layer"
+            },
+            {
+              "target": "nev4as",
+              "label": "middle layer"
             }
           ],
-          "x": 160,
-          "y": 200,
+          "refsCollapsed": false,
+          "x": 141,
+          "y": 211,
           "lane": null,
           "link_map": null,
           "gate": "./cli/bin/screenery-design illustrator --help",
@@ -305,6 +319,7 @@ window.MAPS = {
           "name": "Layers",
           "type": "subprocess-link",
           "refs": [],
+          "refsCollapsed": false,
           "x": 306,
           "y": 360,
           "lane": null,
@@ -321,6 +336,7 @@ window.MAPS = {
           "name": "test",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 390,
           "y": 127,
           "lane": null,
@@ -337,6 +353,7 @@ window.MAPS = {
           "name": "tester",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 390,
           "y": 127,
           "lane": null,
@@ -349,14 +366,7 @@ window.MAPS = {
         }
       ],
       "edges": [],
-      "frames": [],
-      "ghosts": [
-        {
-          "ref": "nxp98d",
-          "x": 370,
-          "y": 290
-        }
-      ]
+      "frames": []
     },
     "layers": {
       "slug": "layers",
@@ -371,6 +381,7 @@ window.MAPS = {
           "name": "front layer",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 234,
           "y": 216,
           "lane": null,
@@ -387,6 +398,7 @@ window.MAPS = {
           "name": "middle layer",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 257,
           "y": 356,
           "lane": null,
@@ -403,6 +415,7 @@ window.MAPS = {
           "name": "back layer",
           "type": "step",
           "refs": [],
+          "refsCollapsed": false,
           "x": 253,
           "y": 470,
           "lane": null,
@@ -415,8 +428,7 @@ window.MAPS = {
         }
       ],
       "edges": [],
-      "frames": [],
-      "ghosts": []
+      "frames": []
     }
   }
 };
