@@ -2,8 +2,8 @@
 nid: ndtqgw
 title: "test"
 type: step
-x: 390
-y: 127
+x: 370
+y: 114
 ---
 
 # test

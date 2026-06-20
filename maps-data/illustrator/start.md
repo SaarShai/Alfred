@@ -1,9 +1,10 @@
 ---
+refs_collapsed: true
 nid: ill100
 title: "Start"
 type: step
-x: 141
-y: 211
+x: 95
+y: 161
 gate: "./cli/bin/screenery-design illustrator --help"
 ---
 # Start

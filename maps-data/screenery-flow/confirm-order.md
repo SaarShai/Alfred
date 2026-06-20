@@ -2,8 +2,8 @@
 nid: n-conf01
 title: "Confirm the order"
 type: step
-x: 100
-y: 80
+x: 57
+y: 85
 lane: Alicia
 ---
 # Confirm the order

@@ -2,8 +2,8 @@
 nid: nrd1ju
 title: "tester"
 type: step
-x: 390
-y: 127
+x: 408
+y: 251
 ---
 
 # test node

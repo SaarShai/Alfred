@@ -120,16 +120,17 @@
   @media(pointer:coarse){.node .port{opacity:.65}}
 
   /* ---- visual polish: all declarative (CSS/defs) so it survives D3's per-tick re-render ---- */
-  /* node hover lift + neon glow — on the inner group so it never fights d3.drag's transform on .node */
-  .node-inner{transition:transform .26s var(--spring);transform-box:fill-box;transform-origin:center}
+  /* node hover lift + glow — transform is GPU-composited (smooth); the glow SNAPS (animating drop-shadow blur = jank) */
+  .node-inner{transition:transform .24s var(--spring);transform-box:fill-box;transform-origin:center;will-change:transform}
+  .node:hover{will-change:transform}
   .node:hover .node-inner{transform:translateY(-4px) scale(1.05)}
-  .node:hover .shape{filter:drop-shadow(0 10px 22px rgba(65,64,76,.22)) drop-shadow(0 0 7px var(--accent)) drop-shadow(0 0 15px var(--accent))}
-  .node .shape{transition:filter .2s ease}
+  .node:hover .shape{filter:drop-shadow(0 9px 18px rgba(65,64,76,.20)) drop-shadow(0 0 9px var(--accent))}
   .node .sheen{pointer-events:none}
   body.dragging .node-inner{transition:none}
-  /* weighted "picked up" feel — a SHORT transition so the lift animates on grab, not per drag-tick */
-  .node.grabbing .node-inner{transition:transform .12s ease;transform:scale(1.07)}
-  .node.grabbing .shape{filter:drop-shadow(0 16px 30px rgba(65,64,76,.30)) drop-shadow(0 0 9px var(--accent))}
+  /* during a drag, drop the blur filters entirely — re-rasterizing drop-shadows every tick is the choppiness; depth comes from the scale instead */
+  body.dragging .node .shape,body.dragging .frame .frame-bg{filter:none}
+  /* weighted "picked up" feel — pure transform (GPU), no per-tick blur */
+  .node.grabbing .node-inner{transform:scale(1.06)}
   /* node enter (deal-in) — damped-spring settle */
   @keyframes pop{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
   .node.enter .node-inner{animation:pop .5s var(--spring) both}

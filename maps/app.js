@@ -66,12 +66,14 @@
   function applyMaps(m) {
     if ((wire && wire.active) || dragging || inputOpen()) { pendingMaps = m; return; }  // don't tear down mid-gesture
     pendingMaps = null;                                  // applying authoritative state — drop any stale queued snapshot
-    MAPS = m;
+    MAPS = m; _nidIx = null;                              // new MAPS object → drop the memoized nid index
     if (!MAPS.maps[cur]) { cur = MAPS.order[0] || null; trail = []; }
     if (edPath) revalidateEditor();                      // open notes drawer: re-check the node still exists
     fillMapSelect(); render();
   }
   function flushPending() { if (pendingMaps && !(wire && wire.active) && !dragging && !inputOpen()) { const m = pendingMaps; pendingMaps = null; applyMaps(m); } }
+  let rafPending = false;                              // coalesce burst pointermoves (120Hz trackpads) into one render per frame
+  function scheduleRender() { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; render(); }); }
 
   // ---- geometry ----
   const isDiamond = n => n.type === 'decision';
@@ -147,7 +149,7 @@
       head.on('dblclick', (e) => { e.stopPropagation(); renameFrame(f); })
         .call(d3.drag().clickDistance(4).container(() => gFrame.node())   // gFrame persists across render(); the per-frame g does not
           .on('start', function (e) { e.sourceEvent.stopPropagation(); })
-          .on('drag', function (e) { f.x += e.dx; f.y += e.dy; render(); })
+          .on('drag', function (e) { f.x += e.dx; f.y += e.dy; scheduleRender(); })
           .on('end', function () { if (SERVER) api('/api/frame', { map: cur, op: 'geom', id: f.id, x: f.x, y: f.y, w: f.w, h: f.h }).then(flushPending); }));
       const cyc = g.append('g').attr('class', 'frame-cyc').attr('transform', 'translate(' + (f.w - 34) + ',13)').on('click', (e) => { e.stopPropagation(); cycleFrameColor(f); });
       cyc.append('circle').attr('r', 6).attr('fill', col);
@@ -159,7 +161,7 @@
       rz.append('path').attr('d', 'M-4,-13 L-13,-4 M-4,-8 L-8,-4').attr('stroke', col).attr('stroke-width', 1.8).attr('stroke-linecap', 'round').attr('opacity', .7);
       rz.call(d3.drag().container(() => gFrame.node())
         .on('start', function (e) { e.sourceEvent.stopPropagation(); })
-        .on('drag', function (e) { f.w = Math.max(80, f.w + e.dx); f.h = Math.max(60, f.h + e.dy); render(); })
+        .on('drag', function (e) { f.w = Math.max(80, f.w + e.dx); f.h = Math.max(60, f.h + e.dy); scheduleRender(); })
         .on('end', function () { if (SERVER) api('/api/frame', { map: cur, op: 'geom', id: f.id, x: f.x, y: f.y, w: f.w, h: f.h }).then(flushPending); }));
     });
 
@@ -199,7 +201,7 @@
       ctrl.append('circle').attr('class', 'edge-bend').attr('cx', mid.x).attr('cy', mid.y).attr('r', 9)
         .call(d3.drag().container(() => canvas.node())     // canvas persists across render()
           .on('start', ev => ev.sourceEvent.stopPropagation())
-          .on('drag', ev => { e.bend = (e.bend || 0) + ev.dy; render(); })
+          .on('drag', ev => { e.bend = (e.bend || 0) + ev.dy; scheduleRender(); })
           .on('end', () => { if (SERVER) { const n = nidSlug(); api('/api/edge', { map: cur, from: n[e.from], to: n[e.to], bend: Math.round(e.bend || 0) }).then(flushPending); } }));
       const cyc = ctrl.append('g').attr('transform', 'translate(' + mid.x + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeColor(e); });
       cyc.append('circle').attr('r', 7).attr('fill', stroke || 'var(--edge)').attr('stroke', '#fff').attr('stroke-opacity', .4);
@@ -218,7 +220,7 @@
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
         .on('start', function (e, d) { if (wire && wire.active) return; dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
-        .on('drag', function (e, d) { if (wire && wire.active) return; d.x = e.x; d.y = e.y; render(); })
+        .on('drag', function (e, d) { if (wire && wire.active) return; d.x = e.x; d.y = e.y; scheduleRender(); })
         .on('end', function (e, d) { if (wire && wire.active) return; dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (SERVER) api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); else flushPending(); }));
 
     sel.each(function (d) {
@@ -273,7 +275,7 @@
         tray.append('path').attr('class', 'ref-conn').attr('d', 'M' + ax + ',' + ay + ' L' + ax + ',' + (cy - gh));
         const g = tray.append('g').attr('class', 'ghost').attr('transform', 'translate(' + ax + ',' + cy + ')').on('click', e => { e.stopPropagation(); gotoRef(r.ref); });
         g.append('rect').attr('class', 'ghost-shape').attr('x', -gw).attr('y', -gh).attr('width', gw * 2).attr('height', gh * 2).attr('rx', 10);
-        fitText(g.append('text').attr('class', 'ghost-label').text(r.name), gw * 2 - 20);
+        { const lab = g.append('text').attr('class', 'ghost-label').text(r.name); if (!dragging) fitText(lab, gw * 2 - 20); }
         g.append('text').attr('class', 'ghost-sub').attr('y', gh + 11).text('↗ ' + r.home);
         const bd = g.append('g').attr('transform', 'translate(' + (-gw + 2) + ',' + (-gh + 2) + ')');
         bd.append('circle').attr('r', 8).attr('fill', 'var(--ref)'); bd.append('text').attr('class', 'typeglyph').attr('font-size', '10px').text('§');
@@ -295,7 +297,7 @@
           row.append('text').attr('class', 'typeglyph').attr('x', 16).attr('y', rowH / 2).attr('font-size', '9px').text('§');
           const nameSel = row.append('text').attr('class', 'tray-name').attr('x', 30).attr('y', rowH / 2).text(r.name);
           const homeSel = row.append('text').attr('class', 'tray-home').attr('x', boxW - 10).attr('y', rowH / 2).text('↗ ' + r.home);
-          fitText(nameSel, boxW - 30 - homeSel.node().getComputedTextLength() - 12);   // never overrun the home label / box edge
+          if (!dragging) fitText(nameSel, boxW - 30 - homeSel.node().getComputedTextLength() - 12);   // skip the forced reflow while dragging; fit on the next settled render
         });
       }
     });
@@ -614,10 +616,12 @@
   async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; } msg.textContent = 'Saved ✓'; if (j.maps) applyMaps(j.maps); }
 
   // ---- cross-map wiki references: a node body may cite [[nid|label]] (any map) — same syntax as the wiki ----
+  let _nidIx = null;                                  // memoized across a render; invalidated on applyMaps (so trays don't rebuild it per ref per frame)
   function nidIndex() {   // nid -> {map, node} across ALL maps
+    if (_nidIx) return _nidIx;
     const ix = {};
     MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => { if (n.id && !ix[n.id]) ix[n.id] = { map: slug, node: n }; }); });
-    return ix;
+    return (_nidIx = ix);
   }
   function resolveRef(target) {   // by nid first (rename-safe), then fall back to slug/name
     const ix = nidIndex(); if (ix[target]) return ix[target];
