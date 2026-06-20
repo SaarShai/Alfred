@@ -189,7 +189,7 @@ function setLink(rel, linkMap) {
 function setType(rel, type) {
   const abs = safeSrc(rel);
   if (!abs || !fs.existsSync(abs) || path.basename(abs) === 'index.md') throw new Error('not a node');
-  if (!['step', 'decision', 'subprocess-link'].includes(type)) throw new Error('bad type');
+  if (!['step', 'decision', 'subprocess-link', 'reference'].includes(type)) throw new Error('bad type');
   let txt = setField(fs.readFileSync(abs, 'utf8'), 'type', type);
   if (type !== 'subprocess-link') txt = removeField(txt, 'link_map');   // a non-link node keeps no dangling link
   fs.writeFileSync(abs, txt);

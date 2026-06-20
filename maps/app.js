@@ -18,7 +18,8 @@
   if (EMBED) document.body.classList.add('embed');
 
   const NS = 'http://www.w3.org/2000/svg';
-  const TYPE_COLOR = { step: 'var(--step)', decision: 'var(--decision)', 'subprocess-link': 'var(--link)' };
+  const TYPE_COLOR = { step: 'var(--step)', decision: 'var(--decision)', 'subprocess-link': 'var(--link)', reference: 'var(--ref)' };
+  const WIKILINK_RE = /\[\[([^\]]+)\]\]/g;   // [[nid|label]] — same syntax as the wiki
   const LANE_VARS = ['--l0', '--l1', '--l2', '--l3', '--l4', '--l5', '--l6'];
   const PAL_HEX = ['#0d9488', '#4f46e5', '#64748b', '#d97706', '#a855f7', '#0ea5e9', '#e11d48',   // matches --l0..--l6
     '#16a34a', '#111827', '#eab308', '#d946ef'];   // + green, black, yellow, magenta
@@ -213,14 +214,15 @@
         inner.append('rect').attr('class', 'sheen').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'url(#glass)');
       }
       inner.append('text').attr('class', 'label').text(d.name);
-      if (d.type === 'subprocess-link') {
+      if (d.type === 'subprocess-link' || d.type === 'reference') {
         const bd = inner.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
         bd.append('circle').attr('r', 9).attr('fill', col);
-        bd.append('text').attr('class', 'typeglyph').text('▸');
+        bd.append('text').attr('class', 'typeglyph').text(d.type === 'reference' ? '§' : '▸');
       }
       // gate-status badge (top-right): ✓ = gated · ! = a stage with no gate (would FAIL the workflow export)
+      // reference nodes are source-of-truth, not stages — never flag them for a missing gate
       const gated = d.gate && String(d.gate).trim();
-      if (gated || hasOut.has(d.id)) {
+      if (gated || (hasOut.has(d.id) && d.type !== 'reference')) {
         const gb = inner.append('g').attr('class', 'gatebadge').attr('transform', 'translate(' + (hw - 2) + ',' + (-hh + 2) + ')');
         gb.append('circle').attr('r', 8).attr('fill', gated ? 'var(--link)' : 'var(--decision)');
         gb.append('text').attr('class', 'typeglyph').attr('font-size', '11px').text(gated ? '✓' : '!');
@@ -522,10 +524,10 @@
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; document.getElementById('editor').hidden = false;
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
-      document.getElementById('ed-text').value = j.content; document.getElementById('ed-msg').textContent = '';
+      document.getElementById('ed-text').value = j.content; document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
-  function closeEditor() { document.getElementById('editor').hidden = true; edPath = null; edNode = null; }
+  function closeEditor() { document.getElementById('editor').hidden = true; edPath = null; edNode = null; document.getElementById('ed-refs').hidden = true; }
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
     if (!edPath) return;
     const node = (map() ? map().nodes : []).find(n => repoRel(n.url) === edPath);
@@ -533,6 +535,47 @@
     else document.getElementById('ed-msg').textContent = 'This node was changed or removed elsewhere — reopen to edit.';
   }
   async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; } msg.textContent = 'Saved ✓'; if (j.maps) applyMaps(j.maps); }
+
+  // ---- cross-map wiki references: a node body may cite [[nid|label]] (any map) — same syntax as the wiki ----
+  function nidIndex() {   // nid -> {map, node} across ALL maps
+    const ix = {};
+    MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => { if (n.id && !ix[n.id]) ix[n.id] = { map: slug, node: n }; }); });
+    return ix;
+  }
+  function resolveRef(target) {   // by nid first (rename-safe), then fall back to slug/name
+    const ix = nidIndex(); if (ix[target]) return ix[target];
+    let hit = null; MAPS.order.some(slug => { const n = (MAPS.maps[slug].nodes || []).find(x => x.slug === target || x.name === target); if (n) { hit = { map: slug, node: n }; return true; } return false; });
+    return hit;
+  }
+  function focusNode(n) {   // center the viewport on one node (supersedes fit's transition since it starts later)
+    const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.4, d3.zoomTransform(svgN).k || 1);
+    svg.transition().duration(450).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * n.x, h / 2 - k * n.y).scale(k));
+  }
+  function gotoRef(target) {
+    const hit = resolveRef(target); if (!hit) return false;
+    const open = () => { const n = (MAPS.maps[hit.map].nodes || []).find(x => x.id === hit.node.id) || hit.node; focusNode(n); openEditor(n); };
+    if (hit.map !== cur) { trail = []; switchMap(hit.map); setTimeout(open, 120); } else open();
+    return true;
+  }
+  function renderRefs(text) {
+    const box = document.getElementById('ed-refs'); box.innerHTML = '';
+    const links = []; let m; WIKILINK_RE.lastIndex = 0;
+    while ((m = WIKILINK_RE.exec(text || ''))) { const parts = m[1].split('|'); links.push({ target: (parts[0] || '').trim(), label: (parts[1] || parts[0] || '').trim() }); }
+    if (!links.length) { box.hidden = true; return; }
+    box.hidden = false;
+    const lab = document.createElement('span'); lab.className = 'lbl'; lab.textContent = 'References'; box.appendChild(lab);
+    links.forEach(l => {
+      const stub = l.target.startsWith('?'), tgt = stub ? l.target.slice(1) : l.target;
+      const hit = stub ? null : resolveRef(tgt);
+      const chip = document.createElement('span');
+      chip.className = 'refchip' + (hit || stub ? '' : ' broken');
+      chip.innerHTML = '<span class="ic">§</span>' + (l.label || tgt);
+      if (hit) { chip.title = '→ ' + (hit.node.name || tgt) + '  (' + hit.map + ')'; chip.onclick = () => gotoRef(tgt); }
+      else if (stub) { chip.title = 'Not written yet (stub)'; chip.style.opacity = '.55'; chip.style.cursor = 'default'; }
+      else { chip.title = 'Unresolved: ' + tgt; }
+      box.appendChild(chip);
+    });
+  }
 
   // inline (not prompt(): blocked in sandboxed preview iframes) — new top-level map, then switch to it
   function addMapPrompt() {
@@ -604,6 +647,7 @@
     cg.onblur = () => { if (ctxNode) nodeStyle({ gate: cg.value.trim() }); }; }
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
+  document.getElementById('ed-text').addEventListener('input', e => renderRefs(e.target.value));   // live-update reference chips as you type [[…]]
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
   document.getElementById('ed-title').ondblclick = () => { if (edNode) renameFromDrawer(edNode); };   // rename title+slug from the side panel
   document.getElementById('ctx-smaller').onclick = () => ctxSize(-1);

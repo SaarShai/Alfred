@@ -8,7 +8,7 @@
   :root{
     --bg1:#f7f3ec; --bg2:#eee7db; --ink:#41404c; --muted:#928f9c;
     --card:#ffffff; --card-ink:#3c3b48; --line:#ddd6ca;
-    --step:#8a8fe6; --decision:#eeb06a; --link:#73c5ab; --edge:#bdb4a6;
+    --step:#8a8fe6; --decision:#eeb06a; --link:#73c5ab; --edge:#bdb4a6; --ref:#6b7280;
     /* owner/lane palette (pastel) */
     --l0:#5fbaa4; --l1:#8b91e6; --l2:#a3a8b6; --l3:#e6a55f; --l4:#bd95e2; --l5:#73b6e0; --l6:#e58fa1;
     --font: ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -134,6 +134,13 @@
     font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5;
     color:var(--ink);background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.2);border-radius:10px}
   #ed-text:focus{outline:none;border-color:var(--step)}
+  .ed-refs{display:flex;flex-wrap:wrap;gap:6px;margin:0 18px 10px;align-items:center}
+  .ed-refs .lbl{font-size:11px;font-weight:700;color:var(--muted);margin-right:2px}
+  .ed-refs .refchip{font-size:11px;font-weight:600;padding:4px 9px;border-radius:999px;cursor:pointer;
+    background:rgba(107,114,128,.12);border:1px solid rgba(107,114,128,.35);color:var(--ink);display:inline-flex;gap:5px;align-items:center}
+  .ed-refs .refchip:hover{background:rgba(107,114,128,.22)}
+  .ed-refs .refchip.broken{background:rgba(224,120,120,.12);border-color:rgba(224,120,120,.4);color:#b3403a;cursor:default}
+  .ed-refs .refchip .ic{opacity:.7}
   .drawer-foot{display:flex;align-items:center;gap:8px;padding:0 18px 16px}
   .drawer-foot .spacer{flex:1}
   .drawer-foot .msg{font-size:12px;color:var(--link)}
@@ -256,6 +263,7 @@
     <button id="ed-close">✕</button>
   </div>
   <textarea id="ed-text" spellcheck="false"></textarea>
+  <div id="ed-refs" class="ed-refs" hidden></div>
   <div class="drawer-foot">
     <button id="ed-openext">Open in app</button>
     <span class="spacer"></span>
@@ -292,6 +300,7 @@
     <button data-t="step">Step</button>
     <button data-t="decision">Decision</button>
     <button data-t="subprocess-link" title="Links to a map">Link</button>
+    <button data-t="reference" title="Source of truth — referenced, not run. No gate, skipped by the workflow.">Ref</button>
   </div>
   <div class="ctx-row"><span class="ctx-lbl">Size</span><button id="ctx-smaller" title="Smaller">−</button><span id="ctx-size">100%</span><button id="ctx-bigger" title="Bigger">+</button></div>
   <button class="full" id="ctx-hl">✦ Highlight</button>
