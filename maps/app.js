@@ -18,7 +18,7 @@
   const seen = new Set();                            // node ids already animated-in (so enter fires once)
   let selection = new Set();                          // currently-selected node ids (re-applied each render, like dragId; foundation for marquee/batch ops)
   let cmdpalReg = [], cmdpalSel = 0;                  // command-palette registry + highlighted row
-  let toastTimeout = null, nudgeTimer = null;
+  let toastTimeout = null, nudgeTimer = null, clipboard = null, coachTimeout = null, landId = null;
   const SHORTCUTS = [['⌘K', 'Command palette'], ['⌘F  /  /', 'Find & fly to a node'], ['N', 'Add a node'], ['Double-click node', 'Open notes'], ['Right-click node', 'Context menu'], ['Drag from port', 'Connect (drop on canvas = create)'], ['Shift-drag', 'Marquee multi-select'], ['Backspace / Delete', 'Archive selection'], ['⌘D', 'Duplicate selection'], ['⌘A', 'Select all'], ['Arrows', 'Nudge selection (⇧ = bigger)'], ['Shift+1', 'Fit to view'], ['⌘Z', 'Undo'], ['⌘S', 'Save notes'], ['Esc', 'Close / deselect'], ['?', 'This help']];
   const EMBED = new URLSearchParams(location.search).has('embed');   // true when shown inside a floating sub-map window
   if (EMBED) document.body.classList.add('embed');
@@ -301,18 +301,18 @@
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : '') + (flashIds.has(d.id) ? ' flash' : ''))   // enter fires once; start/end = flow terminals; flash = transient backlink highlight
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : '') + (flashIds.has(d.id) ? ' flash' : '') + (landId === d.id ? ' land' : ''))   // enter fires once; start/end = flow terminals; flash = backlink highlight; land = drop bounce
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
       .attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => 'Node: ' + d.name + ' (' + d.type + ')')   // a11y: focusable + labelled
       .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectClick(e, d.id); render(); onNodeOpen(d); } })   // keyboard activate = open
       .on('click', (e, d) => { ripple(d.x, d.y, accent(d)); selectClick(e, d.id); render(); clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // ripple + select immediately; defer the navigation so a dblclick can cancel it
-      .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d); })   // double-click opens the edit panel (n8n / Miro / Figma convention)
+      .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d, e); })   // double-click: open editor (or drill a link node; Shift/Cmd = notes)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
         .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
         .on('drag', function (e, d) { if (wire && wire.active) return; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (!group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));
+        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (!group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } dragging = false; dragId = null; document.body.classList.remove('dragging'); if (motionAllowed()) { landId = d.id; setTimeout(() => { landId = null; }, 420); } render(); if (SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -364,6 +364,7 @@
       g.append('circle').attr('class', 'port').attr('cx', hw).attr('cy', 0).attr('r', 5);
       g.append('circle').attr('class', 'port-hit').attr('cx', hw).attr('cy', 0).attr('r', 14)
         .on('pointerdown', (e) => beginWire(e, d))
+        .on('pointerenter', () => { const t = d3.zoomTransform(svgN), pt = t.apply([d.x + hw + 16, d.y - 26]); showDragPortCoach(pt[0], pt[1]); })   // one-time "drag to connect" coachmark
         .on('click', (e) => { if (portArmed) e.stopPropagation(); portArmed = false; });   // only swallow the click that began a wire; otherwise let it reach the node
     });
     // staggered deal-in: freshly-entering nodes pop left→right in a wave (delay only; reuses the pop keyframe, capped so 30 nodes stay snappy)
@@ -445,6 +446,23 @@
   function clearSelection() { if (!selection.size) return; selection.clear(); render(); }
   function selNodes() { return (map() ? map().nodes : []).filter(n => selection.has(n.id)); }
   function persistPos(nodes) { if (SERVER) api('/api/poslist', { map: cur, positions: nodes.map(n => ({ path: repoRel(n.url), x: Math.round(n.x), y: Math.round(n.y) })) }).then(flushPending); }
+  function copySelection() {   // serialize selected nodes + their internal edges (item 11)
+    const ns = selNodes(); if (!ns.length) { clipboard = null; return; }
+    const ids = new Set(ns.map(n => n.id));
+    const edges = (map() ? map().edges : []).filter(e => ids.has(e.from) && ids.has(e.to));
+    clipboard = { nodes: ns.map(n => ({ name: n.name, type: n.type, scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map, x: n.x, y: n.y })), edges: edges.map(e => ({ from: ns.findIndex(n => n.id === e.from), to: ns.findIndex(n => n.id === e.to), label: e.label, bend: e.bend, color: e.color, route: e.route })) };
+  }
+  async function pasteSelection() {   // re-create nodes (preserving relative layout) then re-wire internal edges
+    if (!clipboard || !clipboard.nodes.length || !cur || !SERVER) return;
+    const cn = clipboard.nodes, minX = Math.min(...cn.map(n => n.x)), minY = Math.min(...cn.map(n => n.y));
+    const center = viewCenter(), dx = center.x - minX + 30, dy = center.y - minY + 30, slugs = [];
+    for (let i = 0; i < cn.length; i++) {
+      const n = cn[i], j = await api('/api/add', { map: cur, title: n.name + ' copy', type: n.type, x: Math.round(n.x + dx), y: Math.round(n.y + dy), note: '', scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map });
+      slugs[i] = (j.ok && j.created) ? j.created.split('/').pop().replace(/\.md$/, '') : null;
+    }
+    for (const e of clipboard.edges) { const fs = slugs[e.from], ts = slugs[e.to]; if (fs && ts) await api('/api/edge', { map: cur, from: fs, to: ts, label: e.label, bend: e.bend, color: e.color, route: e.route }); }
+    flushPending();
+  }
 
   // ---- marquee (shift-drag empty canvas) → multi-select ----
   let marqueeStart = null, marqueeRect = null;
@@ -564,9 +582,10 @@
     const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
     if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); }   // top level: float a window; inside a window: drill in place
   }
-  function onNodeOpen(d) {   // double-click: open the edit panel (notes drawer) — the primary "open this node" action
+  function onNodeOpen(d, ev) {   // double-click: drill into a link node (immersive, Shift/Cmd = notes) · else open the edit panel
     const live = byId(d.id); if (!live) return; d = live;
-    closeCtx(); openEditor(d);
+    if (d.link_map && !(ev && (ev.shiftKey || ev.metaKey || ev.ctrlKey))) drillTo(d.link_map);   // immersive drill (switchMap already fits + breadcrumb climbs back)
+    else { closeCtx(); openEditor(d); }
   }
 
   // ---- drag-to-connect ----
@@ -627,6 +646,13 @@
   svgN.addEventListener('pointerup', e => endWire(e, false));
   svgN.addEventListener('pointercancel', e => endWire(e, true));   // touch palm-reject / gesture takeover
   svgN.addEventListener('lostpointercapture', e => { if (wire) endWire(e, true); });
+  let longPressTimer = null;   // touch: long-press a node → context menu (item 47)
+  svgN.addEventListener('pointerdown', e => {
+    const nodeEl = e.target.closest && e.target.closest('.node');
+    if (!nodeEl || (e.target.closest && e.target.closest('.port-hit'))) return;
+    longPressTimer = setTimeout(() => { longPressTimer = null; const d = d3.select(nodeEl).datum(); if (d) { clearTimeout(clickTimer); clickTimer = null; openCtx({ clientX: e.clientX, clientY: e.clientY, preventDefault() {} }, d); } }, 500);
+  }, true);
+  ['pointermove', 'pointerup', 'pointercancel'].forEach(t => svgN.addEventListener(t, () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }));
   function dropTarget(e) {
     const el = document.elementFromPoint(e.clientX, e.clientY);
     const g = el && el.closest && el.closest('g.node');
@@ -916,7 +942,8 @@
   }
 
   // ---- notes drawer ----
-  let edPath = null, edNode = null;
+  let edPath = null, edNode = null, edContentHash = null;
+  function simpleHash(s) { let h = 0; for (let i = 0; i < (s || '').length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return h.toString(16); }
   // rename title+slug by double-clicking the title in the drawer
   function renameFromDrawer(d) {
     const r = document.getElementById('ed-title').getBoundingClientRect();
@@ -934,17 +961,33 @@
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; const f = ed.querySelector('button,input,textarea'); if (f) f.focus(); }
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
-      document.getElementById('ed-text').value = j.content; document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
+      document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
-  function closeEditor() { edPath = null; edNode = null; document.getElementById('ed-refs').hidden = true; fadeOut(document.getElementById('editor')); }
+  function closeEditor() { edPath = null; edNode = null; edContentHash = null; document.getElementById('ed-refs').hidden = true; fadeOut(document.getElementById('editor')); }
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
     if (!edPath) return;
     const node = (map() ? map().nodes : []).find(n => repoRel(n.url) === edPath);
     if (node) document.getElementById('ed-title').textContent = node.name;
     else document.getElementById('ed-msg').textContent = 'This node was changed or removed elsewhere — reopen to edit.';
   }
-  async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; announce('Save failed: ' + j.error); return; } msg.textContent = 'Saved ✓'; announce('Saved'); if (j.maps) applyMaps(j.maps); }
+  async function saveDoc() {
+    const msg = document.getElementById('ed-msg'), text = document.getElementById('ed-text').value;
+    if (edContentHash !== null && edPath) {   // detect an external change before overwriting (item 49)
+      try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const k = await r.json(); if (k.ok && simpleHash(k.content) !== edContentHash) { showSaveConflict(k.content); return; } } catch (_) {}
+    }
+    msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: text });
+    if (!j.ok) { msg.textContent = 'Error: ' + j.error; announce('Save failed: ' + j.error); return; }
+    edContentHash = simpleHash(text); msg.textContent = 'Saved ✓'; announce('Saved'); if (j.maps) applyMaps(j.maps);
+  }
+  function showSaveConflict(diskContent) {
+    document.querySelectorAll('.save-conflict').forEach(el => el.remove());
+    const bar = document.createElement('div'); bar.className = 'save-conflict';
+    const t = document.createElement('span'); t.textContent = 'Changed on disk —'; bar.appendChild(t);
+    const ow = document.createElement('button'); ow.textContent = 'Overwrite'; ow.onclick = async () => { bar.remove(); edContentHash = null; await saveDoc(); }; bar.appendChild(ow);
+    const rl = document.createElement('button'); rl.textContent = 'Reload'; rl.onclick = () => { bar.remove(); document.getElementById('ed-text').value = diskContent; edContentHash = simpleHash(diskContent); renderRefs(diskContent); document.getElementById('ed-msg').textContent = 'Reloaded from disk'; announce('Reloaded from disk'); }; bar.appendChild(rl);
+    document.body.appendChild(bar); document.getElementById('ed-msg').textContent = 'Conflict — file changed elsewhere';
+  }
 
   // ---- cross-map wiki references: a node body may cite [[nid|label]] (any map) — same syntax as the wiki ----
   let _nidIx = null;                                  // memoized across a render; invalidated on applyMaps (so trays don't rebuild it per ref per frame)
@@ -1234,6 +1277,12 @@
   }
   function closeShortcutsOverlay() { fadeOut(document.getElementById('shortcuts')); }
   // ---- undo toast (makes the existing server undo visible) ----
+  function showDragPortCoach(x, y) {   // one-time "drag to connect" hint on first port hover (item 31)
+    try { if (localStorage.getItem('coachmark.dragport')) return; localStorage.setItem('coachmark.dragport', '1'); } catch (_) { return; }
+    const c = document.getElementById('coach-dragport'); if (!c) return;
+    c.style.left = x + 'px'; c.style.top = y + 'px'; c.classList.remove('exiting'); c.hidden = false;
+    clearTimeout(coachTimeout); coachTimeout = setTimeout(() => fadeOut(c), 3000);
+  }
   function showUndoToast(label) {
     const toast = document.getElementById('toast-undo'); if (!toast) return;
     document.getElementById('toast-msg').textContent = label;
@@ -1385,6 +1434,8 @@
     if ((e.key === 'n' || e.key === 'N') && !cmd && !e.shiftKey) { if (SERVER) { e.preventDefault(); const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } return; }   // N = add a node
     if (cmd && e.key.toLowerCase() === 'a' && map()) { e.preventDefault(); map().nodes.forEach(n => selection.add(n.id)); render(); return; }   // select all
     if (cmd && e.key.toLowerCase() === 'd' && selection.size && SERVER) { e.preventDefault(); selNodes().forEach(n => api('/api/add', { map: cur, title: n.name + ' copy', type: n.type, x: n.x + 28, y: n.y + 28, note: '', scale: n.scale, color: n.color, gate: n.gate, hl: n.hl, link_map: n.link_map }).then(flushPending)); return; }   // duplicate
+    if (cmd && e.key.toLowerCase() === 'c' && selection.size) { e.preventDefault(); copySelection(); return; }   // copy
+    if (cmd && e.key.toLowerCase() === 'v' && clipboard && clipboard.nodes.length) { e.preventDefault(); pasteSelection(); return; }   // paste (across maps)
     if ((e.key === 'Backspace' || e.key === 'Delete') && selection.size && SERVER) { e.preventDefault(); if (!confirm('Archive ' + selection.size + ' node' + (selection.size === 1 ? '' : 's') + '?')) return; selNodes().forEach(n => api('/api/archive', { path: repoRel(n.url) }).then(flushPending)); selection.clear(); render(); return; }   // archive selection
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && selection.size) { e.preventDefault(); const d = e.shiftKey ? 24 : 4, dx = e.key === 'ArrowRight' ? d : e.key === 'ArrowLeft' ? -d : 0, dy = e.key === 'ArrowDown' ? d : e.key === 'ArrowUp' ? -d : 0; selNodes().forEach(n => { n.x += dx; n.y += dy; }); scheduleRender(); clearTimeout(nudgeTimer); nudgeTimer = setTimeout(() => persistPos(selNodes()), 350); return; }   // nudge selection (debounced persist)
   });
@@ -1419,6 +1470,7 @@
     if (SERVER) { updateConnStatus('live'); startEventSource(); } else updateConnStatus('readonly');
   }).catch(() => { SERVER = false; updateConnStatus('readonly'); })
     .finally(() => { document.body.classList.toggle('server', SERVER); document.body.classList.add('checked'); });
+  if (window.matchMedia && window.matchMedia('(pointer:coarse)').matches) document.body.classList.add('touch');   // touch device → reveal ports/edge-controls without hover
 
   const boot = (location.hash.match(/map=([^&]+)/) || [])[1];
   if (boot && MAPS.maps[boot]) cur = boot;

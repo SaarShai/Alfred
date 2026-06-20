@@ -145,6 +145,29 @@
   .hc-children{font-size:var(--fs-1);color:var(--muted)}
   @media (prefers-reduced-motion: reduce){#home-panel{animation:none}}
   body.calm #home-panel{animation:none}
+  /* save-conflict guard (49) */
+  .save-conflict{position:fixed;top:54px;right:18px;z-index:66;padding:9px 13px;border-radius:9px;display:flex;gap:8px;align-items:center;
+    background:rgba(238,176,106,.2);border:1px solid rgba(238,176,106,.6);color:#9a6a18;font-size:var(--fs-2);font-weight:600}
+  .save-conflict button{padding:4px 9px;font-size:var(--fs-1);font-weight:700;color:#9a6a18;background:rgba(238,176,106,.3);border:1px solid rgba(238,176,106,.5)}
+  /* one-time drag-from-port coachmark (31) */
+  .coach{position:fixed;z-index:50;transform:translate(-50%,-100%);background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(12px) saturate(140%);backdrop-filter:blur(12px) saturate(140%);
+    border:1px solid rgba(65,64,76,.15);border-radius:8px;padding:6px 9px;font-size:var(--fs-1);font-weight:600;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;box-shadow:0 6px 16px rgba(65,64,76,.14);animation:coach-in .3s ease both}
+  .coach[hidden]{display:none}
+  @keyframes coach-in{from{opacity:0;transform:translate(-50%,calc(-100% + 6px))}to{opacity:1;transform:translate(-50%,-100%)}}
+  .coach.exiting{animation:menu-out .15s ease forwards}
+  .coach-arrow{font-size:9px;color:var(--step);line-height:1}
+  @media (prefers-reduced-motion: reduce){.coach{animation:none}}
+  /* drop bounce (41) */
+  .node.land .node-inner{animation:land .38s var(--spring)}
+  @keyframes land{0%{transform:scale(1.06)}55%{transform:scale(.975)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion: reduce){.node.land .node-inner{animation:none}}
+  body.calm .node.land .node-inner{animation:none}
+  /* touch reveals (47): show hover-only chrome without hover on coarse pointers */
+  body.touch .edge-ctrl{opacity:1;pointer-events:auto}
+  body.touch .frame-del,body.touch .frame-cyc,body.touch .frame-resize{opacity:1}
+  body.touch .node .port{opacity:.7}
+  /* context-menu destructive separator (16) */
+  .ctx-sep{height:1px;background:rgba(65,64,76,.1);margin:9px 0 7px}
   /* knowledge picker overlay */
   .kp{position:fixed;z-index:75;top:64px;left:50%;transform:translateX(-50%);width:min(420px,92vw);
     background:#fffdf8;border:1px solid rgba(65,64,76,.16);border-radius:14px;box-shadow:0 18px 50px rgba(40,38,50,.22);
@@ -605,12 +628,14 @@
   <button class="full" id="ctx-linkknow" title="Cite a source-of-truth node and pin a ghost of it in this map">§ Link knowledge…</button>
   <button class="full" id="ctx-newsub" title="Create a new map and turn this node into a link to it">⊕ New sub-map from this node</button>
   <select class="full" id="ctx-linkmap" title="Open another map from this node"></select>
+  <div class="ctx-sep"></div>
   <button class="full arch" id="ctx-archive">− Archive</button>
 </div>
 
 <input id="name-input" class="inlabel" hidden autocomplete="off" placeholder="title…">
 <input id="edge-label-input" class="inlabel" hidden autocomplete="off" placeholder="label…">
 
+<div id="coach-dragport" class="coach" hidden><div class="coach-arrow">▲</div><div class="coach-text">Drag to connect</div></div>
 <div id="cmdpal" class="kp" hidden role="dialog" aria-modal="true">
   <div class="kp-head"><span>Command palette</span><button id="cmdpal-x" title="Close">✕</button></div>
   <input id="cmdpal-search" placeholder="Search commands or jump to a node… (⌘K)" autocomplete="off" spellcheck="false">

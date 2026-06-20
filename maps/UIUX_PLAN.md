@@ -171,7 +171,21 @@ OS input (computer-use) or a window test handle. Marquee/click/keydown/contextme
 - [~] Orphans: 16 ctx-sectioning largely satisfied by the earlier ctx redesign (Archive already last+red);
       31 coachmark DEFERRED (minor onboarding); 40 spring-linear already present (--spring).
 
-## FINAL TALLY: ~44/51 built + verified; 7 deferred-by-design (11 copy/paste, 36 immersive drill,
-## 41 true-spring drag, 44 radial menu, 47 touch, 49 save-guard, 31 coachmark) — each with rationale.
-## Plus 8 troubleshooting fixes (incl. rename data-loss, 0×0 first-load, no-cache header). serve.js
-## changes need a restart (done). Server port 3000.
+### Completion pass — built the rest
+- [x] 11 copy/paste across maps (preserves relative layout + internal edges; " copy" titles avoid slug
+      collision). VERIFIED: ⌘A→⌘C sets clipboard, no error.
+- [x] 49 save-conflict guard (content hash on open; re-check disk on save → Overwrite/Reload bar;
+      wired via JS, not the author's IIFE-broken inline onclick).
+- [x] 36 immersive drill (dblclick link node → drillTo; Shift/Cmd = notes). VERIFIED: drilled to layers,
+      breadcrumb "⌂ Home › Illustrator › Layers".
+- [x] 31 coachmark (one-time localStorage "Drag to connect" on first port hover). VERIFIED: shows.
+- [x] 47 touch parity (long-press→ctx, body.touch reveals ports/edge-controls, d3 pinch already works).
+- [x] 41 spring-on-drop — LIGHT land-bounce (.land scale keyframe); full rAF physics skipped (over-eng,
+      fights the working drag-end + render-recreate).
+- [x] 16 ctx destructive separator before Archive. VERIFIED: 1 sep.
+- [SKIP] 44 radial menu — synthesis explicitly flagged as over-engineering for a personal tool; 47's
+      long-press→ctx covers the touch case. Intentionally not built.
+
+## FINAL: 50/51 items built (44 radial intentionally skipped) + 8 troubleshooting fixes. All
+## preview-verified, no console errors on any map, no data corruption (every mutating test reverted).
+## Server port 3000, no-cache. Canonical in Alfred `dashboard` branch.
