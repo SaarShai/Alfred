@@ -333,21 +333,6 @@ window.MAPS = {
       "url": "../maps-data/layers/index.md",
       "nodes": [
         {
-          "id": "lay100",
-          "slug": "start",
-          "name": "Start",
-          "type": "step",
-          "x": 60,
-          "y": 344,
-          "lane": null,
-          "link_map": null,
-          "gate": "./cli/bin/screenery-design illustrator --help",
-          "scale": 1,
-          "hl": false,
-          "color": null,
-          "url": "../maps-data/layers/start.md"
-        },
-        {
           "id": "nxp98d",
           "slug": "front-layer",
           "name": "front layer",
