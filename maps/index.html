@@ -183,8 +183,12 @@
   .ex-hint{font-weight:500;opacity:.8}
   #exportpanel pre{background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:var(--ink);max-height:30vh;overflow:auto}
 
-  /* embed mode: this app shown inside a floating sub-map window — hide the top chrome */
-  body.embed header, body.embed #bcrumb, body.embed #offline{display:none!important}
+  /* embed mode: this app shown inside a floating sub-map window — keep a compact editing toolbar,
+     drop only the chrome that doesn't fit a small window (title, map switcher, workflow/tidy/lanes) */
+  body.embed #bcrumb, body.embed #offline{display:none!important}
+  body.embed header{padding:6px 8px;gap:8px;background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0))}
+  body.embed header h1, body.embed #mapsel, body.embed #lanes, body.embed #export, body.embed #tidy, body.embed #addmap, body.embed .spacer{display:none!important}
+  body.embed .btns{gap:6px}
 
   /* floating sub-map windows (picture-in-picture over the top-level map) */
   #pips{position:fixed;inset:0;z-index:55;pointer-events:none}
@@ -295,6 +299,7 @@
   <div class="swatches" id="ctx-colors"></div>
   <div class="ctx-lbl" style="margin:8px 0 4px">Gate — pass/fail check for this stage</div>
   <input class="full" id="ctx-gate" autocomplete="off" placeholder="e.g. pytest tests/ -q">
+  <button class="full" id="ctx-newsub" title="Create a new map and turn this node into a link to it">⊕ New sub-map from this node</button>
   <select class="full" id="ctx-linkmap" title="Open another map from this node"></select>
   <button class="full arch" id="ctx-archive">− Archive</button>
 </div>

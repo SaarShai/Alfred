@@ -444,7 +444,29 @@
     trail.forEach((slug, i) => { const a = document.createElement('a'); a.textContent = (MAPS.maps[slug] || {}).title || slug; a.onclick = () => { const target = trail[i]; trail = trail.slice(0, i); switchMap(target); }; bc.appendChild(a); bc.appendChild(document.createTextNode(' › ')); });
     const span = document.createElement('span'); span.textContent = (map() || {}).title || cur; bc.appendChild(span);
   }
-  function fillMapSelect() { const s = document.getElementById('mapsel'); s.innerHTML = ''; MAPS.order.forEach(slug => { const o = document.createElement('option'); o.value = slug; o.textContent = (MAPS.maps[slug] || {}).title || slug; s.appendChild(o); }); if (cur) s.value = cur; }
+  // parent→child map relationships, derived from subprocess-link nodes (node.link_map points at a child map)
+  function mapParents() {
+    const parentOf = {};                                   // childSlug -> parentSlug (first referencing parent wins)
+    MAPS.order.forEach(slug => {
+      const m = MAPS.maps[slug]; if (!m) return;
+      (m.nodes || []).forEach(n => { if (n.link_map && MAPS.maps[n.link_map] && n.link_map !== slug && !parentOf[n.link_map]) parentOf[n.link_map] = slug; });
+    });
+    return parentOf;
+  }
+  function fillMapSelect() {
+    const s = document.getElementById('mapsel'); s.innerHTML = '';
+    const parentOf = mapParents(), shown = new Set();
+    const emit = (slug, depth) => {
+      if (shown.has(slug) || !MAPS.maps[slug]) return; shown.add(slug);
+      const o = document.createElement('option'); o.value = slug;
+      o.textContent = (depth ? '  '.repeat(depth) + '└ ' : '') + ((MAPS.maps[slug] || {}).title || slug);
+      s.appendChild(o);
+      MAPS.order.forEach(c => { if (parentOf[c] === slug) emit(c, depth + 1); });   // children nest under parent, keep registry order
+    };
+    MAPS.order.forEach(slug => { if (!parentOf[slug]) emit(slug, 0); });   // top-level maps (not anyone's child)
+    MAPS.order.forEach(slug => emit(slug, 0));                             // leftovers (cyclic link refs) — never drop a map
+    if (cur) s.value = cur;
+  }
   function fillLinkSelect() { const s = document.getElementById('ctx-linkmap'); s.innerHTML = ''; const o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Link to map…'; s.appendChild(o0); MAPS.order.filter(sl => sl !== cur).forEach(slug => { const o = document.createElement('option'); o.value = slug; o.textContent = '→ ' + ((MAPS.maps[slug] || {}).title || slug); s.appendChild(o); }); }
 
   function fit() {
@@ -511,7 +533,29 @@
   }
   async function saveDoc() { const msg = document.getElementById('ed-msg'); msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: document.getElementById('ed-text').value }); if (!j.ok) { msg.textContent = 'Error: ' + j.error; return; } msg.textContent = 'Saved ✓'; if (j.maps) applyMaps(j.maps); }
 
-  async function addMapPrompt() { if (!SERVER) return; const t = prompt('New map name:'); if (t === null) return; const title = t.trim(); if (!title) return; const j = await api('/api/map-add', { title }); if (!j.ok) { alert('Map: ' + j.error); return; } trail = []; cur = j.slug; applyMaps(j.maps); setHash(j.slug); }
+  // inline (not prompt(): blocked in sandboxed preview iframes) — new top-level map, then switch to it
+  function addMapPrompt() {
+    if (!SERVER) return;
+    showNameInput(window.innerWidth / 2, 70, '', async title => {
+      if (!title) return;
+      const j = await api('/api/map-add', { title });
+      if (!j.ok) { alert('Map: ' + j.error); return; }
+      trail = []; cur = j.slug; applyMaps(j.maps); setHash(j.slug);
+    });
+  }
+  // turn a node into a sub-process: create a new map and link this node to it in one step
+  function ctxNewSubmap() {
+    if (!ctxNode || !SERVER) return;
+    const d = ctxNode, t = d3.zoomTransform(svgN), [sx, sy] = t.apply([d.x, d.y]);
+    closeCtx();
+    showNameInput(sx, sy - 30, d.name, async title => {       // default the sub-map name to the node's name
+      if (!title) return;
+      const j = await api('/api/map-add', { title });
+      if (!j.ok) { alert('Map: ' + j.error); return; }
+      const j2 = await api('/api/link', { path: repoRel(d.url), link_map: j.slug });
+      if (j2.ok) applyMaps(j2.maps); else alert('Link: ' + j2.error);
+    });
+  }
 
   // ---- workflow export (map → loop spec + agent Markdown, validated by loop_lint.py) ----
   async function openExport() {
@@ -565,6 +609,7 @@
   document.getElementById('ctx-bigger').onclick = () => ctxSize(1);
   document.getElementById('ctx-hl').onclick = ctxHighlight;
   document.getElementById('ctx-archive').onclick = ctxArchive;
+  document.getElementById('ctx-newsub').onclick = ctxNewSubmap;
   document.getElementById('ctx-linkmap').onchange = e => ctxLink(e.target.value);
   document.querySelectorAll('#ctx-types button').forEach(b => b.onclick = () => ctxType(b.dataset.t));
   // double-click empty canvas → quick add
