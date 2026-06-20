@@ -76,7 +76,7 @@
     clearTimeout(sseBounceTimer); ssePending = null;     // a direct apply supersedes any queued SSE snapshot
     if ((wire && wire.active) || dragging || inputOpen()) { pendingMaps = m; return; }  // don't tear down mid-gesture
     pendingMaps = null;                                  // applying authoritative state — drop any stale queued snapshot
-    MAPS = m; _nidIx = null;                              // new MAPS object → drop the memoized nid index
+    MAPS = m; _nidIx = null; _backlinkIx = null;         // new MAPS object → drop the memoized nid + backlink indexes
     if (!MAPS.maps[cur]) { cur = MAPS.order[0] || null; trail = []; }
     if (edPath) revalidateEditor();                      // open notes drawer: re-check the node still exists
     fillMapSelect(); render();
@@ -301,7 +301,7 @@
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : ''))   // enter fires once; start/end = flow terminals
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : '') + (flashIds.has(d.id) ? ' flash' : ''))   // enter fires once; start/end = flow terminals; flash = transient backlink highlight
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
       .attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => 'Node: ' + d.name + ' (' + d.type + ')')   // a11y: focusable + labelled
@@ -340,6 +340,13 @@
         gb.append('text').attr('class', 'typeglyph').attr('font-size', '11px').text(gated ? '✓' : '!');
         gb.append('title').text(gated ? 'gate: ' + gated : 'stage has no gate — add one (right-click → Gate) before the workflow can run');
       }
+      const _cited = backlinkIndex()[d.id];   // "cited by N" backlink pill (bottom-left) on any node referenced as a source of truth
+      if (_cited && _cited.length) {
+        const cb = inner.append('g').attr('class', 'citedby').attr('transform', 'translate(' + (-hw + 3) + ',' + (hh - 3) + ')').style('cursor', 'pointer').on('click', e => { e.stopPropagation(); flashBacklinks(_cited); });
+        cb.append('rect').attr('x', -1).attr('y', -8).attr('width', 30).attr('height', 15).attr('rx', 7).attr('fill', 'var(--ref)').attr('fill-opacity', .16);
+        cb.append('text').attr('class', 'citation-badge').attr('x', 14).attr('y', 0).attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('font-size', '8.5px').attr('font-weight', 700).attr('fill', 'var(--ref)').text('↖' + _cited.length);
+        cb.append('title').text('Cited by ' + _cited.length + ' node(s) — click to flash them');
+      }
       if (selection.has(d.id)) {   // selection ring on the outer g (stable under the hover lift); base extents +5px
         if (isDiamond(d)) g.append('polygon').attr('class', 'selring').attr('points', [[0, -(hh + 5)], [hw + 5, 0], [0, hh + 5], [-(hw + 5), 0]].map(p => p.join(',')).join(' '));
         else g.append('rect').attr('class', 'selring').attr('x', -(hw + 5)).attr('y', -(hh + 5)).attr('width', (hw + 5) * 2).attr('height', (hh + 5) * 2).attr('rx', 14);
@@ -377,7 +384,7 @@
       if (resolved.length === 1) {                                  // one source → a lone ghost mirror below the node
         const r = resolved[0], gw = Math.max(120, Math.min(220, r.name.length * 8 + 56)) / 2, gh = 21, cy = ay + gap + gh;
         tray.append('path').attr('class', 'ref-conn').attr('d', 'M' + ax + ',' + ay + ' L' + ax + ',' + (cy - gh));
-        const g = tray.append('g').attr('class', 'ghost').attr('transform', 'translate(' + ax + ',' + cy + ')').on('click', e => { e.stopPropagation(); gotoRef(r.ref); });
+        const g = tray.append('g').attr('class', 'ghost').attr('transform', 'translate(' + ax + ',' + cy + ')').on('click', e => { e.stopPropagation(); gotoRef(r.ref); }).on('mouseenter', e => showGhostPopover(r.ref, e.clientX, e.clientY)).on('mouseleave', hideGhostPopover);
         g.append('rect').attr('class', 'ghost-shape').attr('x', -gw).attr('y', -gh).attr('width', gw * 2).attr('height', gh * 2).attr('rx', 10);
         { const lab = g.append('text').attr('class', 'ghost-label').text(r.name); if (!dragging) fitText(lab, gw * 2 - 20); }
         g.append('text').attr('class', 'ghost-sub').attr('y', gh + 11).text('↗ ' + r.home);
@@ -395,7 +402,7 @@
         head.append('text').attr('class', 'tray-caret').attr('x', 12).attr('y', headerH / 2).text(collapsed ? '▸' : '▾');
         head.append('text').attr('class', 'tray-title').attr('x', 26).attr('y', headerH / 2).text('§ ' + resolved.length + ' sources');
         if (!collapsed) resolved.forEach((r, i) => {
-          const row = box.append('g').attr('transform', 'translate(0,' + (headerH + i * rowH) + ')').style('cursor', 'pointer').on('click', e => { e.stopPropagation(); gotoRef(r.ref); });
+          const row = box.append('g').attr('transform', 'translate(0,' + (headerH + i * rowH) + ')').style('cursor', 'pointer').on('click', e => { e.stopPropagation(); gotoRef(r.ref); }).on('mouseenter', e => showGhostPopover(r.ref, e.clientX, e.clientY)).on('mouseleave', hideGhostPopover);
           row.append('rect').attr('class', 'tray-row').attr('width', boxW).attr('height', rowH);
           row.append('circle').attr('cx', 16).attr('cy', rowH / 2).attr('r', 7).attr('fill', 'var(--ref)');
           row.append('text').attr('class', 'typeglyph').attr('x', 16).attr('y', rowH / 2).attr('font-size', '9px').text('§');
@@ -411,6 +418,7 @@
     updateMinimap();
     positionSelToolbar();
     { const eb = document.getElementById('empty-state'); if (eb) eb.hidden = !(map() && !map().nodes.length); }   // first-run hint on an empty map
+    renderLint();   // live validation badge (last tail consumer)
   }
 
   function ripple(x, y, col) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
@@ -951,6 +959,56 @@
     let hit = null; MAPS.order.some(slug => { const n = (MAPS.maps[slug].nodes || []).find(x => x.slug === target || x.name === target); if (n) { hit = { map: slug, node: n }; return true; } return false; });
     return hit;
   }
+  let _backlinkIx = null;                              // memoized inverse citation graph: cited-nid -> [{citerId,citerName,citerMap}]
+  function backlinkIndex() {
+    if (_backlinkIx) return _backlinkIx;
+    const ix = {};
+    MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => { (n.refs || []).forEach(rf => { (ix[rf.target] = ix[rf.target] || []).push({ citerId: n.id, citerName: n.name, citerMap: slug }); }); }); });
+    return (_backlinkIx = ix);
+  }
+  let flashIds = new Set(), flashTimer = null;
+  function flashBacklinks(citers) {   // transient highlight of the nodes that cite this source (real .hl untouched)
+    const here = citers.filter(c => c.citerMap === cur), elsewhere = citers.filter(c => c.citerMap !== cur);
+    flashIds = new Set(here.map(c => c.citerId)); render();
+    clearTimeout(flashTimer); flashTimer = setTimeout(() => { flashIds.clear(); render(); }, 2200);
+    document.querySelectorAll('.backlink-list').forEach(el => el.remove());
+    if (elsewhere.length) {
+      const box = document.createElement('div'); box.className = 'backlink-list';
+      const h = document.createElement('div'); h.className = 'bl-head'; h.textContent = 'Also cited in:'; box.appendChild(h);
+      elsewhere.slice(0, 10).forEach(c => { const it = document.createElement('div'); it.className = 'bl-row'; it.textContent = '↗ ' + c.citerName + ' — ' + ((MAPS.maps[c.citerMap] || {}).title || c.citerMap); it.onclick = () => { box.remove(); trail = []; switchMap(c.citerMap, true); setTimeout(() => { const n = byId(c.citerId); if (n) focusNode(n); }, 120); }; box.appendChild(it); });
+      document.body.appendChild(box); setTimeout(() => { if (box.parentNode) box.remove(); }, 7000);
+    }
+  }
+  // ---- hover-preview a Source-of-Truth ghost: popover with the cited node's glyph, gate, home, excerpt ----
+  let ghostHoverTimer = null, ghostPopover = null; const ghostDocCache = {};
+  function hideGhostPopover() { clearTimeout(ghostHoverTimer); if (ghostPopover) { ghostPopover.remove(); ghostPopover = null; } }
+  async function fetchGhostDoc(nid) {
+    if (ghostDocCache[nid] !== undefined) return ghostDocCache[nid];
+    const hit = resolveRef(nid); if (!hit) return (ghostDocCache[nid] = null);
+    try {
+      const r = await fetch('/api/doc?path=' + encodeURIComponent(repoRel(hit.node.url))); const j = await r.json();
+      if (!j.ok) return (ghostDocCache[nid] = null);
+      const excerpt = (j.content || '').replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^#\s+.*\n?/, '').trim().split('\n').filter(Boolean).slice(0, 2).join(' ').slice(0, 150);
+      return (ghostDocCache[nid] = { node: hit.node, home: (MAPS.maps[hit.map] || {}).title || hit.map, excerpt });
+    } catch (_) { return (ghostDocCache[nid] = null); }
+  }
+  function showGhostPopover(nid, x, y) {
+    hideGhostPopover();
+    ghostHoverTimer = setTimeout(async () => {
+      const doc = await fetchGhostDoc(nid); if (!doc) return;
+      const n = doc.node, pop = document.createElement('div'); pop.className = 'ghost-popover' + (motionAllowed() ? ' anim' : '');
+      const head = document.createElement('div'); head.className = 'gp-head';
+      const gl = document.createElement('span'); gl.className = 'gp-glyph'; gl.style.background = accent(n); gl.textContent = n.type === 'reference' ? '§' : n.type === 'subprocess-link' ? '▸' : n.type === 'decision' ? '◇' : '▭'; head.appendChild(gl);
+      const nm = document.createElement('span'); nm.className = 'gp-name'; nm.textContent = n.name; head.appendChild(nm);
+      if (n.gate) { const g = document.createElement('span'); g.className = 'gp-gate'; g.textContent = '✓ gate'; head.appendChild(g); }
+      pop.appendChild(head);
+      const sub = document.createElement('div'); sub.className = 'gp-sub'; sub.textContent = '↗ ' + doc.home; pop.appendChild(sub);
+      if (doc.excerpt) { const b = document.createElement('div'); b.className = 'gp-body'; b.textContent = doc.excerpt; pop.appendChild(b); }
+      pop.style.left = Math.max(8, Math.min(window.innerWidth - 224, x + 12)) + 'px';
+      pop.style.top = Math.max(8, Math.min(window.innerHeight - 140, y + 12)) + 'px';
+      document.body.appendChild(pop); ghostPopover = pop;
+    }, 320);
+  }
   function focusNode(n) {   // center the viewport on one node (supersedes fit's transition since it starts later)
     const w = window.innerWidth, h = window.innerHeight, k = Math.min(1.4, d3.zoomTransform(svgN).k || 1);
     svg.transition().duration(420).ease(d3.easeCubicOut).call(zoom.transform, d3.zoomIdentity.translate(w / 2 - k * n.x, h / 2 - k * n.y).scale(k));   // leap-then-settle: 'brought the node to you'
@@ -971,6 +1029,8 @@
     while ((m = WIKILINK_RE.exec(text || ''))) { const parts = m[1].split('|'); links.push({ target: (parts[0] || '').trim(), label: (parts[1] || parts[0] || '').trim() }); }
     if (!links.length) { box.hidden = true; return; }
     box.hidden = false;
+    const broken = links.filter(l => !l.target.startsWith('?') && !resolveRef(l.target));   // unresolved (not stub) → repair banner
+    if (broken.length) { const b = document.createElement('div'); b.className = 'broken-refs-banner'; b.textContent = '⚠ ' + broken.length + ' broken reference' + (broken.length === 1 ? '' : 's') + ' — fix'; b.onclick = () => showBrokenRefsOverlay(broken); box.appendChild(b); }
     const lab = document.createElement('span'); lab.className = 'lbl'; lab.textContent = 'References'; box.appendChild(lab);
     links.forEach(l => {
       const stub = l.target.startsWith('?'), tgt = stub ? l.target.slice(1) : l.target;
@@ -986,7 +1046,7 @@
   }
 
   // ---- knowledge picker: cite a SoT node from the right-clicked node + pin a ghost of it here ----
-  let kpCiting = null, kpAll = [];
+  let kpCiting = null, kpAll = [], citationPicker = null, brokenRefPicker = null;
   function openKnowPick(d) {
     if (!SERVER) return; kpCiting = d; closeCtx();
     kpAll = [];
@@ -1011,12 +1071,52 @@
     });
   }
   async function pickKnow(it) {
+    if (citationPicker) { insertCitation(it.id, it.name); return; }                          // inline [[ autocomplete
+    if (brokenRefPicker) {                                                                    // broken-ref repair: rewrite the dead [[…]] in the body
+      const tgt = brokenRefPicker; brokenRefPicker = null; closeKnowPick();
+      const ta = document.getElementById('ed-text'); if (!edPath || !SERVER) return;
+      const esc = tgt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const content = ta.value.replace(new RegExp('\\[\\[' + esc + '(\\|[^\\]]*)?\\]\\]'), '[[' + it.id + '|' + it.name + ']]');
+      const msg = document.getElementById('ed-msg'); msg.textContent = 'Fixing…';
+      const j = await api('/api/save', { path: edPath, content }); if (j.ok) { ta.value = content; renderRefs(content); msg.textContent = 'Fixed ✓'; if (j.maps) applyMaps(j.maps); } else msg.textContent = 'Error: ' + j.error;
+      return;
+    }
     if (!kpCiting || !SERVER) return;
     const d = kpCiting; closeKnowPick();
     const j = await api('/api/link-knowledge', { map: cur, path: repoRel(d.url), ref: it.id, label: it.name });   // ghost auto-appears in d's tray
     if (j.ok) applyMaps(j.maps); else alert('Link: ' + j.error);
   }
-  function closeKnowPick() { kpCiting = null; fadeOut(document.getElementById('knowpick')); }
+  function closeKnowPick() { kpCiting = null; brokenRefPicker = null; closeCitationPicker(); fadeOut(document.getElementById('knowpick')); }
+  // ---- inline [[ citation autocomplete (20) + broken-ref repair (21): both reuse this picker ----
+  function buildKpAll() { kpAll = []; MAPS.order.forEach(slug => { const m = MAPS.maps[slug]; if (!m) return; (m.nodes || []).forEach(n => kpAll.push({ id: n.id, name: n.name, type: n.type, mapTitle: m.title || slug })); }); kpAll.sort((a, b) => (a.type === 'reference' ? 0 : 1) - (b.type === 'reference' ? 0 : 1) || a.name.localeCompare(b.name)); }
+  function openCitationPicker(ta, caretPos) {
+    buildKpAll(); citationPicker = { ta, pos: caretPos };
+    const kp = document.getElementById('knowpick'); kp.classList.remove('exiting'); kp.classList.add('compact-picker'); kp.hidden = false;
+    const r = ta.getBoundingClientRect(); kp.style.left = Math.max(8, r.left) + 'px'; kp.style.top = Math.min(window.innerHeight - 220, r.top + 30) + 'px'; kp.style.width = Math.min(340, r.width) + 'px';
+    document.getElementById('kp-search').value = ''; renderKpList(''); setTimeout(() => document.getElementById('kp-search').focus(), 0);
+  }
+  function closeCitationPicker() { const kp = document.getElementById('knowpick'); if (kp.classList.contains('compact-picker')) { kp.classList.remove('compact-picker'); kp.style.left = kp.style.top = kp.style.width = ''; if (!kp.hidden) fadeOut(kp); } citationPicker = null; }
+  function insertCitation(id, label) {
+    const c = citationPicker; closeCitationPicker(); if (!c || !c.ta) return;
+    const ta = c.ta, text = ta.value, pos = ta.selectionStart, before = text.slice(0, pos), bi = before.lastIndexOf('[[');
+    if (bi === -1) { ta.focus(); return; }
+    const ins = '[[' + id + '|' + label + ']]';
+    ta.value = text.slice(0, bi) + ins + text.slice(pos); ta.selectionStart = ta.selectionEnd = bi + ins.length;
+    ta.focus(); ta.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function showBrokenRefPicker(target) {
+    brokenRefPicker = target; buildKpAll();
+    const kp = document.getElementById('knowpick'); kp.classList.remove('exiting'); kp.hidden = false;
+    document.getElementById('kp-search').value = target; renderKpList(target); setTimeout(() => document.getElementById('kp-search').focus(), 0);
+  }
+  function showBrokenRefsOverlay(broken) {
+    document.querySelectorAll('.broken-overlay').forEach(el => el.remove());
+    const ov = document.createElement('div'); ov.className = 'broken-overlay';
+    const h = document.createElement('div'); h.className = 'bo-head'; h.textContent = 'Fix broken references'; ov.appendChild(h);
+    broken.forEach(br => { const row = document.createElement('div'); row.className = 'bo-row'; const lab = document.createElement('span'); lab.className = 'bo-lab'; lab.textContent = '[[' + br.target + ']]'; const btn = document.createElement('button'); btn.className = 'primary'; btn.textContent = 'Relink'; btn.onclick = () => { ov.remove(); showBrokenRefPicker(br.target); }; row.append(lab, btn); ov.appendChild(row); });
+    const x = document.createElement('button'); x.className = 'bo-x'; x.textContent = '✕'; x.onclick = () => ov.remove(); ov.appendChild(x);
+    document.body.appendChild(ov);
+  }
   // mark/unmark the current map as a SoT library (kind: reference)
   function syncLibToggle() { const m = map(), on = !!(m && m.kind === 'reference'); document.getElementById('libtoggle').classList.toggle('on', on); document.body.classList.toggle('libmap', on); }
   async function toggleLibrary() {
@@ -1141,6 +1241,62 @@
     clearTimeout(toastTimeout); toastTimeout = setTimeout(() => fadeOut(toast), 4500);
   }
 
+  // ---- validation lint panel (item 17): live issues for the current map, click to fly to the offender ----
+  let lintOpen = false;
+  function computeLint() {
+    const m = map(); if (!m) return [];
+    const nodes = m.nodes || [], edges = (m.edges || []).filter(e => e.from !== e.to);
+    const byid = {}; nodes.forEach(n => byid[n.id] = n);
+    const out = {}, indeg = {}; nodes.forEach(n => { out[n.id] = []; indeg[n.id] = 0; });
+    edges.forEach(e => { if (byid[e.from] && byid[e.to]) { out[e.from].push(e); indeg[e.to]++; } });
+    const issues = [], starts = nodes.filter(n => indeg[n.id] === 0), ends = nodes.filter(n => out[n.id].length === 0);
+    if (nodes.length && edges.length) {
+      if (!starts.length) issues.push({ msg: 'no START — a cycle at the entry', nodeId: null });
+      else if (starts.length > 1) issues.push({ msg: starts.length + ' START nodes (expected 1)', nodeId: null });
+      if (!ends.length) issues.push({ msg: 'no END — nothing terminates the flow', nodeId: null });
+      const deg = {}; nodes.forEach(n => deg[n.id] = indeg[n.id]); const q = starts.map(n => n.id), seenL = [];
+      while (q.length) { const id = q.shift(); seenL.push(id); out[id].forEach(e => { if (--deg[e.to] === 0) q.push(e.to); }); }
+      if (seenL.length !== nodes.length) issues.push({ msg: 'cycle detected — not a clean pipeline', nodeId: null });
+    }
+    nodes.filter(n => out[n.id].length > 0 && n.type !== 'reference' && !(n.gate && String(n.gate).trim())).forEach(n => issues.push({ msg: 'no gate: ' + n.name, nodeId: n.id }));
+    nodes.forEach(n => (n.refs || []).forEach(rf => { if (!resolveRef(rf.target)) issues.push({ msg: 'broken ref in ' + n.name, nodeId: n.id }); }));
+    return issues;
+  }
+  function renderLint() {
+    const panel = document.getElementById('lint-panel'); if (!panel) return;
+    const issues = computeLint(), badge = panel.querySelector('.lint-badge');
+    if (!issues.length) { badge.hidden = true; panel.classList.remove('open'); return; }
+    badge.hidden = false; badge.querySelector('.lint-count').textContent = issues.length;
+    const list = panel.querySelector('.lint-list'); list.innerHTML = '';
+    issues.forEach(iss => { const row = document.createElement('div'); row.className = 'lint-row'; row.textContent = iss.msg; if (iss.nodeId) { const n = byId(iss.nodeId); if (n) { row.style.cursor = 'pointer'; row.title = 'Zoom to ' + n.name; row.onclick = () => focusNode(n); } } list.appendChild(row); });
+  }
+  function toggleLint() { lintOpen = !lintOpen; document.getElementById('lint-panel').classList.toggle('open', lintOpen); }
+
+  // ---- multi-map Home overview (item 35) ----
+  function openHomeOverlay() {
+    const overlay = document.getElementById('home-overlay'), cards = document.getElementById('home-cards'); cards.innerHTML = '';
+    const parentOf = mapParents();
+    MAPS.order.forEach(slug => {
+      if (parentOf[slug]) return;   // top-level maps only (children nest under them)
+      const m = MAPS.maps[slug]; if (!m) return;
+      const card = document.createElement('div'); card.className = 'home-card' + (slug === cur ? ' current' : ''); card.title = m.title || slug;
+      const t = document.createElement('div'); t.className = 'hc-title'; t.textContent = m.title || slug; card.appendChild(t);
+      const info = document.createElement('div'); info.className = 'hc-info';
+      const c = document.createElement('span'); c.className = 'hc-count'; c.textContent = (m.nodes || []).length + ' nodes'; info.appendChild(c);
+      const hasOut = new Set((m.edges || []).filter(e => e.from !== e.to).map(e => e.from));
+      const ungated = (m.nodes || []).filter(n => hasOut.has(n.id) && n.type !== 'reference' && !(n.gate && String(n.gate).trim())).length;
+      if (ungated) { const w = document.createElement('span'); w.className = 'hc-warning'; w.textContent = '⚠ ' + ungated + ' ungated'; info.appendChild(w); }
+      if (m.kind === 'reference') { const r = document.createElement('span'); r.className = 'hc-warning'; r.style.background = 'rgba(107,114,128,.14)'; r.style.borderColor = 'rgba(107,114,128,.35)'; r.style.color = 'var(--ref)'; r.textContent = '§ library'; info.appendChild(r); }
+      card.appendChild(info);
+      const children = MAPS.order.filter(x => parentOf[x] === slug);
+      if (children.length) { const ch = document.createElement('div'); ch.className = 'hc-children'; ch.textContent = '↳ ' + children.map(x => (MAPS.maps[x] || {}).title || x).join(', '); card.appendChild(ch); }
+      card.onclick = () => { closeHomeOverlay(); jumpMap(slug); };
+      cards.appendChild(card);
+    });
+    overlay.classList.add('open');
+  }
+  function closeHomeOverlay() { document.getElementById('home-overlay').classList.remove('open'); }
+
   // ---- wire UI ----
   document.getElementById('mapsel').onchange = e => jumpMap(e.target.value);
   document.getElementById('fit').onclick = fit;
@@ -1165,7 +1321,12 @@
     cg.onblur = () => { if (ctxNode) nodeStyle({ gate: cg.value.trim() }); }; }
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
-  document.getElementById('ed-text').addEventListener('input', e => renderRefs(e.target.value));   // live-update reference chips as you type [[…]]
+  document.getElementById('ed-text').addEventListener('input', e => {   // live ref chips + inline [[ autocomplete
+    renderRefs(e.target.value);
+    const ta = e.target, pos = ta.selectionStart, before = ta.value.slice(0, pos);
+    if (before.endsWith('[[')) openCitationPicker(ta, pos);
+    else if (citationPicker) { const mm = before.match(/\[\[([^\]\n]*)$/); if (mm) renderKpList(mm[1]); else closeCitationPicker(); }
+  });
   document.getElementById('libtoggle').onclick = toggleLibrary;
   document.getElementById('kp-x').onclick = closeKnowPick;
   document.getElementById('cmdpal-x').onclick = closeCmdpal;
@@ -1174,6 +1335,10 @@
   document.getElementById('shortcuts').onclick = e => { if (e.target.id === 'shortcuts') closeShortcutsOverlay(); };
   document.getElementById('toast-undo-btn').onclick = () => { clearTimeout(toastTimeout); fadeOut(document.getElementById('toast-undo')); doUndo(); };
   document.getElementById('toast-close').onclick = () => { clearTimeout(toastTimeout); fadeOut(document.getElementById('toast-undo')); };
+  document.querySelector('.lint-badge').onclick = toggleLint;
+  document.getElementById('home').onclick = openHomeOverlay;
+  document.getElementById('home-close').onclick = closeHomeOverlay;
+  document.getElementById('home-overlay').onclick = e => { if (e.target.id === 'home-overlay') closeHomeOverlay(); };
   document.getElementById('kp-search').addEventListener('input', e => renderKpList(e.target.value));
   document.getElementById('ctx-linkknow').onclick = () => { if (ctxNode) openKnowPick(ctxNode); };
   document.getElementById('ed-openext').onclick = () => { if (edPath) fetch('/api/open?path=' + encodeURIComponent(edPath)).catch(() => {}); };
@@ -1212,7 +1377,7 @@
     if (cmd && e.key.toLowerCase() === 'f' && !typing) { e.preventDefault(); openFind(); return; }
     if (e.key === '/' && !typing) { e.preventDefault(); openFind(); return; }
     if (e.key === '?' && !typing) { e.preventDefault(); showShortcutsOverlay(); return; }
-    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); closeCmdpal(); closeShortcutsOverlay(); document.getElementById('exportpanel').hidden = true; clearSelection(); return; }
+    if (e.key === 'Escape') { closeEditor(); closeCtx(); closeKnowPick(); closeCmdpal(); closeShortcutsOverlay(); closeHomeOverlay(); document.querySelectorAll('.broken-overlay,.backlink-list').forEach(el => el.remove()); document.getElementById('exportpanel').hidden = true; clearSelection(); return; }
     if (cmd && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); return; }
     if (cmd && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); doUndo(); return; }   // redo deferred: server has single-level undo only
     if (typing) return;   // everything below is canvas-only

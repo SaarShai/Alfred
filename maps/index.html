@@ -84,6 +84,67 @@
   g.tray g:hover > .tray-row{fill:rgba(107,114,128,.13)}
   .tray-name{fill:var(--ink);font-size:11.5px;font-weight:600;dominant-baseline:central;pointer-events:none}
   .tray-home{fill:var(--muted);font-size:10px;font-weight:600;text-anchor:end;dominant-baseline:central;pointer-events:none}
+  /* knowledge: hover-preview popover · cited-by pill · backlink flash (items 18/19) */
+  .citation-badge{pointer-events:none}
+  .node.flash .shape{stroke:var(--decision)!important;stroke-width:3.4px!important;animation:flashpulse 2.2s ease}
+  @keyframes flashpulse{0%,100%{filter:drop-shadow(0 0 0 var(--decision))}30%{filter:drop-shadow(0 0 9px var(--decision))}}
+  .ghost-popover{position:fixed;z-index:85;width:210px;background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);
+    border:1px solid rgba(107,114,128,.25);border-radius:10px;padding:10px 11px;box-shadow:0 12px 32px rgba(65,64,76,.2);display:flex;flex-direction:column;gap:5px;pointer-events:none}
+  .ghost-popover.anim{animation:gp-in .14s var(--spring) both}
+  @keyframes gp-in{from{opacity:0;transform:translateY(4px) scale(.97)}to{opacity:1;transform:none}}
+  .gp-head{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--ink);font-size:var(--fs-2)}
+  .gp-glyph{width:17px;height:17px;border-radius:5px;display:grid;place-items:center;font-size:9px;color:#fff;flex:none;font-weight:800}
+  .gp-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gp-gate{font-size:var(--fs-1);color:var(--link);font-weight:700;flex:none}
+  .gp-sub{font-size:var(--fs-1);color:var(--ref);font-weight:600}
+  .gp-body{color:var(--muted);font-size:var(--fs-1);line-height:1.45;max-height:80px;overflow:hidden}
+  .backlink-list{position:fixed;left:50%;top:120px;transform:translateX(-50%);z-index:85;max-width:280px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(107,114,128,.2);border-radius:11px;padding:11px 13px;box-shadow:0 14px 38px rgba(65,64,76,.22);font-size:var(--fs-2)}
+  .backlink-list .bl-head{font-weight:700;color:var(--ink);margin-bottom:6px}
+  .backlink-list .bl-row{color:var(--ink);cursor:pointer;padding:3px 0;transition:opacity .12s}
+  .backlink-list .bl-row:hover{opacity:.6}
+  @media (prefers-reduced-motion: reduce){.ghost-popover.anim,.node.flash .shape{animation:none}}
+  body.calm .ghost-popover.anim,body.calm .node.flash .shape{animation:none}
+  /* inline [[ autocomplete (20) + broken-ref repair (21) */
+  .kp.compact-picker{top:auto;left:auto;width:auto;min-width:280px;transform:none}
+  .compact-picker .kp-head{display:none}
+  .broken-refs-banner{border-left:3px solid #b3403a;background:rgba(224,120,120,.12);color:#b3403a;font-weight:700;font-size:var(--fs-1);padding:7px 10px;border-radius:8px;margin-bottom:8px;cursor:pointer;width:100%}
+  .broken-refs-banner:hover{background:rgba(224,120,120,.2)}
+  .broken-overlay{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:88;max-width:340px;min-width:280px;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(224,120,120,.3);border-radius:11px;padding:16px;box-shadow:0 16px 44px rgba(65,64,76,.24)}
+  .broken-overlay .bo-head{font-weight:700;color:var(--ink);margin-bottom:12px;font-size:var(--fs-3)}
+  .broken-overlay .bo-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .broken-overlay .bo-lab{flex:1;font-size:var(--fs-1);font-family:ui-monospace,Menlo,monospace;color:#b3403a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .broken-overlay .bo-x{position:absolute;top:10px;right:10px;padding:3px 8px}
+  /* validation lint panel (17) */
+  #lint-panel{position:fixed;bottom:40px;left:18px;z-index:9;font-size:var(--fs-2)}
+  .lint-badge{background:rgba(224,120,120,.18);border:1px solid rgba(224,120,120,.5);color:#b3403a;padding:6px 11px;border-radius:8px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:.15s}
+  .lint-badge[hidden]{display:none}
+  .lint-badge:hover{background:rgba(224,120,120,.28)}
+  .lint-list{display:none;position:absolute;bottom:100%;left:0;margin-bottom:8px;min-width:280px;max-height:42vh;overflow:auto;
+    background:rgba(255,255,255,.8);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);
+    border:1px solid rgba(65,64,76,.16);border-radius:10px;box-shadow:0 10px 28px rgba(65,64,76,.16)}
+  #lint-panel.open .lint-list{display:block}
+  .lint-row{padding:8px 12px;border-bottom:1px solid rgba(65,64,76,.08);font-size:var(--fs-2);color:var(--ink);cursor:default;line-height:1.4}
+  .lint-row:last-child{border-bottom:none}
+  .lint-row:hover{background:rgba(224,120,120,.1)}
+  /* multi-map Home overview (35) */
+  #home-overlay{position:fixed;inset:0;z-index:50;background:rgba(65,64,76,.22);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:24px}
+  #home-overlay.open{display:flex}
+  #home-panel{background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(24px) saturate(150%);backdrop-filter:blur(24px) saturate(150%);border:1px solid rgba(65,64,76,.12);border-radius:16px;box-shadow:0 18px 50px rgba(65,64,76,.22);padding:22px;max-width:880px;width:100%;max-height:85vh;display:flex;flex-direction:column;gap:16px;animation:pop .28s var(--spring) both}
+  #home-head{display:flex;align-items:center;justify-content:space-between}
+  #home-head h2{margin:0;font-size:var(--fs-5);font-weight:700;color:var(--ink)}
+  #home-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;overflow:auto}
+  .home-card{display:flex;flex-direction:column;gap:8px;padding:14px 15px;background:rgba(255,255,255,.6);border:1px solid rgba(148,163,184,.25);border-radius:12px;cursor:pointer;transition:transform .14s var(--spring),background .14s,box-shadow .14s}
+  .home-card:hover{background:#fff;transform:translateY(-2px);box-shadow:0 8px 18px rgba(65,64,76,.1)}
+  .home-card.current{border-color:var(--step);box-shadow:inset 0 0 0 1px var(--step)}
+  .hc-title{font-size:var(--fs-3);font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hc-info{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:var(--fs-1);color:var(--muted)}
+  .hc-count{font-weight:600}
+  .hc-warning{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;background:rgba(238,176,106,.15);border:1px solid rgba(238,176,106,.4);border-radius:6px;color:#9a6a18;font-size:var(--fs-1);font-weight:700}
+  .hc-children{font-size:var(--fs-1);color:var(--muted)}
+  @media (prefers-reduced-motion: reduce){#home-panel{animation:none}}
+  body.calm #home-panel{animation:none}
   /* knowledge picker overlay */
   .kp{position:fixed;z-index:75;top:64px;left:50%;transform:translateX(-50%);width:min(420px,92vw);
     background:#fffdf8;border:1px solid rgba(65,64,76,.16);border-radius:14px;box-shadow:0 18px 50px rgba(40,38,50,.22);
@@ -425,6 +486,7 @@
 <header>
   <h1>Process Maps</h1>
   <select id="mapsel" title="Switch map"></select>
+  <button id="home" class="needserver" title="All maps overview">▦ Maps</button>
   <div class="spacer"></div>
   <div class="btns">
     <button id="addnode" class="primary needserver" title="Add a node (or double-click empty canvas)">＋ Node</button>
@@ -463,6 +525,16 @@
 <div id="connstatus">●Live</div>
 <div id="offline">Read-only — editing needs the app. Run <code>node maps/serve.js</code>, then open the printed URL.</div>
 <div id="pips"></div>
+<div id="lint-panel" class="lint-panel">
+  <div class="lint-list"></div>
+  <div class="lint-badge" hidden><span class="lint-count">0</span> issues <span class="lint-toggle">▴</span></div>
+</div>
+<div id="home-overlay">
+  <div id="home-panel">
+    <div id="home-head"><h2>Maps</h2><button id="home-close" title="Close">✕</button></div>
+    <div id="home-cards"></div>
+  </div>
+</div>
 
 <svg id="map-svg"></svg>
 <div id="status-msg" aria-live="polite" aria-atomic="true" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden"></div>

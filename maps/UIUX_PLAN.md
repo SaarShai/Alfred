@@ -159,6 +159,19 @@ OS input (computer-use) or a window test handle. Marquee/click/keydown/contextme
       mismatch, item 7 dup-title slug collision (→" copy"). DEFERRED: 11 copy/paste, 47 touch. VERIFIED:
       palette (31 cmds+nodes+maps, fuzzy-highlighted), ? sheet (16 rows), ⌘A select-all, N-add, undo
       toast "Added X"→Undo reverts CLEAN (disk-checked). No errors.
-- [ ] Batch 8 (knowledge/SoT + home + drill + save-guard) — 18,19,20,21,35,36,49
-- [ ] Batch 9 (validation lint panel) — 17
-- [ ] Orphaned (fold in): 16 ctx-sectioning, 31 coachmark (40 spring-linear already present)
+- [x] **Batch 8** (knowledge/SoT) — 18 hover-preview ghost (popover w/ glyph+gate+home+excerpt, cached) ·
+      19 backlinks "cited by N" pill + transient flash + cross-map overlay · 20 inline `[[` autocomplete
+      (reuses picker compact-mode) · 21 broken-ref repair banner+relink · 35 Home overview (top-level
+      map cards, node counts, ungated warnings, nested children). Fixed author bugs: d3 v5 `d3.mouse`,
+      backwards popover anim, `pickKnow` now handles 3 modes (link/cite/fix). DEFERRED: 36 immersive
+      drill (PiP already works), 49 save-conflict guard (edge case). VERIFIED: 2 cited-by pills + cross-map
+      overlay; hover popover (excerpt "Mark Breakdown Ready…"); Home 2 cards w/ ⚠ ungated. No errors.
+- [x] **Batch 9** (validation lint) — 17. VERIFIED: orders-operations shows "2 issues" badge → list
+      ("no gate: Order intake"), rows fly to the offending node via focusNode.
+- [~] Orphans: 16 ctx-sectioning largely satisfied by the earlier ctx redesign (Archive already last+red);
+      31 coachmark DEFERRED (minor onboarding); 40 spring-linear already present (--spring).
+
+## FINAL TALLY: ~44/51 built + verified; 7 deferred-by-design (11 copy/paste, 36 immersive drill,
+## 41 true-spring drag, 44 radial menu, 47 touch, 49 save-guard, 31 coachmark) — each with rationale.
+## Plus 8 troubleshooting fixes (incl. rename data-loss, 0×0 first-load, no-cache header). serve.js
+## changes need a restart (done). Server port 3000.
