@@ -1,7 +1,7 @@
 ---
 title: "Process Maps"
 type: maps-root
-maps: [orders-operations, screenery-flow]
+maps: [orders-operations, screenery-flow, illustrator, layers]
 ---
 # Process Maps
 

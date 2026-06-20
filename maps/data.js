@@ -1,7 +1,9 @@
 window.MAPS = {
   "order": [
     "orders-operations",
-    "screenery-flow"
+    "screenery-flow",
+    "illustrator",
+    "layers"
   ],
   "maps": {
     "orders-operations": {
@@ -15,8 +17,8 @@ window.MAPS = {
           "slug": "order-intake",
           "name": "Order intake",
           "type": "step",
-          "x": 115,
-          "y": 222,
+          "x": 58,
+          "y": 274,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -252,6 +254,101 @@ window.MAPS = {
           "color": null
         }
       ],
+      "frames": []
+    },
+    "illustrator": {
+      "slug": "illustrator",
+      "id": "ill001",
+      "title": "Illustrator",
+      "url": "../maps-data/illustrator/index.md",
+      "nodes": [
+        {
+          "id": "ill100",
+          "slug": "start",
+          "name": "Start",
+          "type": "step",
+          "x": 160,
+          "y": 200,
+          "lane": null,
+          "link_map": null,
+          "gate": "./cli/bin/screenery-design illustrator --help",
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/illustrator/start.md"
+        },
+        {
+          "id": "nvjd2r",
+          "slug": "layers",
+          "name": "Layers",
+          "type": "subprocess-link",
+          "x": 306,
+          "y": 360,
+          "lane": null,
+          "link_map": "layers",
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/illustrator/layers.md"
+        },
+        {
+          "id": "ndtqgw",
+          "slug": "test",
+          "name": "test",
+          "type": "step",
+          "x": 390,
+          "y": 127,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/illustrator/test.md"
+        },
+        {
+          "id": "nrd1ju",
+          "slug": "tester",
+          "name": "tester",
+          "type": "step",
+          "x": 390,
+          "y": 127,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/illustrator/tester.md"
+        }
+      ],
+      "edges": [],
+      "frames": []
+    },
+    "layers": {
+      "slug": "layers",
+      "id": "lay001",
+      "title": "Layers",
+      "url": "../maps-data/layers/index.md",
+      "nodes": [
+        {
+          "id": "lay100",
+          "slug": "start",
+          "name": "Start",
+          "type": "step",
+          "x": 160,
+          "y": 200,
+          "lane": null,
+          "link_map": null,
+          "gate": "./cli/bin/screenery-design illustrator --help",
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/layers/start.md"
+        }
+      ],
+      "edges": [],
       "frames": []
     }
   }
