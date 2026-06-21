@@ -4,7 +4,7 @@ nid: nxp98d
 title: "front layer"
 type: step
 x: 474
-y: 135
+y: 134
 ---
 
 # front layer
