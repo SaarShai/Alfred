@@ -20,8 +20,8 @@ window.MAPS = {
           "type": "step",
           "refs": [],
           "refsCollapsed": false,
-          "x": 14,
-          "y": 260,
+          "x": 47,
+          "y": 300,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -35,14 +35,19 @@ window.MAPS = {
           "slug": "job-tracker",
           "name": "Job Tracker",
           "type": "subprocess-link",
-          "refs": [],
+          "refs": [
+            {
+              "target": "n-ship01",
+              "label": "Ship & close"
+            }
+          ],
           "refsCollapsed": false,
-          "x": 441,
-          "y": 327,
+          "x": 415,
+          "y": 275,
           "lane": null,
           "link_map": "screenery-flow",
           "gate": null,
-          "scale": 1,
+          "scale": 1.101,
           "hl": false,
           "color": null,
           "url": "../maps-data/orders-operations/job-tracker.md"

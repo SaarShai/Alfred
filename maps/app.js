@@ -9,6 +9,7 @@
   let trail = [];
   let SERVER = false;
   let wire = null;                                   // active drag-to-connect (drag from a node's right-edge port)
+  let dragMoved = false;                              // did the current node-drag actually move? (a plain click fires d3 start→end with no move → no bounce/save)
   let showLanes = false;
   let pendingMaps = null;                            // SSE queued during a gesture
   let clickTimer = null;                             // single-click debounced against dblclick
@@ -150,6 +151,7 @@
   // edges leave the source's right side and enter the target's left side (n8n / React-Flow style)
   const rightPort = n => ({ x: n.x + halfExt(n).hw, y: n.y });
   const leftPort = n => ({ x: n.x - halfExt(n).hw, y: n.y });
+  const bottomPort = n => ({ x: n.x, y: n.y + halfExt(n).hh });   // knowledge-link anchor (bottom = the knowledge axis)
   // smooth HORIZONTAL-tangent cubic bezier — big horizontal control handles = pronounced S-curve.
   // bow = vertical offset that separates a bidirectional A<->B pair.
   function edgePath(p1, p2, bow) {
@@ -330,9 +332,9 @@
       .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d, e); })   // double-click: open editor (or drill a link node; Shift/Cmd = notes)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragId = d.id; snapCands = snapCandsFor(d); document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
-        .on('drag', function (e, d) { if (wire && wire.active) return; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (!group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } snapCands = null; dragging = false; dragId = null; document.body.classList.remove('dragging'); if (motionAllowed()) { landId = d.id; setTimeout(() => { landId = null; }, 420); } render(); if (SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));
+        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragMoved = false; dragId = d.id; snapCands = snapCandsFor(d); document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
+        .on('drag', function (e, d) { if (wire && wire.active) return; dragMoved = true; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
+        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (dragMoved && !group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } snapCands = null; dragging = false; dragId = null; document.body.classList.remove('dragging'); if (dragMoved && motionAllowed()) { landId = d.id; setTimeout(() => { landId = null; }, 420); } render(); if (dragMoved && SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));   // bounce + save ONLY on a real move — a click no longer jitters or spuriously re-saves position
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -386,6 +388,13 @@
         .on('pointerdown', (e) => beginWire(e, d))
         .on('pointerenter', () => { const t = d3.zoomTransform(svgN), pt = t.apply([d.x + hw + 16, d.y - 26]); showDragPortCoach(pt[0], pt[1]); })   // one-time "drag to connect" coachmark
         .on('click', (e) => { if (portArmed) e.stopPropagation(); portArmed = false; });   // only swallow the click that began a wire; otherwise let it reach the node
+      // knowledge port (bottom edge) — drag out to cite a source-of-truth node (ghost appears in the tray below)
+      if (d.type !== 'reference') {
+        g.append('circle').attr('class', 'port port-know').attr('cx', 0).attr('cy', hh).attr('r', 5);
+        g.append('circle').attr('class', 'port-hit port-know-hit').attr('cx', 0).attr('cy', hh).attr('r', 14)
+          .on('pointerdown', (e) => beginKnowWire(e, d))
+          .on('click', (e) => { if (portArmed) e.stopPropagation(); portArmed = false; });
+      }
     });
     // staggered deal-in: freshly-entering nodes pop left→right in a wave (delay only; reuses the pop keyframe, capped so 30 nodes stay snappy)
     const entering = sel.filter(d => !dragging && !seen.has(d.id));
@@ -409,7 +418,6 @@
         const g = tray.append('g').attr('class', 'ghost').attr('transform', 'translate(' + ax + ',' + cy + ')').on('click', e => { e.stopPropagation(); gotoRef(r.ref); }).on('mouseenter', e => showGhostPopover(r.ref, e.clientX, e.clientY)).on('mouseleave', hideGhostPopover);
         g.append('rect').attr('class', 'ghost-shape').attr('x', -gw).attr('y', -gh).attr('width', gw * 2).attr('height', gh * 2).attr('rx', 10);
         { const lab = g.append('text').attr('class', 'ghost-label').text(r.name); if (!dragging) fitText(lab, gw * 2 - 20); }
-        g.append('text').attr('class', 'ghost-sub').attr('y', gh + 11).text('↗ ' + r.home);
         const bd = g.append('g').attr('transform', 'translate(' + (-gw + 2) + ',' + (-gh + 2) + ')');
         bd.append('circle').attr('r', 8).attr('fill', 'var(--ref)'); bd.append('text').attr('class', 'typeglyph').attr('font-size', '10px').text('§');
         g.append('title').text('Source of truth — "' + r.name + '" in ' + r.home + '. Click to open.');
@@ -429,8 +437,7 @@
           row.append('circle').attr('cx', 16).attr('cy', rowH / 2).attr('r', 7).attr('fill', 'var(--ref)');
           row.append('text').attr('class', 'typeglyph').attr('x', 16).attr('y', rowH / 2).attr('font-size', '9px').text('§');
           const nameSel = row.append('text').attr('class', 'tray-name').attr('x', 30).attr('y', rowH / 2).text(r.name);
-          const homeSel = row.append('text').attr('class', 'tray-home').attr('x', boxW - 10).attr('y', rowH / 2).text('↗ ' + r.home);
-          if (!dragging) fitText(nameSel, boxW - 30 - homeSel.node().getComputedTextLength() - 12);   // skip the forced reflow while dragging; fit on the next settled render
+          if (!dragging) fitText(nameSel, boxW - 30 - 12);   // no ↗home label → name gets the full row width
         });
       }
     });
@@ -438,7 +445,7 @@
     updateBreadcrumb();
     syncLibToggle();
     updateMinimap();
-    positionSelToolbar();
+    // (selection toolbar removed per feedback — right-click context menu covers color/type/gate/link/archive)
     { const eb = document.getElementById('empty-state'); if (eb) eb.hidden = !(map() && !map().nodes.length); }   // first-run hint on an empty map
     renderLint();   // live validation badge (last tail consumer)
   }
@@ -618,13 +625,33 @@
     wire = { fromId: d.id, x0: d.x + hw, y0: d.y, moved: false };
     portArmed = true;
   }
+  function beginKnowWire(e, d) {   // drag from the bottom port → cite a source-of-truth node
+    if (!SERVER) return;
+    e.stopPropagation(); e.preventDefault();
+    try { svgN.setPointerCapture(e.pointerId); } catch (_) {}
+    const bp = bottomPort(d);
+    wire = { fromId: d.id, kind: 'know', x0: bp.x, y0: bp.y, moved: false };
+    portArmed = true;
+  }
   svgN.addEventListener('pointermove', e => {
     if (!wire || !wire.active && !wire.fromId) return;
     const [mx, my] = d3.pointer(e, canvas.node());
     if (!wire.moved && Math.hypot(mx - wire.x0, my - wire.y0) < 4) return;   // threshold
     wire.active = true; wire.moved = true;
-    wire.dropX = mx; wire.dropY = my; wire.screenX = e.clientX; wire.screenY = e.clientY;   // remember drop coords for create-and-connect
+    wire.dropX = mx; wire.dropY = my; wire.screenX = e.clientX; wire.screenY = e.clientY;   // remember drop coords
     const src = byId(wire.fromId); if (!src) return;
+    if (wire.kind === 'know') {   // knowledge-link drag: magnetic to nearest not-yet-cited node; dashed line in the ref color
+      const cited = new Set((src.refs || []).map(r => r.target));
+      const MAG = 64; let nearest = null, nd = Infinity;
+      (map() ? map().nodes : []).forEach(n => { if (n.id === wire.fromId || cited.has(n.id)) return; const dist = Math.hypot(mx - n.x, my - n.y); if (dist < MAG && dist < nd) { nearest = n; nd = dist; } });
+      let tgt = nearest || dropTarget(e);
+      if (tgt && (tgt.id === wire.fromId || cited.has(tgt.id))) tgt = null;   // can't cite self or an already-cited node
+      const endPt = tgt ? { x: tgt.x, y: tgt.y - baseHalf(tgt).hh } : { x: mx, y: my };
+      wirePath.attr('d', edgePath(bottomPort(src), endPt, 0).d).style('stroke', 'var(--ref)').style('stroke-dasharray', '5 4');
+      wire.targetId = tgt ? tgt.id : null; wire.valid = !!tgt;
+      gNode.selectAll('g.node').classed('attracting', n => nearest && n.id === nearest.id).classed('drop-ok', n => tgt && n.id === tgt.id);
+      return;
+    }
     const edges = map() ? map().edges : [];
     const dup = id => edges.some(ed => (ed.from === wire.fromId && ed.to === id) || (ed.from === id && ed.to === wire.fromId));
     const MAG = 60; let nearest = null, nd = Infinity;   // magnetic: snap to the nearest valid target within radius
@@ -637,18 +664,25 @@
       if (!valid) col = '#e11d48';
     }
     const endPt = nearest ? leftPort(nearest) : { x: mx, y: my };
-    wirePath.attr('d', edgePath(rightPort(src), endPt, 0).d).style('stroke', col);   // green = valid · red = self/duplicate
+    wirePath.attr('d', edgePath(rightPort(src), endPt, 0).d).style('stroke', col).style('stroke-dasharray', null);   // green = valid · red = self/duplicate
     wire.targetId = tgt ? tgt.id : null; wire.valid = valid;
     gNode.selectAll('g.node').classed('attracting', d => nearest && d.id === nearest.id).classed('drop-ok', d => tgt && d.id === tgt.id && valid);
   });
   function endWire(e, cancelled) {
     if (!wire) return;
     const was = wire, fromId = wire.fromId, dropX = wire.dropX, dropY = wire.dropY;
-    wirePath.attr('d', '').style('stroke', ''); gNode.selectAll('g.node').classed('drop-ok', false).classed('attracting', false);
+    wirePath.attr('d', '').style('stroke', '').style('stroke-dasharray', null); gNode.selectAll('g.node').classed('drop-ok', false).classed('attracting', false);
     try { svgN.releasePointerCapture(e.pointerId); } catch (_) {}
     portArmed = false;                                    // pointerup precedes any click; a finished/aborted wire never swallows the next tap
     wire = null;                                          // clear BEFORE addEdge/flushPending so guards release
     if (cancelled || !was.active) { flushPending(); return; }
+    if (was.kind === 'know') {                            // knowledge-link drop: cite the target node (or open the picker on empty)
+      const src = byId(fromId);
+      if (was.targetId) { const tgt = byId(was.targetId); if (src && tgt) { ripple(tgt.x, tgt.y, 'var(--ref)'); api('/api/link-knowledge', { map: cur, path: repoRel(src.url), ref: tgt.id, label: tgt.name }).then(j => { if (j && j.ok) applyMaps(j.maps); else flushPending(); }); } else flushPending(); }
+      else if (src) openKnowPick(src);                    // dropped on empty → search the SoT library
+      else flushPending();
+      return;
+    }
     const fs = nidSlug()[fromId]; if (!fs) { flushPending(); return; }
     if (was.targetId && was.valid) {                      // connect to an existing node (or self-loop)
       const ts = nidSlug()[was.targetId], tgt = byId(was.targetId), src = byId(fromId);
