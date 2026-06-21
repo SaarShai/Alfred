@@ -20,8 +20,8 @@ window.MAPS = {
           "type": "step",
           "refs": [],
           "refsCollapsed": false,
-          "x": 47,
-          "y": 300,
+          "x": -19,
+          "y": 307,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -42,8 +42,8 @@ window.MAPS = {
             }
           ],
           "refsCollapsed": false,
-          "x": 415,
-          "y": 275,
+          "x": 471,
+          "y": 307,
           "lane": null,
           "link_map": "screenery-flow",
           "gate": null,
@@ -351,8 +351,8 @@ window.MAPS = {
           "type": "step",
           "refs": [],
           "refsCollapsed": false,
-          "x": 370,
-          "y": 114,
+          "x": 353,
+          "y": 115,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -396,8 +396,8 @@ window.MAPS = {
           "type": "step",
           "refs": [],
           "refsCollapsed": false,
-          "x": 452,
-          "y": 140,
+          "x": 474,
+          "y": 135,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -418,8 +418,8 @@ window.MAPS = {
             }
           ],
           "refsCollapsed": false,
-          "x": 578,
-          "y": 271,
+          "x": 523,
+          "y": 287,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -444,6 +444,23 @@ window.MAPS = {
           "hl": false,
           "color": 7,
           "url": "../maps-data/layers/back-layer.md"
+        },
+        {
+          "id": "nsxxbl",
+          "slug": "test",
+          "name": "test",
+          "type": "step",
+          "refs": [],
+          "refsCollapsed": false,
+          "x": 628,
+          "y": -5,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/layers/test.md"
         }
       ],
       "edges": [
@@ -452,6 +469,14 @@ window.MAPS = {
           "to": "nxp98d",
           "label": "",
           "bend": 0,
+          "color": null,
+          "route": "bezier"
+        },
+        {
+          "from": "nxp98d",
+          "to": "nsxxbl",
+          "label": "",
+          "bend": 19,
           "color": null,
           "route": "bezier"
         }

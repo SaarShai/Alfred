@@ -3,8 +3,8 @@ scale: 1.101
 nid: n-jt01
 title: "Job Tracker"
 type: subprocess-link
-x: 415
-y: 275
+x: 471
+y: 307
 link_map: screenery-flow
 ---
 # Job Tracker

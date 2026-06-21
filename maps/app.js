@@ -12,7 +12,7 @@
   let dragMoved = false;                              // did the current node-drag actually move? (a plain click fires d3 start→end with no move → no bounce/save)
   let showLanes = false;
   let pendingMaps = null;                            // SSE queued during a gesture
-  let clickTimer = null;                             // single-click debounced against dblclick
+  let clickTimer = null, lastClickId = null;         // single-click debounced against dblclick (id-based, since render() recreates the element between native clicks)
   let portArmed = false;                             // true only while a port actually started a wire — so a plain port tap doesn't swallow the node click
   let dragId = null;                                 // id of the node currently being dragged (re-applies the 'grabbing' lift across render()'s per-tick rebuild)
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
@@ -49,7 +49,7 @@
         svgN.__zoom = t;
       }
       canvas.attr('transform', t);
-      updateZoomHud(); document.body.classList.toggle('lod-far', t.k < 0.55); updateMinimapViewport();   // live zoom % + LOD + minimap viewport rect — all cheap, NO full rebuild
+      document.body.classList.toggle('lod-far', t.k < 0.55);   // live level-of-detail toggle (cheap, no rebuild)
     })
     .on('end', () => scheduleRender());   // re-cull to the SETTLED viewport once the pan/zoom/transition completes (per-tick render storms fight programmatic zoom transitions)
   svg.call(zoom);
@@ -81,10 +81,13 @@
     clearTimeout(sseBounceTimer); ssePending = null;     // a direct apply supersedes any queued SSE snapshot
     if ((wire && wire.active) || dragging || inputOpen()) { pendingMaps = m; return; }  // don't tear down mid-gesture
     pendingMaps = null;                                  // applying authoritative state — drop any stale queued snapshot
+    // Skip the full teardown+rebuild when the VISIBLE map is byte-identical (the echo of your own edit + the fs.watch echo).
+    // render() recreates every element; doing so while the cursor is over a node/edge replays its :hover transition → jitter.
+    const curSame = !!(MAPS && cur && m.maps && m.maps[cur] && JSON.stringify(MAPS.maps[cur]) === JSON.stringify(m.maps[cur]) && (MAPS.order || []).join() === (m.order || []).join());
     MAPS = m; _nidIx = null; _backlinkIx = null; ghostDocCache = {};   // new MAPS object → drop the memoized nid + backlink indexes + hover-doc cache (else it pins stale node objects)
     if (!MAPS.maps[cur]) { cur = MAPS.order[0] || null; trail = []; }
     if (edPath) revalidateEditor();                      // open notes drawer: re-check the node still exists
-    fillMapSelect(); render();
+    fillMapSelect(); if (!curSame) render();             // no visible change → keep the existing DOM (no recreation → no hover-jitter)
   }
   function flushPending() { if (pendingMaps && !(wire && wire.active) && !dragging && !inputOpen()) { const m = pendingMaps; pendingMaps = null; applyMaps(m); } }
   let rafPending = false;                              // coalesce burst pointermoves (120Hz trackpads) into one render per frame
@@ -104,31 +107,7 @@
     else { if (!MAPS) return; m = { order: q.order || MAPS.order, maps: Object.assign({}, MAPS.maps, q.patches) }; }   // merge patched map(s) onto the maps we already hold
     applyMaps(m);
   }
-  function updateZoomHud() { const el = document.getElementById('zoom-pct'); if (el) el.textContent = Math.round(d3.zoomTransform(svgN).k * 100) + '%'; }
-  let minimapCollapsed = false, _mmGeom = null;
-  function updateMinimap() {   // FULL rebuild — node bboxes + a draggable viewport rect. Call on render / data change, NOT per zoom tick.
-    const mm = document.getElementById('minimap-svg'); if (!mm || minimapCollapsed) return;
-    const mmg = d3.select(mm); mmg.selectAll('*').remove();
-    const ns = (map() ? map().nodes : []); if (!ns.length) { _mmGeom = null; return; }
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    ns.forEach(n => { const { hw, hh } = halfExt(n); minX = Math.min(minX, n.x - hw); maxX = Math.max(maxX, n.x + hw); minY = Math.min(minY, n.y - hh); maxY = Math.max(maxY, n.y + hh); });
-    if (!isFinite(minX)) { _mmGeom = null; return; }
-    const W = 160, H = 120, pad = 5, iw = W - pad * 2, ih = H - pad * 2, bw = Math.max(1, maxX - minX), bh = Math.max(1, maxY - minY);
-    const scale = Math.min(iw / bw, ih / bh, 1), ox = pad - minX * scale + (iw - bw * scale) / 2, oy = pad - minY * scale + (ih - bh * scale) / 2;
-    _mmGeom = { scale, ox, oy };
-    ns.forEach(n => { const { hw, hh } = halfExt(n); mmg.append('rect').attr('class', 'minimap-node').attr('x', ox + (n.x - hw) * scale).attr('y', oy + (n.y - hh) * scale).attr('width', hw * 2 * scale).attr('height', hh * 2 * scale).attr('rx', 2); });
-    mmg.append('rect').attr('class', 'minimap-viewport').call(d3.drag().container(() => mm)   // drag the viewport rect to pan the canvas there
-      .on('start', e => e.sourceEvent.stopPropagation())
-      .on('drag', e => { const nx = (e.x - ox) / scale, ny = (e.y - oy) / scale, k = d3.zoomTransform(svgN).k, W2 = window.innerWidth, H2 = window.innerHeight; svg.call(zoom.transform, d3.zoomIdentity.translate(W2 / 2 - k * nx, H2 / 2 - k * ny).scale(k)); }));
-    updateMinimapViewport();
-  }
-  function updateMinimapViewport() {   // CHEAP — reposition ONLY the existing viewport rect (per zoom/pan tick; no DOM rebuild → drag-to-pan stays stable)
-    if (!_mmGeom || minimapCollapsed) return;
-    const vr = document.querySelector('#minimap-svg .minimap-viewport'); if (!vr) return;
-    const { scale, ox, oy } = _mmGeom, t = d3.zoomTransform(svgN);
-    const vx = (window.innerWidth / 2 - t.x) / t.k, vy = (window.innerHeight / 2 - t.y) / t.k, vw = window.innerWidth / t.k, vh = window.innerHeight / t.k;
-    d3.select(vr).attr('x', ox + (vx - vw / 2) * scale).attr('y', oy + (vy - vh / 2) * scale).attr('width', vw * scale).attr('height', vh * scale);
-  }
+  // (minimap + zoom-% HUD removed per feedback)
 
   // ---- geometry ----
   const isDiamond = n => n.type === 'decision';
@@ -309,13 +288,7 @@
           .on('start', ev => ev.sourceEvent.stopPropagation())
           .on('drag', ev => { e.bend = (e.bend || 0) + ev.dy; scheduleRender(); })
           .on('end', () => { if (SERVER) { const n = nidSlug(); api('/api/edge', { map: cur, from: n[e.from], to: n[e.to], bend: Math.round(e.bend || 0) }).then(flushPending); } }));
-      const cyc = ctrl.append('g').attr('transform', 'translate(' + (mid.x - (selfLoop ? 0 : 11)) + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeColor(e); });
-      cyc.append('circle').attr('r', 7).attr('fill', stroke || 'var(--edge)').attr('stroke', '#fff').attr('stroke-opacity', .4);
-      if (!selfLoop) {   // route toggle (bezier ↔ smoothstep) — not meaningful for a self-loop
-        const rte = ctrl.append('g').attr('class', 'edge-route').attr('transform', 'translate(' + (mid.x + 11) + ',' + (mid.y - 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); cycleEdgeRoute(e); });
-        rte.append('circle').attr('r', 7).attr('fill', 'var(--edge)').attr('stroke', '#fff').attr('stroke-opacity', .4);
-        rte.append('text').attr('class', 'typeglyph').attr('font-size', '9px').attr('text-anchor', 'middle').attr('dy', '.34em').attr('fill', '#fff').text(e.route === 'smooth' ? '⌐' : '⤳');
-      }
+      // (edge color-cycle + route-toggle circles removed per feedback — set edge color via right-click, route via the command palette)
       const del = ctrl.append('g').attr('transform', 'translate(' + mid.x + ',' + (mid.y + 20) + ')').style('cursor', 'pointer').on('click', (ev) => { ev.stopPropagation(); deleteEdge(e); });
       del.append('circle').attr('r', 7).attr('fill', '#e11d48');
       del.append('path').attr('d', 'M-2.5,-2.5 L2.5,2.5 M2.5,-2.5 L-2.5,2.5').attr('stroke', '#fff').attr('stroke-width', 1.5).attr('stroke-linecap', 'round');
@@ -323,18 +296,22 @@
 
     // ---- nodes ----
     const sel = gNode.selectAll('g.node').data(nodes, d => d.id).enter().append('g')
-      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : '') + (flashIds.has(d.id) ? ' flash' : '') + (landId === d.id ? ' land' : ''))   // enter fires once; start/end = flow terminals; flash = backlink highlight; land = drop bounce
+      .attr('class', d => 'node' + (d.link_map ? ' linkable' : '') + (d.hl ? ' hl' : '') + (dragId === d.id ? ' grabbing' : '') + ((!dragging && !seen.has(d.id)) ? ' enter' : '') + ((hasOut.has(d.id) && !hasIn.has(d.id)) ? ' start' : '') + ((hasIn.has(d.id) && !hasOut.has(d.id)) ? ' end' : '') + (flashIds.has(d.id) ? ' flash' : ''))   // enter fires once; start/end = flow terminals; flash = backlink highlight
       .style('--accent', d => accent(d))
       .attr('transform', d => 'translate(' + d.x + ',' + d.y + ') scale(' + (d.scale || 1) + ')')
       .attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => 'Node: ' + d.name + ' (' + d.type + ')')   // a11y: focusable + labelled
       .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectClick(e, d.id); render(); onNodeOpen(d); } })   // keyboard activate = open
-      .on('click', (e, d) => { ripple(d.x, d.y, accent(d)); selectClick(e, d.id); render(); clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 220); })   // ripple + select immediately; defer the navigation so a dblclick can cancel it
-      .on('dblclick', (e, d) => { e.stopPropagation(); clearTimeout(clickTimer); clickTimer = null; onNodeOpen(d, e); })   // double-click: open editor (or drill a link node; Shift/Cmd = notes)
+      .on('click', (e, d) => {
+        if (clickTimer && lastClickId === d.id) { clearTimeout(clickTimer); clickTimer = null; lastClickId = null; onNodeOpen(d, e); return; }   // 2nd click on the same node = double-click → edit (id-based: render() recreates the element so the native dblclick can't fire)
+        ripple(d.x, d.y, accent(d)); selectClick(e, d.id); render();
+        lastClickId = d.id; clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; lastClickId = null; onNodeClick(d); }, 260);   // defer single-click navigation so a 2nd click can promote to double-click
+      })
+      .on('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); })   // native dblclick is unreliable (element recreated between clicks) — handled in the click handler above
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
         .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragMoved = false; dragId = d.id; snapCands = snapCandsFor(d); document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
         .on('drag', function (e, d) { if (wire && wire.active) return; dragMoved = true; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (dragMoved && !group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } } if (snapGuide) { snapGuide.remove(); snapGuide = null; } snapCands = null; dragging = false; dragId = null; document.body.classList.remove('dragging'); if (dragMoved && motionAllowed()) { landId = d.id; setTimeout(() => { landId = null; }, 420); } render(); if (dragMoved && SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: d.x, y: d.y }).then(flushPending); } else flushPending(); }));   // bounce + save ONLY on a real move — a click no longer jitters or spuriously re-saves position
+        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (dragMoved && !group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } d.x = Math.round(d.x); d.y = Math.round(d.y); } if (snapGuide) { snapGuide.remove(); snapGuide = null; } snapCands = null; dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (dragMoved && SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: Math.round(d.x), y: Math.round(d.y) }).then(flushPending); } else flushPending(); }));   // no drop-bounce (it restarted on each post-save re-render → jitter); save ONLY on a real move; round so the optimistic position matches the server's
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -362,23 +339,11 @@
         gb.append('text').attr('class', 'typeglyph').attr('font-size', '11px').text(gated ? '✓' : '!');
         gb.append('title').text(gated ? 'gate: ' + gated : 'stage has no gate — add one (right-click → Gate) before the workflow can run');
       }
-      const _cited = backlinkIndex()[d.id];   // "cited by N" backlink pill (bottom-left) on any node referenced as a source of truth
-      if (_cited && _cited.length) {
-        const cb = inner.append('g').attr('class', 'citedby').attr('transform', 'translate(' + (-hw + 3) + ',' + (hh - 3) + ')').style('cursor', 'pointer').on('click', e => { e.stopPropagation(); flashBacklinks(_cited); });
-        cb.append('rect').attr('x', -1).attr('y', -8).attr('width', 30).attr('height', 15).attr('rx', 7).attr('fill', 'var(--ref)').attr('fill-opacity', .16);
-        cb.append('text').attr('class', 'citation-badge').attr('x', 14).attr('y', 0).attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('font-size', '8.5px').attr('font-weight', 700).attr('fill', 'var(--ref)').text('↖' + _cited.length);
-        cb.append('title').text('Cited by ' + _cited.length + ' node(s) — click to flash them');
-      }
+      // ("cited by N" backlink pill removed per feedback)
       if (selection.has(d.id)) {   // selection ring on the outer g (stable under the hover lift); base extents +5px
         if (isDiamond(d)) g.append('polygon').attr('class', 'selring').attr('points', [[0, -(hh + 5)], [hw + 5, 0], [0, hh + 5], [-(hw + 5), 0]].map(p => p.join(',')).join(' '));
         else g.append('rect').attr('class', 'selring').attr('x', -(hw + 5)).attr('y', -(hh + 5)).attr('width', (hw + 5) * 2).attr('height', (hh + 5) * 2).attr('rx', 14);
-        const rh = g.append('g').attr('class', 'node-resize').attr('transform', 'translate(' + (hw + 5) + ',' + (hh + 5) + ')');   // corner grip → drag to scale
-        rh.append('circle').attr('r', 6).attr('fill', col).attr('opacity', .7);
-        rh.call(d3.drag().container(() => canvas.node())
-          .on('start', e => { e.sourceEvent.stopPropagation(); dragging = true; document.body.classList.add('dragging'); })
-          .on('drag', e => { const delta = (Math.abs(e.dx) > Math.abs(e.dy) ? e.dx : e.dy) * 0.01; d.scale = Math.max(0.5, Math.min(2.5, (d.scale || 1) + delta)); const sz = document.getElementById('ctx-size'); if (sz) sz.textContent = Math.round(d.scale * 100) + '%'; scheduleRender(); })
-          .on('end', () => { dragging = false; document.body.classList.remove('dragging'); if (SERVER) api('/api/node-style', { path: repoRel(d.url), scale: +(d.scale || 1).toFixed(3) }).then(flushPending); }));
-      }
+      }   // (corner resize grip removed per feedback — scale via right-click → Size ±)
       // BPMN terminal rings — START (green, left edge) · END (slate, thicker, right edge); derived from flow topology
       if (hasOut.has(d.id) && !hasIn.has(d.id)) g.append('circle').attr('class', 'terminal start').attr('cx', -hw - 12).attr('cy', 0).attr('r', 6).append('title').text('START — no incoming edge');
       if (hasIn.has(d.id) && !hasOut.has(d.id)) g.append('circle').attr('class', 'terminal end').attr('cx', hw + 12).attr('cy', 0).attr('r', 7).append('title').text('END — no outgoing edge');
@@ -444,8 +409,7 @@
 
     updateBreadcrumb();
     syncLibToggle();
-    updateMinimap();
-    // (selection toolbar removed per feedback — right-click context menu covers color/type/gate/link/archive)
+    // (selection toolbar + minimap removed per feedback — right-click context menu covers color/type/gate/link/archive)
     { const eb = document.getElementById('empty-state'); if (eb) eb.hidden = !(map() && !map().nodes.length); }   // first-run hint on an empty map
     renderLint();   // live validation badge (last tail consumer)
   }
@@ -610,10 +574,9 @@
     const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
     if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); }   // top level: float a window; inside a window: drill in place
   }
-  function onNodeOpen(d, ev) {   // double-click: drill into a link node (immersive, Shift/Cmd = notes) · else open the edit panel
+  function onNodeOpen(d, ev) {   // double-click ALWAYS opens the edit panel (single-click a link node still navigates into its sub-map)
     const live = byId(d.id); if (!live) return; d = live;
-    if (d.link_map && !(ev && (ev.shiftKey || ev.metaKey || ev.ctrlKey))) drillTo(d.link_map);   // immersive drill (switchMap already fits + breadcrumb climbs back)
-    else { closeCtx(); openEditor(d); }
+    closeCtx(); openEditor(d);
   }
 
   // ---- drag-to-connect ----
@@ -956,7 +919,7 @@
     const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
     if (!isFinite(k) || k <= 0 || !isFinite(cx) || !isFinite(cy)) return;   // never push a NaN/degenerate transform
     const t = d3.zoomIdentity.translate(w / 2 - k * cx, h / 2 - k * cy).scale(k);
-    if (instant) { svgN.__zoom = t; canvas.attr('transform', t); updateZoomHud(); document.body.classList.toggle('lod-far', t.k < 0.55); }   // set d3 zoom state directly (reliable, synchronous) so the very next render() culls to the fitted viewport
+    if (instant) { svgN.__zoom = t; canvas.attr('transform', t); document.body.classList.toggle('lod-far', t.k < 0.55); }   // set d3 zoom state directly (reliable, synchronous) so the very next render() culls to the fitted viewport
     else svg.transition().duration(400).call(zoom.transform, t);   // animated for the Fit button
   }
   function zoomTo(scale) {   // zoom to an absolute level, keeping the current viewport center
@@ -1410,12 +1373,6 @@
   // ---- wire UI ----
   document.getElementById('mapsel').onchange = e => jumpMap(e.target.value);
   document.getElementById('fit').onclick = fit;
-  document.getElementById('zoom-fit').onclick = fit;
-  document.getElementById('zoom-50').onclick = () => zoomTo(0.5);
-  document.getElementById('zoom-100').onclick = () => zoomTo(1);
-  document.getElementById('zoom-200').onclick = () => zoomTo(2);
-  document.getElementById('zoom-sel').onclick = zoomToSelection;
-  document.getElementById('minimap-toggle').onclick = () => { minimapCollapsed = !minimapCollapsed; document.getElementById('minimap').classList.toggle('minimized', minimapCollapsed); document.getElementById('minimap-toggle').textContent = minimapCollapsed ? '+' : '−'; if (!minimapCollapsed) updateMinimap(); };
   document.getElementById('tidy').onclick = tidyLayout;
   document.getElementById('addnode').onclick = () => { const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); };
   document.getElementById('addmap').onclick = addMapPrompt;
