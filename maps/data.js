@@ -78,7 +78,7 @@ window.MAPS = {
           "from": "n-jt01",
           "to": "n-shp01",
           "label": "completed",
-          "bend": -57,
+          "bend": -82,
           "color": null,
           "route": "bezier"
         }
