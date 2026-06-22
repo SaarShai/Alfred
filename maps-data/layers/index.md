@@ -2,10 +2,7 @@
 nid: lay001
 title: "Layers"
 type: map
-nodes: [front-layer, middle-layer, back-layer, test]
-edges:
-  - {from: back-layer, to: front-layer, label: ""}
-  - {from: front-layer, to: test, label: "", bend: 19}
+nodes: []
 ---
 # Layers
 

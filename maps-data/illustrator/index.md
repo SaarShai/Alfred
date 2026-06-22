@@ -2,7 +2,7 @@
 nid: ill001
 title: "Illustrator"
 type: map
-nodes: [start, layers, test, tester]
+nodes: []
 ---
 # Illustrator
 

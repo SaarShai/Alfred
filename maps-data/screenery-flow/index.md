@@ -2,15 +2,7 @@
 nid: m-scrn01
 title: "Screenery — Operating Flow"
 type: map
-nodes: [confirm-order, open-job, colour-stock-check, handoff, schedule-run, produce-log, reconcile-stock, ship-close]
-edges:
-  - {from: open-job, to: colour-stock-check, label: "breakdown frozen"}
-  - {from: colour-stock-check, to: handoff, label: "colour OK"}
-  - {from: handoff, to: schedule-run, label: "schedule"}
-  - {from: schedule-run, to: produce-log, label: "start production"}
-  - {from: produce-log, to: reconcile-stock, label: "sheets used"}
-  - {from: reconcile-stock, to: ship-close, label: ""}
-  - {from: confirm-order, to: open-job, label: "open row + files"}
+nodes: []
 ---
 # Screenery — Operating Flow
 
