@@ -2,8 +2,8 @@
 nid: nsxxbl
 title: "test"
 type: step
-x: 628
-y: -5
+x: 674
+y: -60
 ---
 
 # test

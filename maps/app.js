@@ -12,7 +12,8 @@
   let dragMoved = false;                              // did the current node-drag actually move? (a plain click fires d3 start→end with no move → no bounce/save)
   let showLanes = false;
   let pendingMaps = null;                            // SSE queued during a gesture
-  let clickTimer = null, lastClickId = null;         // single-click debounced against dblclick (id-based, since render() recreates the element between native clicks)
+  let clickTimer = null;                             // single-click navigation, debounced against double-tap
+  let lastTapId = null, lastTapAt = 0, suppressClick = false;   // double-tap (→ edit) detected on pointerdown (capture, stable svg) by id+timing — robust against render() recreating the node element
   let portArmed = false;                             // true only while a port actually started a wire — so a plain port tap doesn't swallow the node click
   let dragId = null;                                 // id of the node currently being dragged (re-applies the 'grabbing' lift across render()'s per-tick rebuild)
   let dragging = false;                              // node-move in progress (guards mid-drag SSE)
@@ -302,16 +303,16 @@
       .attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => 'Node: ' + d.name + ' (' + d.type + ')')   // a11y: focusable + labelled
       .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectClick(e, d.id); render(); onNodeOpen(d); } })   // keyboard activate = open
       .on('click', (e, d) => {
-        if (clickTimer && lastClickId === d.id) { clearTimeout(clickTimer); clickTimer = null; lastClickId = null; onNodeOpen(d, e); return; }   // 2nd click on the same node = double-click → edit (id-based: render() recreates the element so the native dblclick can't fire)
+        if (suppressClick) { suppressClick = false; return; }   // trailing click(s) of a double-tap — editor already opening
         ripple(d.x, d.y, accent(d)); selectClick(e, d.id); render();
-        lastClickId = d.id; clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; lastClickId = null; onNodeClick(d); }, 260);   // defer single-click navigation so a 2nd click can promote to double-click
+        clearTimeout(clickTimer); clickTimer = setTimeout(() => { clickTimer = null; onNodeClick(d); }, 430);   // defer single-click navigation PAST the 400ms double-tap window so a double-tap (handled on pointerdown) reliably pre-empts it
       })
-      .on('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); })   // native dblclick is unreliable (element recreated between clicks) — handled in the click handler above
+      .on('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); })   // double-tap handled on svgN pointerdown (capture) — native dblclick is unreliable (element recreated between clicks)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragMoved = false; dragId = d.id; snapCands = snapCandsFor(d); document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
-        .on('drag', function (e, d) { if (wire && wire.active) return; dragMoved = true; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; checkSnap(d); } scheduleRender(); })
-        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (dragMoved && !group) { const s = checkSnap(d); if (s) { d.x = s.x; d.y = s.y; } d.x = Math.round(d.x); d.y = Math.round(d.y); } if (snapGuide) { snapGuide.remove(); snapGuide = null; } snapCands = null; dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (dragMoved && SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: Math.round(d.x), y: Math.round(d.y) }).then(flushPending); } else flushPending(); }));   // no drop-bounce (it restarted on each post-save re-render → jitter); save ONLY on a real move; round so the optimistic position matches the server's
+        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragMoved = false; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
+        .on('drag', function (e, d) { if (wire && wire.active) return; dragMoved = true; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; } scheduleRender(); })   // free-form placement (no align-snap)
+        .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (dragMoved && !group) { d.x = Math.round(d.x); d.y = Math.round(d.y); } if (snapGuide) { snapGuide.remove(); snapGuide = null; } dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (dragMoved && SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: Math.round(d.x), y: Math.round(d.y) }).then(flushPending); } else flushPending(); }));   // drop exactly where released; save only on a real move; round to whole px to match the server
 
     sel.each(function (d) {
       const g = d3.select(this), { hw, hh } = baseHalf(d), col = accent(d);   // draw at base size; the node g carries scale()
@@ -668,6 +669,17 @@
   svgN.addEventListener('pointerdown', e => {
     const nodeEl = e.target.closest && e.target.closest('.node');
     if (!nodeEl || (e.target.closest && e.target.closest('.port-hit'))) return;
+    const dd = d3.select(nodeEl).datum();
+    if (dd) {   // DOUBLE-TAP a node → open the edit panel. Detected here (stable svg, capture phase) by id+timing, before render() can recreate the element.
+      if (lastTapId === dd.id && (e.timeStamp - lastTapAt) < 400) {
+        lastTapId = null; lastTapAt = 0;
+        suppressClick = true; setTimeout(() => { suppressClick = false; }, 450);   // eat the trailing click(s); auto-clear so it can't get stuck if no click fires
+        clearTimeout(clickTimer); clickTimer = null; clearTimeout(longPressTimer); longPressTimer = null;
+        closeCtx(); openEditor(byId(dd.id) || dd);
+        return;
+      }
+      lastTapId = dd.id; lastTapAt = e.timeStamp;
+    }
     longPressTimer = setTimeout(() => { longPressTimer = null; const d = d3.select(nodeEl).datum(); if (d) { clearTimeout(clickTimer); clickTimer = null; openCtx({ clientX: e.clientX, clientY: e.clientY, preventDefault() {} }, d); } }, 500);
   }, true);
   ['pointermove', 'pointerup', 'pointercancel'].forEach(t => svgN.addEventListener(t, () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }));
