@@ -1545,11 +1545,13 @@
     cg.onblur = () => { if (ctxNode) nodeStyle({ gate: cg.value.trim() }); }; }
   document.getElementById('ed-close').onclick = closeEditor;
   document.getElementById('ed-save').onclick = saveDoc;
-  document.getElementById('ed-text').addEventListener('input', e => {   // live ref chips + inline [[ autocomplete
+  let autosaveTimer = null;
+  document.getElementById('ed-text').addEventListener('input', e => {   // live ref chips + inline [[ autocomplete + debounced autosave
     renderRefs(e.target.value);
     const ta = e.target, pos = ta.selectionStart, before = ta.value.slice(0, pos);
     if (before.endsWith('[[')) openCitationPicker(ta, pos);
     else if (citationPicker) { const mm = before.match(/\[\[([^\]\n]*)$/); if (mm) renderKpList(mm[1]); else closeCitationPicker(); }
+    if (edPath) { clearTimeout(autosaveTimer); document.getElementById('ed-msg').textContent = 'Saving…'; autosaveTimer = setTimeout(saveDoc, 800); }
   });
   document.getElementById('libtoggle').onclick = toggleLibrary;
   document.getElementById('kp-x').onclick = closeKnowPick;

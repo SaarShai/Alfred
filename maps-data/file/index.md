@@ -2,7 +2,7 @@
 nid: mbuq47
 title: "FILE"
 type: map
-nodes: [front-layer]
+nodes: [front-layer, middle-layer, back-layer]
 ---
 
 # FILE
