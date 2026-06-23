@@ -51,6 +51,26 @@ function setChildren(file, slugs) {
   else txt = txt.replace(/^---\n([\s\S]*?)\n---/, (full, inner) => '---\n' + inner + '\n' + line + '\n---');
   fs.writeFileSync(file, txt);
 }
+// write node metadata (summary/status/tags) into the frontmatter block only, in one pass.
+// frontmatter is the source of truth; a body line with the same key is never touched.
+function setMeta(abs, d) {
+  let txt = fs.readFileSync(abs, 'utf8');
+  const m = txt.match(/^(---\n)([\s\S]*?)(\n---)/);
+  if (!m) throw new Error('no frontmatter');
+  let fm = m[2];
+  const set = (key, val) => {
+    const re = new RegExp('^' + key + ':[^\\n]*$', 'm');
+    if (val == null || val === '') fm = fm.replace(new RegExp('^' + key + ':[^\\n]*\\n?', 'm'), '');   // clear
+    else if (re.test(fm)) fm = fm.replace(re, () => key + ': ' + val);                                 // replace
+    else fm = fm + '\n' + key + ': ' + val;                                                            // append within fm
+  };
+  if (d.summary !== undefined) set('summary', d.summary && String(d.summary).trim() ? JSON.stringify(String(d.summary).trim()) : '');
+  if (d.status !== undefined) set('status', d.status && String(d.status).trim() ? String(d.status).trim().toLowerCase() : '');
+  if (d.tags !== undefined) { const tg = (Array.isArray(d.tags) ? d.tags : []).map(t => String(t).trim().toLowerCase().replace(/,/g, '')).filter(Boolean); set('tags', tg.length ? '[' + tg.join(', ') + ']' : ''); }
+  if (/^updated:/m.test(fm)) set('updated', today());   // bump updated only if the node already tracks it (pursuits convention)
+  txt = txt.slice(0, m.index) + m[1] + fm + m[3] + txt.slice(m.index + m[0].length);
+  fs.writeFileSync(abs, txt);
+}
 // turn a leaf "<slug>.md" into a branch "<slug>/index.md" so it can hold children
 function leafToBranch(file) {
   const dir = file.replace(/\.md$/, '');
@@ -270,6 +290,26 @@ http.createServer((req, res) => {
           const trees = JSON.parse(raw);
           broadcast(trees);
           json(res, { ok: true, title: titleOf(content), trees });
+        });
+      } catch (e) { json(res, { ok: false, error: String(e.message || e) }, 400); }
+    });
+    return;
+  }
+
+  if (p === '/api/node-meta' && req.method === 'POST') {
+    let b = ''; req.on('data', c => b += c);
+    req.on('end', () => {
+      try {
+        const d = JSON.parse(b || '{}');
+        const abs = safePursuits(d.path);
+        if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
+        setMeta(abs, d);
+        rebuild(err => {
+          if (err) return json(res, { ok: false, error: 'build failed: ' + err.message }, 500);
+          const raw = fs.readFileSync(path.join(DASH, 'data.js'), 'utf8').replace(/^window\.TREES = /, '').replace(/;\s*$/, '');
+          const trees = JSON.parse(raw);
+          broadcast(trees);
+          json(res, { ok: true, trees });
         });
       } catch (e) { json(res, { ok: false, error: String(e.message || e) }, 400); }
     });

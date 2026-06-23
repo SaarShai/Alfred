@@ -175,8 +175,8 @@
     // settings (gear) icon — above the doc icon — opens the size dialog
     const gear = nodeEnter.append('g').attr('class', 'gearbtn')
       .attr('transform', d => 'translate(' + (W(d) / 2 - 2) + ',-18)')
-      .on('click', (e, d) => { e.stopPropagation(); openSizePop(e, d); });
-    gear.append('title').text('Size');
+      .on('click', (e, d) => { e.stopPropagation(); openNodeInfo(e, d); });
+    gear.append('title').text('Node info');
     gear.append('circle').attr('r', 9).attr('fill', colorOf);
     gear.append('text').attr('text-anchor', 'middle').attr('dy', '0.32em').attr('font-size', 11).attr('fill', '#fff').text('⚙');
 
@@ -244,6 +244,11 @@
       renderTree(s, s.root);
     });
     if (dirty) saveOffsets();
+    if (!document.getElementById('nodeinfo').hidden && niKey) {   // keep an open panel bound to the live (rebuilt) node; don't clobber an in-progress edit
+      const d = niResolve(niKey);
+      if (!d) closeSizePop();
+      else { infoNode = d; sizeNode = d; const ae = document.activeElement; if (!(ae && ae.closest && ae.closest('#nodeinfo'))) buildNodeInfo(d); }
+    }
   }
 
   function refresh(source) {
@@ -340,18 +345,83 @@
     } catch (e) { msg.textContent = 'Error: ' + e.message; }
   }
 
-  // ---- per-node size dialog ----
-  let sizeNode = null;
-  function openSizePop(e, d) {
-    sizeNode = d;
-    const pop = document.getElementById('sizepop');
+  // ---- per-node info panel: status · tags · summary · connections + size/highlight/rename/archive ----
+  let sizeNode = null;                                  // kept name — nudgeScale/toggleHilite/renameNode/archiveNode operate on it
+  let infoNode = null, niKey = null, niFocusTag = false;
+  const NI_STATUS = { note: { label: 'Note', color: 'var(--muted)' }, active: { label: 'Active', color: 'var(--c2)' }, blocked: { label: 'Blocked', color: 'var(--c4)' }, done: { label: 'Done', color: 'var(--c0)' } };
+  function niEl(tag, cls) { const el = document.createElement(tag); if (cls) el.className = cls; return el; }
+  function openNodeInfo(e, d) { sizeNode = d; infoNode = d; niKey = keyOf(d); buildNodeInfo(d); document.getElementById('nodeinfo').hidden = false; }
+  function closeSizePop() { document.getElementById('nodeinfo').hidden = true; sizeNode = null; infoNode = null; niKey = null; }   // name kept: existing callers (renameNode/archiveNode/Escape) reuse it
+  async function saveNodeMeta(patch) {
+    if (!SERVER || !infoNode) return;
+    try { await fetch('/api/node-meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ path: repoRel(infoNode.data.url) }, patch)) }); }
+    catch (_) {}   // the SSE broadcast refreshes the tree; the panel was already updated optimistically
+  }
+  function centerOnNode(d) {
+    const s = states[d.ti]; if (!s || d.hx === undefined) return;
+    const X = MARGIN_L + d.hx, Y = s.yOffset + d.vy, k = d3.zoomTransform(svg.node()).k || 1;
+    svg.transition().duration(420).call(zoom.transform, d3.zoomIdentity.translate(window.innerWidth / 2 - k * X, window.innerHeight / 2 - k * Y).scale(k));
+  }
+  function niResolve(key) { let found = null; states.forEach(s => s.root.each(d => { if (keyOf(d) === key) found = d; })); return found; }
+  function niGoto(targetKey) {
+    let t = niResolve(targetKey), a = t && t.parent, need = false;   // expand ancestors so a collapsed target lays out + shows
+    while (a) { if (a._children && !a.children) { a.children = a._children; need = true; } a = a.parent; }
+    const go = () => { const d = niResolve(targetKey); if (!d) return; openNodeInfo(null, d); centerOnNode(d); };
+    if (need && t) { refresh(t.parent || t); setTimeout(go, 40); } else go();
+  }
+  function niConnSection(title, nodes) {
+    const wrap = niEl('div'); const h = niEl('div', 'ni-sec-lbl'); h.textContent = title; wrap.appendChild(h);
+    nodes.forEach(n => {
+      const row = niEl('div', 'ni-connrow'); row.title = 'Go to "' + n.data.name + '"';
+      const dot = niEl('span', 'ni-conndot'); dot.style.background = colorOf(n); row.appendChild(dot);
+      const nm = niEl('span', 'ni-connname'); nm.textContent = n.data.name; row.appendChild(nm);
+      const kc = (n.children || n._children || []).length; if (kc) { const c = niEl('span', 'ni-connkind'); c.textContent = kc; row.appendChild(c); }
+      row.onclick = () => niGoto(keyOf(n));
+      wrap.appendChild(row);
+    });
+    return wrap;
+  }
+  function buildNodeInfo(d) {
+    document.getElementById('ni-name').textContent = d.data.name;
+    document.getElementById('ni-glyph').style.background = colorOf(d);
+    // status pills (server) or a read-only pill
+    const sbox = document.getElementById('ni-status'); sbox.innerHTML = '';
+    if (SERVER) {
+      Object.keys(NI_STATUS).forEach(s => {
+        const b = niEl('button', 'ni-status' + (d.data.status === s ? ' on' : '')); b.textContent = NI_STATUS[s].label;
+        if (d.data.status === s) b.style.background = NI_STATUS[s].color;
+        b.onclick = () => { const nv = d.data.status === s ? null : s; d.data.status = nv || undefined; saveNodeMeta({ status: nv || '' }); buildNodeInfo(d); };
+        sbox.appendChild(b);
+      });
+    } else if (d.data.status) {
+      const meta = NI_STATUS[d.data.status] || { label: d.data.status, color: 'var(--muted)' };
+      const pill = niEl('span', 'ni-status on'); pill.textContent = meta.label; pill.style.background = meta.color; sbox.appendChild(pill);
+    }
+    // summary (save on blur)
+    const ta = document.getElementById('ni-summary'); ta.value = d.data.summary || ''; ta.readOnly = !SERVER;
+    ta.onblur = SERVER ? () => { const v = ta.value.trim(); if ((d.data.summary || '') !== v) { d.data.summary = v || undefined; saveNodeMeta({ summary: v }); } } : null;
+    // tags (chips + add)
+    const tbox = document.getElementById('ni-tags'); tbox.innerHTML = '';
+    (d.data.tags || []).forEach(tg => {
+      const chip = niEl('span', 'ni-tag'); chip.appendChild(document.createTextNode(tg));
+      if (SERVER) { const x = niEl('b'); x.textContent = '×'; x.title = 'Remove'; x.onclick = () => { d.data.tags = (d.data.tags || []).filter(z => z !== tg); saveNodeMeta({ tags: d.data.tags }); buildNodeInfo(d); }; chip.appendChild(x); }
+      tbox.appendChild(chip);
+    });
+    if (SERVER) {
+      const inp = niEl('input', 'ni-taginput ni-edit'); inp.placeholder = '+ tag'; inp.autocomplete = 'off'; inp.spellcheck = false;
+      inp.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); const v = inp.value.trim().toLowerCase().replace(/,/g, ''); if (!v) return; d.data.tags = [...(d.data.tags || []), v].filter((z, i, arr) => arr.indexOf(z) === i); saveNodeMeta({ tags: d.data.tags }); niFocusTag = true; buildNodeInfo(d); } else if (ev.key === 'Escape') inp.blur(); };
+      tbox.appendChild(inp);
+    }
+    if (niFocusTag) { niFocusTag = false; const ti = tbox.querySelector('.ni-taginput'); if (ti) ti.focus(); }
+    // connections — parent + children (the tree's edges)
+    const nav = document.getElementById('ni-nav'); nav.innerHTML = '';
+    const kids = d.children || d._children || [];
+    if (d.parent) nav.appendChild(niConnSection('Parent', [d.parent]));
+    if (kids.length) nav.appendChild(niConnSection('Children', kids));
+    // existing controls
     document.getElementById('size-val').textContent = Math.round((d.scale || 1) * 100) + '%';
     updateHlBtn();
-    pop.style.left = Math.min(window.innerWidth - 170, (e.clientX || window.innerWidth / 2) + 8) + 'px';
-    pop.style.top = Math.min(window.innerHeight - 130, (e.clientY || 80) + 8) + 'px';
-    pop.hidden = false;
   }
-  function closeSizePop() { document.getElementById('sizepop').hidden = true; sizeNode = null; }
   async function renameNode() {
     if (!sizeNode || !SERVER) return;
     const cur = sizeNode.data.name;
@@ -419,7 +489,9 @@
   document.getElementById('size-hl').onclick = toggleHilite;
   document.getElementById('size-rename').onclick = renameNode;
   document.getElementById('size-archive').onclick = archiveNode;
-  document.addEventListener('click', e => { const pop = document.getElementById('sizepop'); if (!pop.hidden && !pop.contains(e.target)) closeSizePop(); });
+  document.getElementById('ni-close').onclick = closeSizePop;
+  document.getElementById('ni-notes').onclick = () => { const d = infoNode; closeSizePop(); if (d) openEditor(d); };
+  document.addEventListener('click', e => { const pop = document.getElementById('nodeinfo'); if (!pop.hidden && !pop.contains(e.target) && !e.target.closest('.gearbtn')) closeSizePop(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeModal(); closeEditor(); closeSizePop(); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !document.getElementById('editor').hidden) { e.preventDefault(); saveDoc(); }

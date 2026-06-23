@@ -24,11 +24,18 @@ function frontmatter(file) {
   const title = (fm.match(/^title:\s*(.+)$/m) || [])[1];
   const childLine = (fm.match(/^children:\s*\[(.*)\]\s*$/m) || [])[1];
   const nid = (fm.match(/^nid:\s*(.+)$/m) || [])[1];
+  const summary = (fm.match(/^summary:\s*(.+)$/m) || [])[1];
+  const status = (fm.match(/^status:\s*(.+)$/m) || [])[1];
+  const tagLine = (fm.match(/^tags:\s*\[(.*)\]\s*$/m) || [])[1];
   const h1 = (txt.match(/^#\s+(.+)$/m) || [])[1];
+  const st = clean(status);
   return {
     title: clean(title) || (h1 && h1.trim()) || null,
     nid: clean(nid),
     children: childLine ? childLine.split(',').map(s => s.trim()).filter(Boolean) : [],
+    summary: clean(summary) || null,                                    // 1-line purpose (NodeInfo panel)
+    status: st ? st.toLowerCase() : null,                               // tolerant: lowercased; null when absent
+    tags: tagLine ? tagLine.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [],
   };
 }
 function clean(s) { return s == null ? null : s.trim().replace(/^["']|["']$/g, ''); }
@@ -95,6 +102,9 @@ function build(baseDir, slug, trail) {
     id: ensureNid(r.file, fm.nid),
     url: path.relative(DASH, r.file),
   };
+  if (fm.summary) node.summary = fm.summary;                 // surfaced in the NodeInfo panel
+  if (fm.status) node.status = fm.status;
+  if (fm.tags && fm.tags.length) node.tags = fm.tags;
   if (r.dir && fm.children.length) {
     node.children = fm.children.map(c => build(r.dir, c, slug)).filter(Boolean);
     if (!node.children.length) delete node.children;
