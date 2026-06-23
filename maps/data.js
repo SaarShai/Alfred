@@ -1,33 +1,10 @@
 window.MAPS = {
   "order": [
-    "orders-operations",
-    "screenery-flow",
     "illustrator",
-    "layers",
     "finalizing-file",
     "file"
   ],
   "maps": {
-    "orders-operations": {
-      "slug": "orders-operations",
-      "id": "m-ords01",
-      "title": "Orders Operations",
-      "kind": "process",
-      "url": "../maps-data/orders-operations/index.md",
-      "nodes": [],
-      "edges": [],
-      "frames": []
-    },
-    "screenery-flow": {
-      "slug": "screenery-flow",
-      "id": "m-scrn01",
-      "title": "Screenery — Operating Flow",
-      "kind": "process",
-      "url": "../maps-data/screenery-flow/index.md",
-      "nodes": [],
-      "edges": [],
-      "frames": []
-    },
     "illustrator": {
       "slug": "illustrator",
       "id": "ill001",
@@ -78,16 +55,6 @@ window.MAPS = {
           "url": "../maps-data/illustrator/file.md"
         }
       ],
-      "edges": [],
-      "frames": []
-    },
-    "layers": {
-      "slug": "layers",
-      "id": "lay001",
-      "title": "Layers",
-      "kind": "process",
-      "url": "../maps-data/layers/index.md",
-      "nodes": [],
       "edges": [],
       "frames": []
     },
@@ -446,8 +413,8 @@ window.MAPS = {
         },
         {
           "id": "nn5tcr",
-          "slug": "panels",
-          "name": "PANELS",
+          "slug": "panels-3-panel-modular",
+          "name": "PANELS (3-panel modular)",
           "type": "step",
           "summary": null,
           "icon": null,
@@ -463,7 +430,28 @@ window.MAPS = {
           "scale": 1,
           "hl": false,
           "color": null,
-          "url": "../maps-data/file/panels.md"
+          "url": "../maps-data/file/panels-3-panel-modular.md"
+        },
+        {
+          "id": "ns8gr5",
+          "slug": "illustrator-file",
+          "name": "Illustrator FILE",
+          "type": "step",
+          "summary": null,
+          "icon": null,
+          "tags": [],
+          "status": null,
+          "refs": [],
+          "refsCollapsed": false,
+          "x": 639,
+          "y": 340,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/file/illustrator-file.md"
         }
       ],
       "edges": [],
