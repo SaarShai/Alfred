@@ -1,9 +1,9 @@
 ---
-nid: nj6q05
-title: "SPLIT files"
+nid: nimjtv
+title: "CHECK"
 type: step
-x: 1601
-y: 491
+x: 1352
+y: 488
 ---
 
 # SPLIT files
