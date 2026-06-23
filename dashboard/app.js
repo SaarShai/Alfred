@@ -507,7 +507,7 @@
     }
   }).catch(() => { SERVER = false; })
     .finally(() => { document.body.classList.toggle('server', SERVER); document.body.classList.add('checked'); });
-  buildStates(window.TREES);
-  refresh(null);
+  try { buildStates(window.TREES); refresh(null); document.body.classList.add('d3-canvas-ready'); }   // headless-test signal: first paint done (tools/validate_canvas.py)
+  catch (e) { document.body.classList.add('d3-canvas-error'); throw e; }
   setTimeout(fit, 60);
 })();
