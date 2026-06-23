@@ -467,7 +467,17 @@ window.MAPS = {
         }
       ],
       "edges": [],
-      "frames": []
+      "frames": [
+        {
+          "id": "fr5kmf5",
+          "label": "STANDARD 3-panels model",
+          "x": 232,
+          "y": 847,
+          "w": 363,
+          "h": 248,
+          "color": 0
+        }
+      ]
     }
   },
   "issues": []
