@@ -46,5 +46,6 @@ window.MAPS = {
       "edges": [],
       "frames": []
     }
-  }
+  },
+  "issues": []
 };

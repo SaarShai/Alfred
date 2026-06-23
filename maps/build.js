@@ -15,8 +15,16 @@ const ROOT = path.resolve(MAPS, '..');        // repo root
 const SRC = path.join(ROOT, 'maps-data');
 const OUT = path.join(MAPS, 'data.js');
 
-const warnings = [];
+const issues = [];   // structured, surfaced in window.MAPS.issues (was a flat `warnings` string[])
+function issue(map, msg, level, node) { issues.push({ map: map || null, node: node || null, level: level || 'warn', msg: msg }); }
 let nodeCount = 0;
+
+// tolerant validation — canonical node types + the aliases hand/LLM edits commonly produce.
+// An unknown type/status is normalized (or cleared) and logged, never left to silently mis-render.
+const TYPE_CANON = ['step', 'decision', 'subprocess-link', 'reference'];
+const TYPE_ALIASES = { task: 'step', process: 'step', action: 'step', activity: 'step', state: 'step', branch: 'decision', condition: 'decision', choice: 'decision', if: 'decision', gateway: 'decision', link: 'subprocess-link', subprocess: 'subprocess-link', submap: 'subprocess-link', 'sub-map': 'subprocess-link', sublink: 'subprocess-link', ref: 'reference', source: 'reference', sot: 'reference', doc: 'reference', document: 'reference' };
+const STATUS_CANON = ['draft', 'active', 'blocked', 'done'];
+const STATUS_ALIASES = { draft: 'draft', todo: 'draft', planned: 'draft', backlog: 'draft', active: 'active', wip: 'active', 'in-progress': 'active', inprogress: 'active', doing: 'active', current: 'active', blocked: 'blocked', stuck: 'blocked', waiting: 'blocked', onhold: 'blocked', 'on-hold': 'blocked', done: 'done', complete: 'done', completed: 'done', shipped: 'done' };
 
 // unquote a frontmatter scalar. JSON.stringify'd values (title:/gate:) decode via JSON.parse; bare values strip one quote pair.
 function clean(s) { if (s == null) return null; s = String(s).trim(); if (/^".*"$/s.test(s)) { try { return JSON.parse(s); } catch (_) {} } return s.replace(/^["']|["']$/g, ''); }
@@ -68,7 +76,7 @@ function ensureNid(file, fm, prefix) {
 
 function readNode(mapSlug, nodeSlug) {
   const file = path.join(SRC, mapSlug, nodeSlug + '.md');
-  if (!fs.existsSync(file)) { warnings.push('missing node: ' + mapSlug + '/' + nodeSlug); return null; }
+  if (!fs.existsSync(file)) { issue(mapSlug, 'missing node "' + nodeSlug + '"', 'warn', nodeSlug); return null; }
   const txt = fs.readFileSync(file, 'utf8');
   const fm = fmBlock(txt);
   const nid = ensureNid(file, fm, 'n');
@@ -76,12 +84,32 @@ function readNode(mapSlug, nodeSlug) {
   const x = Number(field(fm, 'x')); const y = Number(field(fm, 'y'));
   const scale = Number(field(fm, 'scale')); const color = field(fm, 'color');
   const body = txt.replace(/^---\n[\s\S]*?\n---\n?/, '');   // body sans frontmatter — for [[wiki]] citations
+
+  // ---- tolerant field normalization (drop-broken-keep-rest) ----
+  let type = field(fm, 'type') || 'step';
+  if (type !== 'step') {
+    const lc = String(type).toLowerCase();
+    if (TYPE_CANON.includes(lc)) type = lc;
+    else if (TYPE_ALIASES[lc]) { issue(mapSlug, nodeSlug + ': type "' + type + '" → "' + TYPE_ALIASES[lc] + '"', 'fixed', nodeSlug); type = TYPE_ALIASES[lc]; }
+    else { issue(mapSlug, nodeSlug + ': unknown type "' + type + '" → "step"', 'fixed', nodeSlug); type = 'step'; }
+  }
+  let status = field(fm, 'status');
+  if (status) { const s = STATUS_ALIASES[String(status).toLowerCase()]; if (s) status = s; else { issue(mapSlug, nodeSlug + ': unknown status "' + status + '" → cleared', 'fixed', nodeSlug); status = null; } }
+  const tags = listField(fm, 'tags').map(t => t.trim().toLowerCase()).filter(Boolean);
+  const summary = field(fm, 'summary') || null;
+  let colorIx = null;   // palette-index override of lane/type accent
+  if (color != null && color !== '') { const c = Math.trunc(+color); if (Number.isFinite(c) && c >= 0) colorIx = c; else issue(mapSlug, nodeSlug + ': bad color "' + color + '" → cleared', 'fixed', nodeSlug); }
+  const sc = Number.isFinite(scale) && scale > 0 ? Math.min(4, scale) : 1;   // clamp upper so a corrupt scale can't blow up layout
+
   nodeCount++;
   return {
     id: nid,
     slug: nodeSlug,
     name: field(fm, 'title') || (h1 && h1.trim()) || nodeSlug,
-    type: field(fm, 'type') || 'step',
+    type,
+    summary,                                     // 1-line purpose (NodeInfo panel + tooltip)
+    tags,                                        // lowercase-hyphenated keywords (search / filter)
+    status,                                      // draft | active | blocked | done (or null)
     refs: refsOf(body),                          // [{target,label}] — knowledge this node cites (rendered as a tray below it)
     refsCollapsed: field(fm, 'refs_collapsed') === 'true',   // tray box collapsed?
 
@@ -90,16 +118,16 @@ function readNode(mapSlug, nodeSlug) {
     lane: field(fm, 'lane') || null,
     link_map: field(fm, 'link_map') || null,
     gate: field(fm, 'gate') || null,            // per-stage pass/fail check (for the loop-spec export)
-    scale: Number.isFinite(scale) && scale > 0 ? scale : 1,
+    scale: sc,
     hl: field(fm, 'hl') === 'true',
-    color: color != null && color !== '' ? +color : null,   // palette-index override of lane/type accent
+    color: colorIx,
     url: path.relative(MAPS, file),
   };
 }
 
 function readMap(mapSlug) {
   const idx = path.join(SRC, mapSlug, 'index.md');
-  if (!fs.existsSync(idx)) { warnings.push('missing map index: ' + mapSlug); return null; }
+  if (!fs.existsSync(idx)) { issue(mapSlug, 'missing map index', 'warn'); return null; }
   const txt = fs.readFileSync(idx, 'utf8');
   const fm = fmBlock(txt);
   const mid = ensureNid(idx, fm, 'm');
@@ -109,11 +137,16 @@ function readMap(mapSlug) {
   // seed any node missing x/y onto a simple staggered grid so it's never stacked at origin
   let gi = 0;
   nodes.forEach(n => { if (n.x == null || n.y == null) { n.x = 120 + (gi % 5) * 240; n.y = 120 + Math.floor(gi / 5) * 160; gi++; } });
+  const seenEdge = new Set();
   const edges = edgesField(fm).map(e => {
     const from = bySlug[e.from], to = bySlug[e.to];
-    if (!from) warnings.push('edge from unknown node: ' + mapSlug + '/' + e.from);
-    if (!to) warnings.push('edge to unknown node: ' + mapSlug + '/' + e.to);
-    return (from && to) ? { from, to, label: e.label || '', bend: e.bend || 0, color: e.color != null ? e.color : null, route: e.route || 'bezier' } : null;
+    if (!from) issue(mapSlug, 'edge from unknown node "' + e.from + '" — dropped', 'warn');
+    if (!to) issue(mapSlug, 'edge to unknown node "' + e.to + '" — dropped', 'warn');
+    if (!from || !to) return null;                         // drop-broken-keep-rest: a dangling edge never breaks the map
+    const k = from + '>' + to;
+    if (seenEdge.has(k)) { issue(mapSlug, 'duplicate edge ' + e.from + ' → ' + e.to + ' — dropped', 'fixed'); return null; }
+    seenEdge.add(k);
+    return { from, to, label: e.label || '', bend: e.bend || 0, color: e.color != null ? e.color : null, route: e.route || 'bezier' };
   }).filter(Boolean);
   const frames = framesField(fm);
   const kind = field(fm, 'kind') || 'process';   // 'reference' = a SoT library map (no flow / workflow)
@@ -121,15 +154,15 @@ function readMap(mapSlug) {
 }
 
 // Build maps/data.js from maps-data/. Callable in-process (serve.js) AND as a CLI.
-// Returns the {order, maps} object so the server can broadcast it without re-reading data.js.
+// Returns { order, maps, issues } so the server can broadcast it without re-reading data.js.
 function build() {
-  warnings.length = 0; nodeCount = 0; usedIds.clear();   // reset module state → repeated in-process builds are independent
+  issues.length = 0; nodeCount = 0; usedIds.clear();   // reset module state → repeated in-process builds are independent
   const registry = path.join(SRC, 'index.md');
   if (!fs.existsSync(registry)) throw new Error('missing maps-data/index.md');
   const order = listField(fmBlock(fs.readFileSync(registry, 'utf8')), 'maps');
   const maps = {};
   order.forEach(slug => { const m = readMap(slug); if (m) maps[slug] = m; });
-  const out = { order: order.filter(s => maps[s]), maps };
+  const out = { order: order.filter(s => maps[s]), maps, issues: issues.slice() };   // issues → surfaced in the dashboard lint panel
   fs.writeFileSync(OUT, 'window.MAPS = ' + JSON.stringify(out, null, 2) + ';\n');
   return out;
 }
@@ -139,5 +172,5 @@ module.exports = { build };
 if (require.main === module) {   // CLI: node build.js
   const out = build();
   console.log('wrote ' + path.relative(process.cwd(), OUT) + '  (' + out.order.length + ' maps, ' + nodeCount + ' nodes)');
-  if (warnings.length) { console.log('WARNINGS:'); warnings.forEach(w => console.log('  - ' + w)); }
+  if (out.issues.length) { console.log('ISSUES:'); out.issues.forEach(i => console.log('  - [' + i.level + '] ' + (i.map ? i.map + '/' : '') + i.msg)); }
 }

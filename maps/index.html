@@ -128,6 +128,43 @@
   .lint-row{padding:8px 12px;border-bottom:1px solid rgba(65,64,76,.08);font-size:var(--fs-2);color:var(--ink);cursor:default;line-height:1.4}
   .lint-row:last-child{border-bottom:none}
   .lint-row:hover{background:rgba(224,120,120,.1)}
+  /* node info panel — appears on single-select: summary · tags · status · connections (adopted from Understand-Anything's NodeInfo) */
+  #nodeinfo{position:fixed;top:64px;right:16px;z-index:40;width:300px;max-height:calc(100vh - 96px);overflow:auto;
+    background:rgba(255,255,255,.84);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
+    border:1px solid rgba(65,64,76,.14);border-radius:14px;box-shadow:var(--e3);padding:14px;display:flex;flex-direction:column;gap:9px;font-size:var(--fs-2);color:var(--ink);animation:ni-in .18s var(--spring) both}
+  #nodeinfo[hidden]{display:none}
+  @keyframes ni-in{from{opacity:0;transform:translateX(8px) scale(.98)}to{opacity:1;transform:none}}
+  body.calm #nodeinfo{animation:none}
+  @media (prefers-reduced-motion:reduce){#nodeinfo{animation:none}}
+  .ni-head{display:flex;align-items:flex-start;gap:8px}
+  .ni-glyph{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;flex:none;margin-top:1px}
+  .ni-name{flex:1;font-weight:700;font-size:var(--fs-3);line-height:1.25}
+  .ni-name[data-edit]{cursor:text}
+  .ni-name[data-edit]:hover{text-decoration:underline dotted}
+  .ni-x{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+  .ni-x:hover{color:var(--ink);background:none}
+  .ni-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .ni-lbl{font-size:var(--fs-1);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .ni-status{font-size:var(--fs-1);font-weight:700;border:none;border-radius:7px;padding:3px 8px;cursor:pointer;transition:.12s}
+  .ni-summary{width:100%;border:1px solid rgba(65,64,76,.14);border-radius:9px;padding:7px 9px;font:inherit;font-size:var(--fs-2);color:var(--ink);background:rgba(255,255,255,.55);resize:vertical;min-height:40px;line-height:1.4}
+  .ni-summary:focus{outline:none;border-color:var(--step)}
+  .ni-tags{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .ni-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(138,143,230,.13);border:1px solid rgba(138,143,230,.3);color:var(--ink);border-radius:999px;padding:2px 8px;font-size:var(--fs-1);font-weight:600}
+  .ni-tag b{cursor:pointer;opacity:.5;font-weight:800}
+  .ni-tag b:hover{opacity:1;color:#b3403a}
+  .ni-taginput{border:1px dashed rgba(65,64,76,.25);border-radius:999px;padding:2px 8px;font:inherit;font-size:var(--fs-1);width:78px;background:transparent;color:var(--ink)}
+  .ni-taginput:focus{outline:none;border-color:var(--step)}
+  .ni-sec{font-size:var(--fs-1);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+  .ni-conn{display:flex;flex-direction:column;gap:2px}
+  .ni-connrow{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:8px;cursor:pointer;transition:background .12s}
+  .ni-connrow:hover{background:rgba(138,143,230,.12)}
+  .ni-connglyph{width:15px;height:15px;border-radius:4px;display:grid;place-items:center;font-size:8px;font-weight:800;color:#fff;flex:none}
+  .ni-connname{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ni-connlbl{font-size:var(--fs-1);color:var(--muted);flex:none;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ni-foot{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(65,64,76,.1);padding-top:9px;margin-top:2px}
+  .ni-foot button{padding:6px 10px;font-size:var(--fs-1)}
+  .ni-back{margin-right:auto}
+  body:not(.server) .ni-edit{display:none}
   /* multi-map Home overview (35) */
   #home-overlay{position:fixed;inset:0;z-index:50;background:rgba(65,64,76,.22);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:24px}
   #home-overlay.open{display:flex}
@@ -534,6 +571,7 @@
   </div>
 </div>
 
+<div id="nodeinfo" hidden></div>
 <svg id="map-svg"></svg>
 <div id="status-msg" aria-live="polite" aria-atomic="true" style="position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden"></div>
 <div id="empty-state" hidden>

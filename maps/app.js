@@ -96,16 +96,17 @@
   let sseBounceTimer = null, ssePending = null;        // ssePending: accumulator { full, patches:{slug:map}, order } so a burst of per-map patches coalesces without dropping any
   function debounceSse(fn, delay) { clearTimeout(sseBounceTimer); sseBounceTimer = setTimeout(fn, delay); }
   function queueSse(d) {
-    if (!ssePending) ssePending = { full: null, patches: {}, order: null };
-    if (d && d.t === 'patch') { ssePending.patches[d.slug] = d.map; ssePending.order = d.order; }
-    else { ssePending.full = (d && d.t === 'full') ? d.maps : d; ssePending.patches = {}; }   // a full snapshot supersedes any queued patches
+    if (!ssePending) ssePending = { full: null, patches: {}, order: null, issues: undefined };
+    if (d && d.t === 'patch') { ssePending.patches[d.slug] = d.map; ssePending.order = d.order; if (d.issues !== undefined) ssePending.issues = d.issues; }
+    else { ssePending.full = (d && d.t === 'full') ? d.maps : d; ssePending.patches = {}; ssePending.issues = (d && d.t === 'full' && d.maps) ? d.maps.issues : (d ? d.issues : undefined); }   // a full snapshot supersedes any queued patches
   }
   function flushSse() {
     const q = ssePending; ssePending = null;
     if (!q) return;
     let m;
-    if (q.full) { m = q.full; if (Object.keys(q.patches).length) m = { order: q.order || m.order, maps: Object.assign({}, m.maps, q.patches) }; }
+    if (q.full) { m = q.full; if (Object.keys(q.patches).length) m = { order: q.order || m.order, maps: Object.assign({}, m.maps, q.patches), issues: m.issues }; }
     else { if (!MAPS) return; m = { order: q.order || MAPS.order, maps: Object.assign({}, MAPS.maps, q.patches) }; }   // merge patched map(s) onto the maps we already hold
+    if (q.issues !== undefined) m.issues = q.issues; else if (m.issues === undefined && MAPS) m.issues = MAPS.issues;   // carry build issues (a patch payload omits the full maps obj)
     applyMaps(m);
   }
   // (minimap + zoom-% HUD removed per feedback)
@@ -255,7 +256,7 @@
 
     // ---- edges ----
     const idMap = new Map(allNodes.map(n => [n.id, n]));                       // O(1) node lookup (was byId() O(N) per edge → O(E·N)/frame)
-    const edgeSet = new Set(edges.map(e => e.from + ' ' + e.to));         // O(1) reverse-edge test (was edges.some() O(E) per edge → O(E²)/frame)
+    const edgeSet = new Set(edges.map(e => e.from + '\u0000' + e.to));         // O(1) reverse-edge test (was edges.some() O(E) per edge → O(E²)/frame)
     edges.forEach(e => {
       const a = idMap.get(e.from), b = idMap.get(e.to); if (!a || !b) return;
       if (!visibleNodeIds.has(a.id) && !visibleNodeIds.has(b.id)) return;   // cull edges with both endpoints off-screen
@@ -264,7 +265,7 @@
       if (selfLoop) { ({ d, c1, c2 } = selfLoopPath(a, e.bend)); mid = c1; p1 = mid; p2 = mid; }   // feedback / retry edge
       else {
         p1 = rightPort(a); p2 = leftPort(b);
-        const hasReverse = edgeSet.has(e.to + ' ' + e.from);
+        const hasReverse = edgeSet.has(e.to + '\u0000' + e.from);
         const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);   // manual bend overrides the auto bidirectional bow
         ({ d, c1, c2 } = (e.route === 'smooth') ? orthStepPath(p1, p2) : edgePath(p1, p2, bow));
         mid = cubicMid(p1, c1, c2, p2);
@@ -412,7 +413,8 @@
     syncLibToggle();
     // (selection toolbar + minimap removed per feedback — right-click context menu covers color/type/gate/link/archive)
     { const eb = document.getElementById('empty-state'); if (eb) eb.hidden = !(map() && !map().nodes.length); }   // first-run hint on an empty map
-    renderLint();   // live validation badge (last tail consumer)
+    renderLint();   // live validation badge
+    renderNodeInfo();   // node info panel (single-select) — last tail consumer
   }
 
   function ripple(x, y, col) {   // transient pulse in the never-cleared gWire so render() can't kill it mid-animation
@@ -443,13 +445,13 @@
     const ns = selNodes(); if (!ns.length) { clipboard = null; return; }
     const ids = new Set(ns.map(n => n.id));
     const edges = (map() ? map().edges : []).filter(e => ids.has(e.from) && ids.has(e.to));
-    clipboard = { nodes: ns.map(n => ({ name: n.name, type: n.type, scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map, x: n.x, y: n.y })), edges: edges.map(e => ({ from: ns.findIndex(n => n.id === e.from), to: ns.findIndex(n => n.id === e.to), label: e.label, bend: e.bend, color: e.color, route: e.route })) };
+    clipboard = { nodes: ns.map(n => ({ name: n.name, type: n.type, scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map, summary: n.summary, tags: n.tags, status: n.status, x: n.x, y: n.y })), edges: edges.map(e => ({ from: ns.findIndex(n => n.id === e.from), to: ns.findIndex(n => n.id === e.to), label: e.label, bend: e.bend, color: e.color, route: e.route })) };
   }
   async function pasteSelection() {   // re-create nodes (preserving relative layout) then re-wire internal edges — one atomic batch: single undo, single rebuild, styling preserved
     if (!clipboard || !clipboard.nodes.length || !cur || !SERVER) return;
     const cn = clipboard.nodes, minX = Math.min(...cn.map(n => n.x)), minY = Math.min(...cn.map(n => n.y));
     const center = viewCenter(), dx = center.x - minX + 30, dy = center.y - minY + 30;
-    const j = await api('/api/add-batch', { map: cur, nodes: cn.map(n => ({ title: n.name + ' copy', type: n.type, x: Math.round(n.x + dx), y: Math.round(n.y + dy), note: '', scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map })) });
+    const j = await api('/api/add-batch', { map: cur, nodes: cn.map(n => ({ title: n.name + ' copy', type: n.type, x: Math.round(n.x + dx), y: Math.round(n.y + dy), note: '', scale: n.scale, hl: n.hl, color: n.color, gate: n.gate, lane: n.lane, link_map: n.link_map, summary: n.summary, tags: n.tags, status: n.status })) });
     const slugs = (j.ok && j.created) ? j.created.map(c => c.split('/').pop().replace(/\.md$/, '')) : [];
     for (const e of clipboard.edges) { const fs = slugs[e.from], ts = slugs[e.to]; if (fs && ts) await api('/api/edge', { map: cur, from: fs, to: ts, label: e.label, bend: e.bend, color: e.color, route: e.route }); }
     flushPending();
@@ -800,7 +802,7 @@
   function switchMap(slug, noHash) {
     if (!MAPS.maps[slug]) return;
     if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-    selection.clear(); dragId = null; portArmed = false;                              // don't leak gesture/selection state into the next map
+    selection.clear(); infoStack.length = 0; dragId = null; portArmed = false;                              // don't leak gesture/selection/back-stack state into the next map
     if (wire) { wirePath.attr('d', '').style('stroke', ''); wire = null; }
     if (marqueeRect) { marqueeRect.remove(); marqueeRect = null; } marqueeStart = null;
     cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug);
@@ -991,12 +993,13 @@
     edPath = repoRel(d.url); edNode = d;
     document.getElementById('ed-title').textContent = d.name; document.getElementById('ed-path').textContent = edPath;
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; const f = ed.querySelector('button,input,textarea'); if (f) f.focus(); }
+    { const ni = document.getElementById('nodeinfo'); if (ni) ni.hidden = true; }   // the right drawer covers the info panel — hide it while editing (reappears on close)
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
       document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
-  function closeEditor() { edPath = null; edNode = null; edContentHash = null; const ed = document.getElementById('editor'); const ae = document.activeElement; if (ae && ed.contains(ae)) ae.blur(); document.getElementById('ed-refs').hidden = true; fadeOut(ed); }   // blur so focus leaves the hidden editor (else shortcuts/typing-guard stay stuck on the textarea)
+  function closeEditor() { edPath = null; edNode = null; edContentHash = null; const ed = document.getElementById('editor'); const ae = document.activeElement; if (ae && ed.contains(ae)) ae.blur(); document.getElementById('ed-refs').hidden = true; fadeOut(ed); renderNodeInfo(); }   // blur so focus leaves the hidden editor; re-show the info panel if the node is still selected
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
     if (!edPath) return;
     const node = (map() ? map().nodes : []).find(n => repoRel(n.url) === edPath);
@@ -1341,6 +1344,7 @@
     }
     nodes.filter(n => out[n.id].length > 0 && n.type !== 'reference' && !(n.gate && String(n.gate).trim())).forEach(n => issues.push({ msg: 'no gate: ' + n.name, nodeId: n.id }));
     nodes.forEach(n => (n.refs || []).forEach(rf => { if (!resolveRef(rf.target)) issues.push({ msg: 'broken ref in ' + n.name, nodeId: n.id }); }));
+    (MAPS.issues || []).forEach(bi => { if (bi.level !== 'warn') return; if (bi.map && bi.map !== cur) return; issues.push({ msg: bi.msg, nodeId: bi.node ? (nodes.find(n => n.slug === bi.node) || {}).id || null : null }); });   // surface build-time warnings (dropped dangling/dup edges, missing nodes)
     return issues;
   }
   function renderLint() {
@@ -1353,6 +1357,102 @@
     issues.forEach(iss => { const row = document.createElement('div'); row.className = 'lint-row'; row.textContent = iss.msg; if (iss.nodeId) { const n = byId(iss.nodeId); if (n) { row.style.cursor = 'pointer'; row.title = 'Zoom to ' + n.name; row.onclick = () => focusNode(n); } } list.appendChild(row); });
   }
   function toggleLint() { lintOpen = !lintOpen; document.getElementById('lint-panel').classList.toggle('open', lintOpen); }
+
+  // ---- node info panel (single-select): summary · tags · status · 1-hop connections (adopted from Understand-Anything's NodeInfo) ----
+  let niId = null, infoStack = [], niFocusTag = false;
+  const STATUS_META = { draft: { label: 'Draft', color: 'var(--muted)' }, active: { label: 'Active', color: 'var(--link)' }, blocked: { label: 'Blocked', color: 'var(--decision)' }, done: { label: 'Done', color: 'var(--step)' } };
+  const NODE_GLYPH = { step: '▭', decision: '◇', 'subprocess-link': '▸', reference: '§' };
+  function niEl(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
+  async function saveNodeMeta(node, patch) {   // persist summary/tags/status via the existing node-style endpoint
+    if (!SERVER || !node) return;
+    const j = await api('/api/node-style', Object.assign({ path: repoRel(node.url) }, patch));
+    if (j && j.ok) applyMaps(j.maps);
+  }
+  function renderNodeInfo() {
+    const panel = document.getElementById('nodeinfo'); if (!panel) return;
+    const selId = selection.size === 1 ? [...selection][0] : null;
+    const n = selId ? byId(selId) : null;
+    const editorOpen = !document.getElementById('editor').hidden;
+    if (!n || dragging || editorOpen) { panel.hidden = true; if (!n) niId = null; return; }   // hide while dragging / editing, or when not a single selection
+    if (niId === n.id && !panel.hidden) return;   // already built for this node → don't clobber in-progress edits or focus
+    niId = n.id; buildNodeInfo(panel, n);
+  }
+  function niConnSection(title, items) {
+    const wrap = niEl('div', 'ni-conn'), h = niEl('div', 'ni-sec'); h.textContent = title; wrap.appendChild(h);
+    items.forEach(it => {
+      const t = byId(it.id); if (!t) return;
+      const row = niEl('div', 'ni-connrow'); row.title = 'Go to "' + t.name + '"';
+      const g = niEl('span', 'ni-connglyph'); g.style.background = accent(t); g.textContent = NODE_GLYPH[t.type] || '▭'; row.appendChild(g);
+      const nm = niEl('span', 'ni-connname'); nm.textContent = t.name; row.appendChild(nm);
+      if (it.label) { const lb = niEl('span', 'ni-connlbl'); lb.textContent = it.label; row.appendChild(lb); }
+      row.onclick = () => { if (niId) infoStack.push(niId); selection.clear(); selection.add(t.id); render(); focusNode(t); };   // navigate + push back-stack
+      wrap.appendChild(row);
+    });
+    return wrap;
+  }
+  function buildNodeInfo(panel, n) {
+    panel.hidden = false; panel.innerHTML = '';
+    const col = accent(n);
+    // header — glyph · name (dbl-click → rename) · close
+    const head = niEl('div', 'ni-head');
+    const gl = niEl('div', 'ni-glyph'); gl.style.background = col; gl.textContent = NODE_GLYPH[n.type] || '▭'; head.appendChild(gl);
+    const nm = niEl('div', 'ni-name'); nm.textContent = n.name;
+    if (SERVER) { nm.setAttribute('data-edit', '1'); nm.title = 'Double-click to rename'; nm.ondblclick = () => { const live = byId(n.id); if (live) openRename(live); }; }
+    head.appendChild(nm);
+    const x = niEl('button', 'ni-x'); x.textContent = '✕'; x.title = 'Close (deselect)'; x.onclick = clearSelection; head.appendChild(x);
+    panel.appendChild(head);
+    // type (+ sub-map link target)
+    const trow = niEl('div', 'ni-row'); const tl = niEl('span', 'ni-lbl'); tl.textContent = n.type === 'subprocess-link' ? 'link' : n.type; trow.appendChild(tl);
+    if (n.link_map) { const ll = niEl('span', 'ni-connlbl'); ll.textContent = '▸ ' + ((MAPS.maps[n.link_map] || {}).title || n.link_map); trow.appendChild(ll); }
+    panel.appendChild(trow);
+    // status — editable pills (server) or a read-only pill
+    if (SERVER) {
+      const srow = niEl('div', 'ni-row ni-edit'); const sl = niEl('span', 'ni-lbl'); sl.textContent = 'Status'; srow.appendChild(sl);
+      ['draft', 'active', 'blocked', 'done'].forEach(s => {
+        const b = niEl('button', 'ni-status'); b.textContent = STATUS_META[s].label;
+        const on = n.status === s; b.style.background = on ? STATUS_META[s].color : 'rgba(65,64,76,.10)'; b.style.color = on ? '#fff' : 'var(--muted)';
+        b.onclick = () => { const ns = byId(n.id); if (!ns) return; const nv = ns.status === s ? null : s; ns.status = nv; saveNodeMeta(ns, { status: nv || '' }); buildNodeInfo(panel, ns); };   // toggle off if already set
+        srow.appendChild(b);
+      });
+      panel.appendChild(srow);
+    } else if (n.status) {
+      const srow = niEl('div', 'ni-row'); const sl = niEl('span', 'ni-lbl'); sl.textContent = 'Status'; const pill = niEl('span', 'ni-status'); const meta = STATUS_META[n.status] || { label: n.status, color: 'var(--muted)' }; pill.textContent = meta.label; pill.style.background = meta.color; pill.style.color = '#fff'; srow.append(sl, pill); panel.appendChild(srow);
+    }
+    // summary — editable line (save on blur) or read-only text
+    if (SERVER) {
+      const ta = niEl('textarea', 'ni-summary ni-edit'); ta.value = n.summary || ''; ta.placeholder = 'Add a one-line summary…'; ta.rows = 2;
+      ta.onblur = () => { const ns = byId(n.id); if (!ns) return; const v = ta.value.trim(); if ((ns.summary || '') !== v) { ns.summary = v || null; saveNodeMeta(ns, { summary: v }); } };
+      panel.appendChild(ta);
+    } else if (n.summary) { const s = niEl('div', 'ni-summary'); s.style.background = 'transparent'; s.style.border = 'none'; s.textContent = n.summary; panel.appendChild(s); }
+    // tags — chips (× to remove) + an add input
+    const tagsWrap = niEl('div', 'ni-tags');
+    (n.tags || []).forEach(t => {
+      const chip = niEl('span', 'ni-tag'); chip.appendChild(document.createTextNode(t));   // textNode, not innerHTML — a tag must never execute
+      if (SERVER) { const xb = niEl('b'); xb.textContent = '×'; xb.title = 'Remove tag'; xb.onclick = () => { const ns = byId(n.id); if (!ns) return; ns.tags = (ns.tags || []).filter(x => x !== t); saveNodeMeta(ns, { tags: ns.tags }); buildNodeInfo(panel, ns); }; chip.appendChild(xb); }
+      tagsWrap.appendChild(chip);
+    });
+    if (SERVER) {
+      const inp = niEl('input', 'ni-taginput ni-edit'); inp.placeholder = '+ tag'; inp.autocomplete = 'off'; inp.spellcheck = false;
+      inp.onkeydown = e => {
+        if (e.key === 'Enter') { e.preventDefault(); const v = inp.value.trim().toLowerCase().replace(/,/g, ''); if (!v) return; const ns = byId(n.id); if (!ns) return; ns.tags = [...(ns.tags || []), v].filter((x, i, a) => a.indexOf(x) === i); saveNodeMeta(ns, { tags: ns.tags }); niFocusTag = true; buildNodeInfo(panel, ns); }   // optimistic add; rebuild then refocus the input
+        else if (e.key === 'Escape') { inp.blur(); }
+      };
+      tagsWrap.appendChild(inp);
+    }
+    if ((n.tags || []).length || SERVER) panel.appendChild(tagsWrap);
+    if (niFocusTag) { niFocusTag = false; const ti = panel.querySelector('.ni-taginput'); if (ti) ti.focus(); }
+    // connections — intra-map edges (skip self-loops)
+    const edges = map() ? map().edges : [];
+    const outE = edges.filter(e => e.from === n.id && e.from !== e.to);
+    const inE = edges.filter(e => e.to === n.id && e.from !== e.to);
+    if (outE.length) panel.appendChild(niConnSection('Leads to →', outE.map(e => ({ id: e.to, label: e.label }))));
+    if (inE.length) panel.appendChild(niConnSection('← From', inE.map(e => ({ id: e.from, label: e.label }))));
+    // footer — back-stack · open notes
+    const foot = niEl('div', 'ni-foot');
+    if (infoStack.length) { const bk = niEl('button', 'ni-back'); bk.textContent = '← Back'; bk.onclick = () => { const prev = infoStack.pop(); if (!prev) return; const pn = byId(prev); selection.clear(); selection.add(prev); render(); if (pn) focusNode(pn); }; foot.appendChild(bk); }
+    const notes = niEl('button', 'primary'); notes.textContent = '✐ Notes'; notes.onclick = () => { const nn = byId(n.id) || n; openEditor(nn); }; foot.appendChild(notes);
+    panel.appendChild(foot);
+  }
 
   // ---- multi-map Home overview (item 35) ----
   function openHomeOverlay() {
@@ -1463,7 +1563,7 @@
     if (e.shiftKey && (e.key === '1' || e.code === 'Digit1')) { e.preventDefault(); fit(); return; }   // Shift+1 = fit
     if ((e.key === 'n' || e.key === 'N') && !cmd && !e.shiftKey) { if (SERVER) { e.preventDefault(); const c = viewCenter(); quickAdd(c.x, c.y, window.innerWidth / 2, window.innerHeight / 2); } return; }   // N = add a node
     if (cmd && e.key.toLowerCase() === 'a' && map()) { e.preventDefault(); map().nodes.forEach(n => selection.add(n.id)); render(); return; }   // select all
-    if (cmd && e.key.toLowerCase() === 'd' && selection.size && SERVER) { e.preventDefault(); api('/api/add-batch', { map: cur, nodes: selNodes().map(n => ({ title: n.name + ' copy', type: n.type, x: n.x + 28, y: n.y + 28, note: '', scale: n.scale, color: n.color, gate: n.gate, hl: n.hl, lane: n.lane, link_map: n.link_map })) }).then(flushPending); return; }   // duplicate (atomic batch → one undo, styling preserved)
+    if (cmd && e.key.toLowerCase() === 'd' && selection.size && SERVER) { e.preventDefault(); api('/api/add-batch', { map: cur, nodes: selNodes().map(n => ({ title: n.name + ' copy', type: n.type, x: n.x + 28, y: n.y + 28, note: '', scale: n.scale, color: n.color, gate: n.gate, hl: n.hl, lane: n.lane, link_map: n.link_map, summary: n.summary, tags: n.tags, status: n.status })) }).then(flushPending); return; }   // duplicate (atomic batch → one undo, styling preserved)
     if (cmd && e.key.toLowerCase() === 'c' && selection.size) { e.preventDefault(); copySelection(); return; }   // copy
     if (cmd && e.key.toLowerCase() === 'v' && clipboard && clipboard.nodes.length) { e.preventDefault(); pasteSelection(); return; }   // paste (across maps)
     if ((e.key === 'Backspace' || e.key === 'Delete') && selection.size && SERVER) { e.preventDefault(); if (!confirm('Archive ' + selection.size + ' node' + (selection.size === 1 ? '' : 's') + '?')) return; selNodes().forEach(n => api('/api/archive', { path: repoRel(n.url) }).then(flushPending)); selection.clear(); render(); return; }   // archive selection

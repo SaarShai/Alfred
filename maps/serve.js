@@ -27,7 +27,7 @@ const sseClients = new Set();
 let changedSlug = null;   // set by the POST wrapper to the single map a mutation touched (null = multi-map/unknown → send full)
 function broadcast(maps, slug) {
   // single-map edit → ship only that map (other SSE clients merge it); multi-map/unknown → full snapshot. The acting client already has full state from the POST reply.
-  const payload = (slug && maps.maps[slug]) ? { t: 'patch', slug, order: maps.order, map: maps.maps[slug] } : { t: 'full', maps };
+  const payload = (slug && maps.maps[slug]) ? { t: 'patch', slug, order: maps.order, map: maps.maps[slug], issues: maps.issues } : { t: 'full', maps };   // carry build issues so a single-map edit refreshes the global lint badge
   const msg = 'data:' + JSON.stringify(payload) + '\n\n';
   sseClients.forEach(res => { try { res.write(msg); } catch (e) { sseClients.delete(res); } });
 }
@@ -167,6 +167,9 @@ function addNode(mapSlug, title, type, x, y, note, linkMap, style) {
     if (style.hl) fm += 'hl: true\n';
     if (style.color != null && style.color !== '') fm += 'color: ' + (+style.color) + '\n';
     if (style.gate && String(style.gate).trim()) fm += 'gate: ' + JSON.stringify(String(style.gate).trim()) + '\n';
+    if (style.summary && String(style.summary).trim()) fm += 'summary: ' + JSON.stringify(String(style.summary).trim()) + '\n';
+    if (style.status && String(style.status).trim()) fm += 'status: ' + String(style.status).trim().toLowerCase() + '\n';
+    if (Array.isArray(style.tags) && style.tags.length) { const tg = style.tags.map(t => String(t).trim().toLowerCase().replace(/,/g, '')).filter(Boolean); if (tg.length) fm += 'tags: [' + tg.join(', ') + ']\n'; }
   }
   fm += '---\n\n# ' + title + '\n\n' + (note && note.trim() ? note.trim() + '\n' : '_(empty node — edit me)_\n');
   fs.writeFileSync(path.join(dir, slug + '.md'), fm);
@@ -241,6 +244,9 @@ function setNodeStyle(rel, d) {
   if (d.color !== undefined) txt = (d.color === null || d.color === '' ? removeField(txt, 'color') : setField(txt, 'color', d.color));
   if (d.gate !== undefined) txt = (d.gate && String(d.gate).trim() ? setField(txt, 'gate', JSON.stringify(String(d.gate).trim())) : removeField(txt, 'gate'));
   if (d.refsCollapsed !== undefined) txt = (d.refsCollapsed ? setField(txt, 'refs_collapsed', 'true') : removeField(txt, 'refs_collapsed'));
+  if (d.summary !== undefined) txt = (d.summary && String(d.summary).trim() ? setField(txt, 'summary', JSON.stringify(String(d.summary).trim())) : removeField(txt, 'summary'));   // 1-line purpose
+  if (d.status !== undefined) txt = (d.status && String(d.status).trim() ? setField(txt, 'status', String(d.status).trim().toLowerCase()) : removeField(txt, 'status'));   // draft|active|blocked|done
+  if (d.tags !== undefined) { const tg = (Array.isArray(d.tags) ? d.tags : []).map(t => String(t).trim().toLowerCase().replace(/,/g, '')).filter(Boolean); txt = (tg.length ? setList(txt, 'tags', tg) : removeField(txt, 'tags')); }   // strip commas so the [a, b] list round-trips
   fs.writeFileSync(abs, txt);
 }
 // remove a [[target…]] citation (and a leading "Ref: " label line if that's all that's left) from a node body
