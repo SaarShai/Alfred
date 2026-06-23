@@ -2,8 +2,8 @@
 nid: nk018k
 title: "OBJECTS"
 type: step
-x: 417
-y: 851
+x: 287
+y: 602
 ---
 
 # OBJECTS
