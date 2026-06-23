@@ -2,8 +2,8 @@
 nid: n9gf95
 title: "CHECKING"
 type: step
-x: 1342
-y: 486
+x: 1327
+y: 494
 ---
 
 # CHECKING

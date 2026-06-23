@@ -128,8 +128,8 @@ window.MAPS = {
           "status": null,
           "refs": [],
           "refsCollapsed": false,
-          "x": 1342,
-          "y": 486,
+          "x": 1327,
+          "y": 494,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -149,7 +149,7 @@ window.MAPS = {
           "status": null,
           "refs": [],
           "refsCollapsed": false,
-          "x": 1601,
+          "x": 1590,
           "y": 491,
           "lane": null,
           "link_map": null,
@@ -158,6 +158,27 @@ window.MAPS = {
           "hl": false,
           "color": null,
           "url": "../maps-data/finalizing-file/split-files.md"
+        },
+        {
+          "id": "nv6860",
+          "slug": "preflight",
+          "name": "PREFLIGHT",
+          "type": "step",
+          "summary": null,
+          "icon": null,
+          "tags": [],
+          "status": null,
+          "refs": [],
+          "refsCollapsed": false,
+          "x": 201,
+          "y": 382,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/finalizing-file/preflight.md"
         }
       ],
       "edges": [
@@ -188,6 +209,14 @@ window.MAPS = {
         {
           "from": "n9gf95",
           "to": "nj6q05",
+          "label": "",
+          "bend": 0,
+          "color": null,
+          "route": "bezier"
+        },
+        {
+          "from": "nv6860",
+          "to": "ntdz88",
           "label": "",
           "bend": 0,
           "color": null,

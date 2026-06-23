@@ -2,10 +2,15 @@
 nid: nj6q05
 title: "SPLIT files"
 type: step
-x: 1601
+x: 1590
 y: 491
 ---
 
 # SPLIT files
 
-_(empty node — edit me)_
+
+
+
+STEPS:
+
+* Downsample over-resolution images (above 300 DPI) to 300 DPI
