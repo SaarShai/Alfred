@@ -696,7 +696,9 @@
         lastTapId = null; lastTapAt = 0;
         suppressClick = true; setTimeout(() => { suppressClick = false; }, 450);   // eat the trailing click(s); auto-clear so it can't get stuck if no click fires
         clearTimeout(clickTimer); clickTimer = null; clearTimeout(longPressTimer); longPressTimer = null;
-        closeCtx(); const dn = byId(dd.id) || dd; openNodeInfo(dn); openEditor(dn);   // double-tap opens BOTH: the NodeInfo panel (left) + the editor drawer (right)
+        closeCtx(); const dn = byId(dd.id) || dd;
+        if (dn.link_map) { if (EMBED) drillTo(dn.link_map); else openPip(dn.link_map); }   // linked node → open the sub-map instead of the editor
+        else { openNodeInfo(dn); openEditor(dn); }   // double-tap opens BOTH: the NodeInfo panel (left) + the editor drawer (right)
         return;
       }
       lastTapId = dd.id; lastTapAt = e.timeStamp;

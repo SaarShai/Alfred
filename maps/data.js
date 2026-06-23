@@ -4,7 +4,8 @@ window.MAPS = {
     "screenery-flow",
     "illustrator",
     "layers",
-    "finalizing-file"
+    "finalizing-file",
+    "file"
   ],
   "maps": {
     "orders-operations": {
@@ -33,7 +34,50 @@ window.MAPS = {
       "title": "Illustrator",
       "kind": "process",
       "url": "../maps-data/illustrator/index.md",
-      "nodes": [],
+      "nodes": [
+        {
+          "id": "ntppap",
+          "slug": "finalizing-file",
+          "name": "FINALIZING File",
+          "type": "subprocess-link",
+          "summary": null,
+          "icon": null,
+          "tags": [],
+          "status": null,
+          "refs": [],
+          "refsCollapsed": false,
+          "x": 443,
+          "y": 755,
+          "lane": null,
+          "link_map": "finalizing-file",
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/illustrator/finalizing-file.md"
+        },
+        {
+          "id": "nscn2g",
+          "slug": "file",
+          "name": "FILE",
+          "type": "subprocess-link",
+          "summary": null,
+          "icon": null,
+          "tags": [],
+          "status": null,
+          "refs": [],
+          "refsCollapsed": false,
+          "x": 347,
+          "y": 539,
+          "lane": null,
+          "link_map": "file",
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/illustrator/file.md"
+        }
+      ],
       "edges": [],
       "frames": []
     },
@@ -223,6 +267,38 @@ window.MAPS = {
           "route": "bezier"
         }
       ],
+      "frames": []
+    },
+    "file": {
+      "slug": "file",
+      "id": "mbuq47",
+      "title": "FILE",
+      "kind": "process",
+      "url": "../maps-data/file/index.md",
+      "nodes": [
+        {
+          "id": "n842k9",
+          "slug": "front-layer",
+          "name": "FRONT layer",
+          "type": "step",
+          "summary": null,
+          "icon": null,
+          "tags": [],
+          "status": null,
+          "refs": [],
+          "refsCollapsed": false,
+          "x": 546,
+          "y": 450,
+          "lane": null,
+          "link_map": null,
+          "gate": null,
+          "scale": 1,
+          "hl": false,
+          "color": null,
+          "url": "../maps-data/file/front-layer.md"
+        }
+      ],
+      "edges": [],
       "frames": []
     }
   },
