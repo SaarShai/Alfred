@@ -154,6 +154,13 @@
   .ni-tag b:hover{opacity:1;color:#b3403a}
   .ni-taginput{border:1px dashed rgba(65,64,76,.25);border-radius:999px;padding:2px 8px;font:inherit;font-size:var(--fs-1);width:78px;background:transparent;color:var(--ink)}
   .ni-taginput:focus{outline:none;border-color:var(--step)}
+  .ni-icon{margin-left:auto;min-width:34px;height:28px;text-align:center;border:1px dashed rgba(65,64,76,.25);border-radius:8px;padding:0 6px;font-size:16px;line-height:1;background:transparent;color:var(--ink);cursor:pointer}
+  .ni-icon:hover{border-color:var(--step);border-style:solid}
+  .ni-icon.placeholder{opacity:.45}
+  .emoji-pop{position:fixed;z-index:80;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(65,64,76,.14);border-radius:12px;box-shadow:var(--e3);max-width:300px}
+  .emoji-pop button{width:30px;height:30px;border:none;background:transparent;border-radius:7px;font-size:18px;line-height:1;cursor:pointer;padding:0}
+  .emoji-pop button:hover{background:rgba(65,64,76,.10)}
+  .emoji-pop .emoji-clear{font-size:12px;color:var(--muted)}
   .ni-sec{font-size:var(--fs-1);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
   .ni-conn{display:flex;flex-direction:column;gap:2px}
   .ni-connrow{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:8px;cursor:pointer;transition:background .12s}

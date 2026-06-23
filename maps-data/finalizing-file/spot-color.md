@@ -1,6 +1,7 @@
 ---
+color: 8
 nid: nd3vvb
-title: "create spot layer objects"
+title: "SPOT color"
 type: step
 x: 753
 y: 490

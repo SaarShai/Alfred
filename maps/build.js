@@ -108,6 +108,7 @@ function readNode(mapSlug, nodeSlug) {
     name: field(fm, 'title') || (h1 && h1.trim()) || nodeSlug,
     type,
     summary,                                     // 1-line purpose (NodeInfo panel + tooltip)
+    icon: field(fm, 'icon') || null,             // optional emoji/char shown on the card for at-a-glance distinction
     tags,                                        // lowercase-hyphenated keywords (search / filter)
     status,                                      // draft | active | blocked | done (or null)
     refs: refsOf(body),                          // [{target,label}] — knowledge this node cites (rendered as a tray below it)

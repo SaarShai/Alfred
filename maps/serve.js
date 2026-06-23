@@ -245,6 +245,7 @@ function setNodeStyle(rel, d) {
   if (d.gate !== undefined) txt = (d.gate && String(d.gate).trim() ? setField(txt, 'gate', JSON.stringify(String(d.gate).trim())) : removeField(txt, 'gate'));
   if (d.refsCollapsed !== undefined) txt = (d.refsCollapsed ? setField(txt, 'refs_collapsed', 'true') : removeField(txt, 'refs_collapsed'));
   if (d.summary !== undefined) txt = (d.summary && String(d.summary).trim() ? setField(txt, 'summary', JSON.stringify(String(d.summary).trim())) : removeField(txt, 'summary'));   // 1-line purpose
+  if (d.icon !== undefined) txt = (d.icon && String(d.icon).trim() ? setField(txt, 'icon', JSON.stringify(String(d.icon).trim())) : removeField(txt, 'icon'));   // emoji/char card badge
   if (d.status !== undefined) txt = (d.status && String(d.status).trim() ? setField(txt, 'status', String(d.status).trim().toLowerCase()) : removeField(txt, 'status'));   // draft|active|blocked|done
   if (d.tags !== undefined) { const tg = (Array.isArray(d.tags) ? d.tags : []).map(t => String(t).trim().toLowerCase().replace(/,/g, '')).filter(Boolean); txt = (tg.length ? setList(txt, 'tags', tg) : removeField(txt, 'tags')); }   // strip commas so the [a, b] list round-trips
   fs.writeFileSync(abs, txt);
@@ -425,6 +426,15 @@ http.createServer((req, res) => {
     if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
     if (typeof d.content !== 'string') return json(res, { ok: false, error: 'no content' }, 400);
     pushUndo(umap(d)); fs.writeFileSync(abs, d.content.replace(/\r\n/g, '\n')); rebuildAndReply(res, { title: titleOf(d.content) });   // normalize CRLF→LF so the build's frontmatter regexes (bare \n) never break
+  })) return;
+  if (POST('/api/save-body', d => {   // replace ONLY the body, preserving the frontmatter on disk (editor shows the body; nid/type/x/y are managed elsewhere and must not be clobbered)
+    const abs = safeSrc(d.path);
+    if (!abs || !fs.existsSync(abs)) return json(res, { ok: false, error: 'not found' }, 404);
+    if (typeof d.body !== 'string') return json(res, { ok: false, error: 'no body' }, 400);
+    const cur = fs.readFileSync(abs, 'utf8'); const m = cur.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+    let fm = (m ? m[0] : '').replace(/\r\n/g, '\n'); if (fm && !fm.endsWith('\n')) fm += '\n';
+    const out = fm + (fm ? '\n' : '') + d.body.replace(/\r\n/g, '\n').replace(/\s+$/, '') + '\n';
+    pushUndo(umap(d)); fs.writeFileSync(abs, out); rebuildAndReply(res);
   })) return;
   if (POST('/api/add', d => { pushUndo(d.map); const created = addNode(d.map, d.title, d.type, d.x, d.y, d.note, d.link_map, d); rebuildAndReply(res, { created }); })) return;
   if (POST('/api/add-batch', d => { pushUndo(d.map); const created = (d.nodes || []).map(n => addNode(d.map, n.title, n.type, n.x, n.y, n.note, n.link_map, n)); rebuildAndReply(res, { created }); })) return;   // duplicate/paste N nodes atomically: ONE undo snapshot, ONE rebuild

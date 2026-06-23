@@ -345,7 +345,7 @@
         inner.append('rect').attr('class', 'shape').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'var(--card-glass)').attr('stroke', col).attr('stroke-width', 2.2);
         inner.append('rect').attr('class', 'sheen').attr('x', -hw).attr('y', -hh).attr('width', hw * 2).attr('height', hh * 2).attr('rx', 11).attr('fill', 'url(#glass)');
       }
-      inner.append('text').attr('class', 'label').text(d.name);
+      inner.append('text').attr('class', 'label').text((d.icon ? d.icon + '  ' : '') + d.name);   // optional emoji/char prefix for at-a-glance distinction
       if (d.type === 'subprocess-link' || d.type === 'reference') {
         const bd = inner.append('g').attr('transform', 'translate(' + (-hw + 2) + ',' + (-hh + 2) + ')');
         bd.append('circle').attr('r', 9).attr('fill', col);
@@ -997,6 +997,7 @@
   // ---- notes drawer ----
   let edPath = null, edNode = null, edContentHash = null;
   function simpleHash(s) { let h = 0; for (let i = 0; i < (s || '').length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return h.toString(16); }
+  function stripFM(t) { const m = (t || '').match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/); return (m ? t.slice(m[0].length) : t).replace(/^\s*\n/, ''); }   // editor shows only the body (notes + H1); frontmatter is metadata, managed by the panel/drag/rename
   // rename title+slug by double-clicking the title in the drawer
   function renameFromDrawer(d) {
     const r = document.getElementById('ed-title').getBoundingClientRect();
@@ -1014,14 +1015,14 @@
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; const f = ed.querySelector('button,input,textarea'); if (f) f.focus(); }
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
-      document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
+      const body = stripFM(j.content); document.getElementById('ed-text').value = body; edContentHash = simpleHash(body); document.getElementById('ed-msg').textContent = ''; renderRefs(body);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
   }
   async function resyncEditorAfterRename(nid, newPath, newTitle) {   // a rename rewrites the file's title: on disk — if the editor is open for that node, refresh its path + body so a later save can't revert the rename (stale editor content == old title)
     if (!edNode || edNode.id !== nid) return;
     if (newPath) { edPath = newPath; edNode.url = '../' + newPath; const ep = document.getElementById('ed-path'); if (ep) ep.textContent = newPath; }
     const et = document.getElementById('ed-title'); if (et && newTitle) et.textContent = newTitle;
-    try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json(); if (j.ok) { document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); renderRefs(j.content); } } catch (_) {}
+    try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json(); if (j.ok) { const body = stripFM(j.content); document.getElementById('ed-text').value = body; edContentHash = simpleHash(body); renderRefs(body); } } catch (_) {}
   }
   function closeEditor() { edPath = null; edNode = null; edContentHash = null; const ed = document.getElementById('editor'); const ae = document.activeElement; if (ae && ed.contains(ae)) ae.blur(); document.getElementById('ed-refs').hidden = true; fadeOut(ed); renderNodeInfo(); }   // blur so focus leaves the hidden editor; re-show the info panel if the node is still selected
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
@@ -1032,10 +1033,10 @@
   }
   async function saveDoc() {
     const msg = document.getElementById('ed-msg'), text = document.getElementById('ed-text').value;
-    if (edContentHash !== null && edPath) {   // detect an external change before overwriting (item 49)
-      try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const k = await r.json(); if (k.ok && simpleHash(k.content) !== edContentHash) { showSaveConflict(k.content); return; } } catch (_) {}
+    if (edContentHash !== null && edPath) {   // detect an external change before overwriting (item 49) — compare the BODY only (frontmatter is owned by the panel/drag, not the editor)
+      try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const k = await r.json(); if (k.ok && simpleHash(stripFM(k.content)) !== edContentHash) { showSaveConflict(stripFM(k.content)); return; } } catch (_) {}
     }
-    msg.textContent = 'Saving…'; const j = await api('/api/save', { path: edPath, content: text });
+    msg.textContent = 'Saving…'; const j = await api('/api/save-body', { path: edPath, body: text });
     if (!j.ok) { msg.textContent = 'Error: ' + j.error; announce('Save failed: ' + j.error); return; }
     edContentHash = simpleHash(text); msg.textContent = 'Saved ✓'; announce('Saved'); if (j.maps) applyMaps(j.maps);
   }
@@ -1180,7 +1181,7 @@
       const esc = tgt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const content = ta.value.replace(new RegExp('\\[\\[' + esc + '(\\|[^\\]]*)?\\]\\]'), '[[' + it.id + '|' + it.name + ']]');
       const msg = document.getElementById('ed-msg'); msg.textContent = 'Fixing…';
-      const j = await api('/api/save', { path: edPath, content }); if (j.ok) { ta.value = content; edContentHash = simpleHash(content); renderRefs(content); msg.textContent = 'Fixed ✓'; if (j.maps) applyMaps(j.maps); } else msg.textContent = 'Error: ' + j.error;   // resync hash to the saved body, else the next manual save sees a false conflict
+      const j = await api('/api/save-body', { path: edPath, body: content }); if (j.ok) { ta.value = content; edContentHash = simpleHash(content); renderRefs(content); msg.textContent = 'Fixed ✓'; if (j.maps) applyMaps(j.maps); } else msg.textContent = 'Error: ' + j.error;   // body-only save preserves frontmatter; resync hash to the saved body
       return;
     }
     if (!kpCiting || !SERVER) return;
@@ -1388,6 +1389,19 @@
   const STATUS_META = { draft: { label: 'Draft', color: 'var(--muted)' }, active: { label: 'Active', color: 'var(--link)' }, blocked: { label: 'Blocked', color: 'var(--decision)' }, done: { label: 'Done', color: 'var(--step)' } };
   const NODE_GLYPH = { step: '▭', decision: '◇', 'subprocess-link': '▸', reference: '§' };
   function niEl(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
+  function showEmojiPalette(anchor, commit) {   // small click-to-pick emoji grid (works in the sandboxed preview where the OS picker isn't reachable)
+    document.querySelectorAll('.emoji-pop').forEach(el => el.remove());
+    const EMO = ['⚙️', '🔧', '✂️', '🎨', '🖌️', '🖨️', '📐', '📏', '🧩', '✅', '⚠️', '🚫', '🔍', '📦', '📤', '📥', '🗂️', '🏷️', '💡', '🔁', '▶️', '⏸️', '🟢', '🔴', '🔵', '📝', '🧪', '🚀', '⭐', '📌', '🔗', '🧱'];
+    const pop = niEl('div', 'emoji-pop');
+    EMO.forEach(em => { const b = niEl('button'); b.type = 'button'; b.textContent = em; b.onclick = ev => { ev.stopPropagation(); commit(em); pop.remove(); }; pop.appendChild(b); });
+    const clr = niEl('button', 'emoji-clear'); clr.type = 'button'; clr.textContent = '✕'; clr.title = 'No icon'; clr.onclick = ev => { ev.stopPropagation(); commit(''); pop.remove(); }; pop.appendChild(clr);
+    document.body.appendChild(pop);
+    const r = anchor.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, r.left)) + 'px';
+    pop.style.top = (r.bottom + 6) + 'px';
+    const close = ev => { if (!pop.contains(ev.target) && ev.target !== anchor) { pop.remove(); document.removeEventListener('pointerdown', close, true); } };
+    setTimeout(() => document.addEventListener('pointerdown', close, true), 0);
+  }
   async function saveNodeMeta(node, patch) {   // persist summary/tags/status via the existing node-style endpoint
     if (!SERVER || !node) return;
     const j = await api('/api/node-style', Object.assign({ path: repoRel(node.url) }, patch));
@@ -1427,6 +1441,12 @@
     // type (+ sub-map link target)
     const trow = niEl('div', 'ni-row'); const tl = niEl('span', 'ni-lbl'); tl.textContent = n.type === 'subprocess-link' ? 'link' : n.type; trow.appendChild(tl);
     if (n.link_map) { const ll = niEl('span', 'ni-connlbl'); ll.textContent = '▸ ' + ((MAPS.maps[n.link_map] || {}).title || n.link_map); trow.appendChild(ll); }
+    if (SERVER) {   // icon — emoji/char shown on the card for at-a-glance distinction
+      const il = niEl('button', 'ni-icon ni-edit'); il.type = 'button'; il.textContent = n.icon || '🙂'; if (!n.icon) il.classList.add('placeholder'); il.title = 'Card icon — click to pick an emoji';
+      const commit = v => { const ns = byId(n.id); if (!ns) return; if ((ns.icon || '') !== v) { ns.icon = v || null; saveNodeMeta(ns, { icon: v }); render(); } il.textContent = v || '🙂'; il.classList.toggle('placeholder', !v); };   // render(): icon changes the card label, and applyMaps' curSame check would skip the redraw (optimistic local set already matches the server echo)
+      il.onclick = e => { e.stopPropagation(); showEmojiPalette(il, commit); };
+      trow.appendChild(il);
+    }
     panel.appendChild(trow);
     // status — editable pills (server) or a read-only pill
     if (SERVER) {
@@ -1557,7 +1577,7 @@
   // double-click empty canvas → quick add
   svg.on('dblclick.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
   svg.on('contextmenu.add', e => { if (e.target.closest('.node') || e.target.closest('.edgegrp') || e.target.closest('.frame-grab')) return; e.preventDefault(); closeCtx(); const [mx, my] = d3.pointer(e, canvas.node()); quickAdd(mx, my, e.clientX, e.clientY); });
-  svg.on('click.sel', e => { if (e.shiftKey) return; if (!e.target.closest('.node') && !e.target.closest('.edgegrp') && !e.target.closest('.frame-grab')) clearSelection(); });   // click empty canvas → deselect (ignore the trailing click after a shift-marquee)
+  svg.on('click.sel', e => { if (e.shiftKey) return; if (!e.target.closest('.node') && !e.target.closest('.edgegrp') && !e.target.closest('.frame-grab')) { if (!document.getElementById('editor').hidden) closeEditor(); clearSelection(); } });   // click empty canvas → close editor + info panel, deselect (ignore the trailing click after a shift-marquee)
   svg.on('mousedown.marquee', startMarquee);
   window.addEventListener('mousemove', updateMarquee);
   window.addEventListener('mouseup', endMarquee);
