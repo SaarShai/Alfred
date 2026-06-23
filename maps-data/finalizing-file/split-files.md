@@ -13,4 +13,4 @@ y: 491
 
 STEPS:
 
-* Downsample over-resolution images (above 300 DPI) to 300 DPI
+*

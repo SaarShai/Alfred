@@ -8,4 +8,8 @@ y: 494
 
 # CHECKING
 
-_(empty node — edit me)_
+STEPS:
+
+* CNC: lines in the illustrator layer it belongs (color is canonical)
+
+* ALIGNMENT:

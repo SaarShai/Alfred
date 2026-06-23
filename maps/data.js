@@ -98,8 +98,8 @@ window.MAPS = {
         },
         {
           "id": "nm1gft",
-          "slug": "registration-marks",
-          "name": "REGISTRATION marks",
+          "slug": "collection",
+          "name": "COLLECTION",
           "type": "step",
           "summary": null,
           "icon": null,
@@ -115,7 +115,7 @@ window.MAPS = {
           "scale": 1,
           "hl": false,
           "color": null,
-          "url": "../maps-data/finalizing-file/registration-marks.md"
+          "url": "../maps-data/finalizing-file/collection.md"
         },
         {
           "id": "n9gf95",
