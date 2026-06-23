@@ -203,6 +203,25 @@
     while (t.length > 1 && node.getComputedTextLength() > maxW) { t = t.slice(0, -1); sel.text(t + '…'); }
   }
 
+  function dragMoveEdges(ids) {   // recompute the `d` of edges touching any dragged node, without a full render() (keeps drag cheap)
+    const m = map(); if (!m) return;
+    const pos = new Map();
+    gNode.selectAll('g.node').each(function (n) { pos.set(n.id, n); });   // read positions from the RENDERED nodes' bound data — the exact objects the drag handler mutates (byId may return a different object after an SSE rebuild → edge would lag)
+    gEdge.selectAll('g.edgegrp').each(function (e) {
+      if (!e || (!ids.has(e.from) && !ids.has(e.to))) return;
+      const a = pos.get(e.from) || byId(e.from), b = pos.get(e.to) || byId(e.to); if (!a || !b) return;
+      let d;
+      if (e.from === e.to) { ({ d } = selfLoopPath(a, e.bend)); }
+      else {
+        const p1 = rightPort(a), p2 = leftPort(b);
+        const hasReverse = m.edges.some(x => x.from === e.to && x.to === e.from);
+        const bow = e.bend ? e.bend : (hasReverse ? (e.from < e.to ? 22 : -22) : 0);
+        ({ d } = (e.route === 'smooth') ? orthStepPath(p1, p2) : edgePath(p1, p2, bow));
+      }
+      d3.select(this).selectAll('path.edge').attr('d', d);
+    });
+  }
+
   function render() {
     LANE_COLORS = laneColorMap();
     hideGhostPopover();   // a rebuild (SSE refresh, drag end, map switch) can remove the hovered node mid-delay → cancel its armed timer / stray popover
@@ -271,7 +290,7 @@
         mid = cubicMid(p1, c1, c2, p2);
       }
       const stroke = e.color != null ? PAL_HEX[e.color % PAL_HEX.length] : null;
-      const g = gEdge.append('g').attr('class', 'edgegrp');
+      const g = gEdge.append('g').datum(e).attr('class', 'edgegrp');   // datum lets dragMoveEdges() recompute just the connected edges live during a drag
       const vis = g.append('path').attr('class', 'edge' + (selfLoop ? ' self-loop' : '')).attr('d', d).attr('marker-end', e.color != null ? 'url(#ah' + (e.color % PAL_HEX.length) + ')' : 'url(#ah)');
       if (stroke) vis.style('stroke', stroke);
       if (e.color != null) { const dp = ['', '8,4', '4,6', '12,3', '3,8', '6,5', '10,3', '5,5', '9,3', '2,6', '7,4'], pat = dp[e.color % dp.length]; if (pat) vis.style('stroke-dasharray', pat); }   // colorblind / mono-export redundancy
@@ -311,8 +330,8 @@
       .on('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); })   // double-tap handled on svgN pointerdown (capture) — native dblclick is unreliable (element recreated between clicks)
       .on('contextmenu', (e, d) => { e.preventDefault(); clearTimeout(clickTimer); clickTimer = null; openCtx(e, d); })
       .call(d3.drag().clickDistance(5)
-        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragMoved = false; dragId = d.id; document.body.classList.add('dragging'); e.sourceEvent.stopPropagation(); render(); })
-        .on('drag', function (e, d) { if (wire && wire.active) return; dragMoved = true; if (selection.has(d.id) && selection.size > 1) selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); else { d.x = e.x; d.y = e.y; } scheduleRender(); })   // free-form placement (no align-snap)
+        .on('start', function (e, d) { if (wire && wire.active) return; if (!selection.has(d.id)) { selection.clear(); selection.add(d.id); } dragging = true; dragMoved = false; dragId = d.id; document.body.classList.add('dragging'); d3.select(this).classed('grabbing', true); e.sourceEvent.stopPropagation(); })   // no render() on grab — apply the pick-up state directly so the dragged <g> is never recreated mid-gesture (render() runs once on drop)
+        .on('drag', function (e, d) { if (wire && wire.active) return; dragMoved = true; let ids; if (selection.has(d.id) && selection.size > 1) { ids = new Set(selection); selNodes().forEach(n => { n.x += e.dx; n.y += e.dy; }); } else { ids = new Set([d.id]); d.x = e.x; d.y = e.y; } gNode.selectAll('g.node').filter(n => ids.has(n.id)).attr('transform', n => 'translate(' + n.x + ',' + n.y + ') scale(' + (n.scale || 1) + ')'); dragMoveEdges(ids); })   // live drag: move just the node <g>(s) + their edges directly — NO full render() per frame (a webview throttles that → lag). render() runs once on drop.
         .on('end', function (e, d) { if (wire && wire.active) return; const group = selection.has(d.id) && selection.size > 1; if (dragMoved && !group) { d.x = Math.round(d.x); d.y = Math.round(d.y); } if (snapGuide) { snapGuide.remove(); snapGuide = null; } dragging = false; dragId = null; document.body.classList.remove('dragging'); render(); if (dragMoved && SERVER) { if (group) persistPos(selNodes()); else api('/api/pos', { path: repoRel(d.url), x: Math.round(d.x), y: Math.round(d.y) }).then(flushPending); } else flushPending(); }));   // drop exactly where released; save only on a real move; round to whole px to match the server
 
     sel.each(function (d) {
@@ -438,7 +457,7 @@
     if (e && (e.shiftKey || e.metaKey || e.ctrlKey)) { if (selection.has(id)) selection.delete(id); else selection.add(id); }
     else { selection.clear(); selection.add(id); }
   }
-  function clearSelection() { if (!selection.size) return; selection.clear(); render(); }
+  function clearSelection() { const had = selection.size || niOpenId; niOpenId = null; infoStack.length = 0; selection.clear(); if (had) render(); }   // deselect also closes the info panel
   function selNodes() { return (map() ? map().nodes : []).filter(n => selection.has(n.id)); }
   function persistPos(nodes) { if (SERVER) api('/api/poslist', { map: cur, positions: nodes.map(n => ({ path: repoRel(n.url), x: Math.round(n.x), y: Math.round(n.y) })) }).then(flushPending); }
   function copySelection() {   // serialize selected nodes + their internal edges (item 11)
@@ -577,9 +596,9 @@
     const live = byId(d.id); if (!live) return; d = live;   // re-resolve against the CURRENT map: a debounced click can fire after a map switch / SSE moved the node
     if (d.link_map) { if (EMBED) drillTo(d.link_map); else openPip(d.link_map); }   // top level: float a window; inside a window: drill in place
   }
-  function onNodeOpen(d, ev) {   // double-click ALWAYS opens the edit panel (single-click a link node still navigates into its sub-map)
+  function onNodeOpen(d, ev) {   // open = NodeInfo panel (left) + editor drawer (right), together
     const live = byId(d.id); if (!live) return; d = live;
-    closeCtx(); openEditor(d);
+    closeCtx(); openNodeInfo(d); openEditor(d);
   }
 
   // ---- drag-to-connect ----
@@ -677,7 +696,7 @@
         lastTapId = null; lastTapAt = 0;
         suppressClick = true; setTimeout(() => { suppressClick = false; }, 450);   // eat the trailing click(s); auto-clear so it can't get stuck if no click fires
         clearTimeout(clickTimer); clickTimer = null; clearTimeout(longPressTimer); longPressTimer = null;
-        closeCtx(); openEditor(byId(dd.id) || dd);
+        closeCtx(); const dn = byId(dd.id) || dd; openNodeInfo(dn); openEditor(dn);   // double-tap opens BOTH: the NodeInfo panel (left) + the editor drawer (right)
         return;
       }
       lastTapId = dd.id; lastTapAt = e.timeStamp;
@@ -758,7 +777,7 @@
     const t = d3.zoomTransform(svgN), [sx, sy] = t.apply([d.x, d.y]);
     showNameInput(sx, sy, d.name, async title => {
       if (!title || title === d.name) return;
-      const j = await api('/api/rename', { path: repoRel(d.url), title }); if (j.ok) applyMaps(j.maps); else alert('Rename: ' + j.error);
+      const j = await api('/api/rename', { path: repoRel(d.url), title }); if (j.ok) { applyMaps(j.maps); resyncEditorAfterRename(d.id, j.path, title); } else alert('Rename: ' + j.error);
     });
   }
 
@@ -802,7 +821,7 @@
   function switchMap(slug, noHash) {
     if (!MAPS.maps[slug]) return;
     if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-    selection.clear(); infoStack.length = 0; dragId = null; portArmed = false;                              // don't leak gesture/selection/back-stack state into the next map
+    selection.clear(); infoStack.length = 0; niOpenId = null; dragId = null; portArmed = false;                              // don't leak gesture/selection/back-stack/info-panel state into the next map
     if (wire) { wirePath.attr('d', '').style('stroke', ''); wire = null; }
     if (marqueeRect) { marqueeRect.remove(); marqueeRect = null; } marqueeStart = null;
     cur = slug; seen.clear(); document.getElementById('mapsel').value = slug; if (!noHash) setHash(slug);
@@ -984,7 +1003,7 @@
     showNameInput(r.left + r.width / 2, r.top + 12, d.name, async title => {
       if (!title || title === d.name) return;
       const j = await api('/api/rename', { path: repoRel(d.url), title });
-      if (j.ok) { if (j.path) { edPath = j.path; if (edNode) edNode.url = '../' + j.path; } applyMaps(j.maps); document.getElementById('ed-title').textContent = title; }
+      if (j.ok) { applyMaps(j.maps); resyncEditorAfterRename(d.id, j.path, title); }
       else alert('Rename: ' + j.error);
     });
   }
@@ -993,11 +1012,16 @@
     edPath = repoRel(d.url); edNode = d;
     document.getElementById('ed-title').textContent = d.name; document.getElementById('ed-path').textContent = edPath;
     document.getElementById('ed-msg').textContent = 'Loading…'; document.getElementById('ed-text').value = ''; { const ed = document.getElementById('editor'); ed.classList.remove('exiting'); ed.hidden = false; const f = ed.querySelector('button,input,textarea'); if (f) f.focus(); }
-    { const ni = document.getElementById('nodeinfo'); if (ni) ni.hidden = true; }   // the right drawer covers the info panel — hide it while editing (reappears on close)
     try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json();
       if (!j.ok) { document.getElementById('ed-msg').textContent = 'Error: ' + j.error; return; }
       document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); document.getElementById('ed-msg').textContent = ''; renderRefs(j.content);
     } catch (e) { document.getElementById('ed-msg').textContent = 'Error: ' + e.message; }
+  }
+  async function resyncEditorAfterRename(nid, newPath, newTitle) {   // a rename rewrites the file's title: on disk — if the editor is open for that node, refresh its path + body so a later save can't revert the rename (stale editor content == old title)
+    if (!edNode || edNode.id !== nid) return;
+    if (newPath) { edPath = newPath; edNode.url = '../' + newPath; const ep = document.getElementById('ed-path'); if (ep) ep.textContent = newPath; }
+    const et = document.getElementById('ed-title'); if (et && newTitle) et.textContent = newTitle;
+    try { const r = await fetch('/api/doc?path=' + encodeURIComponent(edPath)); const j = await r.json(); if (j.ok) { document.getElementById('ed-text').value = j.content; edContentHash = simpleHash(j.content); renderRefs(j.content); } } catch (_) {}
   }
   function closeEditor() { edPath = null; edNode = null; edContentHash = null; const ed = document.getElementById('editor'); const ae = document.activeElement; if (ae && ed.contains(ae)) ae.blur(); document.getElementById('ed-refs').hidden = true; fadeOut(ed); renderNodeInfo(); }   // blur so focus leaves the hidden editor; re-show the info panel if the node is still selected
   function revalidateEditor() {   // an SSE re-render may have archived/renamed the open node
@@ -1359,7 +1383,8 @@
   function toggleLint() { lintOpen = !lintOpen; document.getElementById('lint-panel').classList.toggle('open', lintOpen); }
 
   // ---- node info panel (single-select): summary · tags · status · 1-hop connections (adopted from Understand-Anything's NodeInfo) ----
-  let niId = null, infoStack = [], niFocusTag = false;
+  let niId = null, niOpenId = null, infoStack = [], niFocusTag = false;   // niOpenId: the node the info panel is explicitly opened for (double-click) — decoupled from selection so a single-click select never opens it
+  function openNodeInfo(d) { selection.clear(); selection.add(d.id); niOpenId = d.id; render(); }
   const STATUS_META = { draft: { label: 'Draft', color: 'var(--muted)' }, active: { label: 'Active', color: 'var(--link)' }, blocked: { label: 'Blocked', color: 'var(--decision)' }, done: { label: 'Done', color: 'var(--step)' } };
   const NODE_GLYPH = { step: '▭', decision: '◇', 'subprocess-link': '▸', reference: '§' };
   function niEl(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
@@ -1370,10 +1395,8 @@
   }
   function renderNodeInfo() {
     const panel = document.getElementById('nodeinfo'); if (!panel) return;
-    const selId = selection.size === 1 ? [...selection][0] : null;
-    const n = selId ? byId(selId) : null;
-    const editorOpen = !document.getElementById('editor').hidden;
-    if (!n || dragging || editorOpen) { panel.hidden = true; if (!n) niId = null; return; }   // hide while dragging / editing, or when not a single selection
+    const n = niOpenId ? byId(niOpenId) : null;   // shown only when explicitly opened via double-click (not on plain selection)
+    if (!n || dragging) { panel.hidden = true; if (!n) { niId = null; niOpenId = null; } return; }   // hide while dragging, or when not explicitly open
     if (niId === n.id && !panel.hidden) return;   // already built for this node → don't clobber in-progress edits or focus
     niId = n.id; buildNodeInfo(panel, n);
   }
@@ -1385,7 +1408,7 @@
       const g = niEl('span', 'ni-connglyph'); g.style.background = accent(t); g.textContent = NODE_GLYPH[t.type] || '▭'; row.appendChild(g);
       const nm = niEl('span', 'ni-connname'); nm.textContent = t.name; row.appendChild(nm);
       if (it.label) { const lb = niEl('span', 'ni-connlbl'); lb.textContent = it.label; row.appendChild(lb); }
-      row.onclick = () => { if (niId) infoStack.push(niId); selection.clear(); selection.add(t.id); render(); focusNode(t); };   // navigate + push back-stack
+      row.onclick = () => { if (niId) infoStack.push(niId); selection.clear(); selection.add(t.id); niOpenId = t.id; render(); focusNode(t); };   // navigate + push back-stack (panel follows the jump)
       wrap.appendChild(row);
     });
     return wrap;
@@ -1399,7 +1422,7 @@
     const nm = niEl('div', 'ni-name'); nm.textContent = n.name;
     if (SERVER) { nm.setAttribute('data-edit', '1'); nm.title = 'Double-click to rename'; nm.ondblclick = () => { const live = byId(n.id); if (live) openRename(live); }; }
     head.appendChild(nm);
-    const x = niEl('button', 'ni-x'); x.textContent = '✕'; x.title = 'Close (deselect)'; x.onclick = clearSelection; head.appendChild(x);
+    const x = niEl('button', 'ni-x'); x.textContent = '✕'; x.title = 'Close'; x.onclick = clearSelection; head.appendChild(x);
     panel.appendChild(head);
     // type (+ sub-map link target)
     const trow = niEl('div', 'ni-row'); const tl = niEl('span', 'ni-lbl'); tl.textContent = n.type === 'subprocess-link' ? 'link' : n.type; trow.appendChild(tl);
@@ -1449,7 +1472,7 @@
     if (inE.length) panel.appendChild(niConnSection('← From', inE.map(e => ({ id: e.from, label: e.label }))));
     // footer — back-stack · open notes
     const foot = niEl('div', 'ni-foot');
-    if (infoStack.length) { const bk = niEl('button', 'ni-back'); bk.textContent = '← Back'; bk.onclick = () => { const prev = infoStack.pop(); if (!prev) return; const pn = byId(prev); selection.clear(); selection.add(prev); render(); if (pn) focusNode(pn); }; foot.appendChild(bk); }
+    if (infoStack.length) { const bk = niEl('button', 'ni-back'); bk.textContent = '← Back'; bk.onclick = () => { const prev = infoStack.pop(); if (!prev) return; const pn = byId(prev); selection.clear(); selection.add(prev); niOpenId = prev; render(); if (pn) focusNode(pn); }; foot.appendChild(bk); }
     const notes = niEl('button', 'primary'); notes.textContent = '✐ Notes'; notes.onclick = () => { const nn = byId(n.id) || n; openEditor(nn); }; foot.appendChild(notes);
     panel.appendChild(foot);
   }

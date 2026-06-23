@@ -129,11 +129,11 @@
   .lint-row:last-child{border-bottom:none}
   .lint-row:hover{background:rgba(224,120,120,.1)}
   /* node info panel — appears on single-select: summary · tags · status · connections (adopted from Understand-Anything's NodeInfo) */
-  #nodeinfo{position:fixed;top:64px;right:16px;z-index:40;width:300px;max-height:calc(100vh - 96px);overflow:auto;
+  #nodeinfo{position:fixed;top:64px;left:16px;z-index:40;width:300px;max-height:calc(100vh - 96px);overflow:auto;
     background:rgba(255,255,255,.84);-webkit-backdrop-filter:blur(20px) saturate(150%);backdrop-filter:blur(20px) saturate(150%);
     border:1px solid rgba(65,64,76,.14);border-radius:14px;box-shadow:var(--e3);padding:14px;display:flex;flex-direction:column;gap:9px;font-size:var(--fs-2);color:var(--ink);animation:ni-in .18s var(--spring) both}
   #nodeinfo[hidden]{display:none}
-  @keyframes ni-in{from{opacity:0;transform:translateX(8px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes ni-in{from{opacity:0;transform:translateX(-8px) scale(.98)}to{opacity:1;transform:none}}
   body.calm #nodeinfo{animation:none}
   @media (prefers-reduced-motion:reduce){#nodeinfo{animation:none}}
   .ni-head{display:flex;align-items:flex-start;gap:8px}
@@ -299,6 +299,7 @@
   body.dragging .node .shape,body.dragging .frame .frame-bg{filter:none}
   /* weighted "picked up" feel — pure transform (GPU), no per-tick blur */
   .node.grabbing .node-inner{transform:scale(1.06)}
+  .node:focus,.node:focus-visible{outline:none}   /* the <g> is focusable (tabindex) for a11y; suppress the UA focus ring — selection is shown by .selring, and the ring otherwise lingers as an orange outline while dragging */
   /* node enter (deal-in) — damped-spring settle */
   @keyframes pop{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
   .node.enter .node-inner{animation:pop .5s var(--spring) both}
