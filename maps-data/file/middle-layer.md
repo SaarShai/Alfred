@@ -4,9 +4,9 @@ nid: n2taty
 title: "MIDDLE LAYER"
 type: step
 x: 494
-y: 651
+y: 652
 ---
 
 # MIDDLE LAYER
 
-*
+* MESH:
