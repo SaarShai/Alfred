@@ -998,7 +998,7 @@
 
   // ---- notes drawer ----
   let edPath = null, edNode = null, edContentHash = null;
-  function simpleHash(s) { let h = 0; for (let i = 0; i < (s || '').length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return h.toString(16); }
+  function simpleHash(s) { let h = 0; const n = (s || '').replace(/\s+$/, ''); for (let i = 0; i < n.length; i++) h = ((h << 5) - h + n.charCodeAt(i)) | 0; return h.toString(16); }
   function stripFM(t) { const m = (t || '').match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/); return (m ? t.slice(m[0].length) : t).replace(/^\s*\n/, ''); }   // editor shows only the body (notes + H1); frontmatter is metadata, managed by the panel/drag/rename
   // rename title+slug by double-clicking the title in the drawer
   function renameFromDrawer(d) {
