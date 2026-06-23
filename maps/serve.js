@@ -364,6 +364,19 @@ function addMap(title) {
   return slug;
 }
 
+function archiveMap(slug) {
+  if (!slug || /[\\/]/.test(slug)) throw new Error('bad slug');
+  const dir = path.join(SRC, slug);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) throw new Error('no such map');
+  fs.mkdirSync(ARCHIVE, { recursive: true });
+  let dest = path.join(ARCHIVE, slug + '__map'), n = 2;
+  while (fs.existsSync(dest)) dest = path.join(ARCHIVE, slug + '__map-' + (n++));
+  fs.renameSync(dir, dest);
+  const reg = path.join(SRC, 'index.md');
+  let r = fs.readFileSync(reg, 'utf8');
+  fs.writeFileSync(reg, setList(r, 'maps', getList(r, 'maps').filter(s => s !== slug)));
+}
+
 function body(req, cb) { let b = ''; req.on('data', c => b += c); req.on('end', () => { try { cb(JSON.parse(b || '{}')); } catch (e) { cb(null); } }); }
 
 // ---- undo: snapshot a map's whole .md file set before each mutation; /api/undo restores the top ----
@@ -451,6 +464,7 @@ http.createServer((req, res) => {
   if (POST('/api/unlink-knowledge', d => { pushUndo(umap(d)); removeRef(d.path, d.ref); rebuildAndReply(res); })) return;
   if (POST('/api/map-kind', d => { pushUndo(d.map); setMapKind(d.map, d.kind); rebuildAndReply(res); })) return;
   if (POST('/api/map-add', d => { const slug = addMap(d.title); rebuildAndReply(res, { slug }); })) return;
+  if (POST('/api/map-archive', d => { pushUndo(d.map); archiveMap(d.map); rebuildAndReply(res); })) return;
   if (POST('/api/undo', () => { const s = undoStack.pop(); if (!s) return json(res, { ok: false, error: 'nothing to undo' }, 400); restoreSnap(s); rebuildAndReply(res); })) return;
 
   // static (maps/ only)

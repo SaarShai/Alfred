@@ -1520,6 +1520,9 @@
       const go = () => { closeHomeOverlay(); jumpMap(slug); };
       card.tabIndex = 0; card.setAttribute('role', 'button'); card.onclick = go;
       card.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } };   // cards were mouse-only <div>s
+      const arch = document.createElement('button'); arch.className = 'hc-archive'; arch.type = 'button'; arch.textContent = '✕'; arch.title = 'Archive this map';
+      arch.onclick = async ev => { ev.stopPropagation(); if (!SERVER) return; const childTxt = children.length ? '\n\nChild maps (' + children.length + ') will be orphaned but kept.' : ''; if (!confirm('Archive map "' + (m.title || slug) + '"?\nMoves maps-data/' + slug + '/ to maps-data/.archive/.' + childTxt)) return; const j = await api('/api/map-archive', { map: slug }); if (j && j.ok) { if (slug === cur) { const fallback = MAPS.order.find(s => s !== slug); if (fallback) jumpMap(fallback); } applyMaps(j.maps); openHomeOverlay(); } else alert('Archive: ' + (j && j.error || 'failed')); };
+      card.appendChild(arch);
       cards.appendChild(card);
     });
     overlay.classList.add('open');

@@ -179,7 +179,10 @@
   #home-head{display:flex;align-items:center;justify-content:space-between}
   #home-head h2{margin:0;font-size:var(--fs-5);font-weight:700;color:var(--ink)}
   #home-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;overflow:auto}
-  .home-card{display:flex;flex-direction:column;gap:8px;padding:14px 15px;background:rgba(255,255,255,.6);border:1px solid rgba(148,163,184,.25);border-radius:12px;cursor:pointer;transition:transform .14s var(--spring),background .14s,box-shadow .14s}
+  .home-card{position:relative;display:flex;flex-direction:column;gap:8px;padding:14px 15px;background:rgba(255,255,255,.6);border:1px solid rgba(148,163,184,.25);border-radius:12px;cursor:pointer;transition:transform .14s var(--spring),background .14s,box-shadow .14s}
+  .hc-archive{position:absolute;top:8px;right:8px;width:22px;height:22px;display:none;align-items:center;justify-content:center;border:1px solid rgba(148,163,184,.35);background:rgba(255,255,255,.85);border-radius:6px;color:var(--muted);font-size:13px;line-height:1;cursor:pointer;padding:0}
+  .home-card:hover .hc-archive,.home-card:focus-within .hc-archive{display:inline-flex}
+  .hc-archive:hover{background:#fff;color:#b04646;border-color:rgba(176,70,70,.5)}
   .home-card:hover{background:#fff;transform:translateY(-2px);box-shadow:0 8px 18px rgba(65,64,76,.1)}
   .home-card.current{border-color:var(--step);box-shadow:inset 0 0 0 1px var(--step)}
   .hc-title{font-size:var(--fs-3);font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
