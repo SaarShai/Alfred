@@ -1604,9 +1604,7 @@
 
   const boot = (location.hash.match(/map=([^&]+)/) || [])[1];
   if (boot && MAPS.maps[boot]) cur = boot;
-  fillMapSelect(); fillLinkSelect(); render();
-  requestAnimationFrame(() => {   // defer fit one frame so the iframe has real dimensions, then instant-fit + re-cull (no flash, no missed-transition)
-    try { fit(true); render(); document.body.classList.add('d3-canvas-ready'); }   // headless-test signal: first paint settled (tools/validate_canvas.py)
-    catch (e) { document.body.classList.add('d3-canvas-error'); throw e; }
-  });
+  try { fillMapSelect(); fillLinkSelect(); render(); document.body.classList.add('d3-canvas-ready'); }   // headless-test signal: boot render done — set synchronously (rAF is throttled/paused in bg iframes). tools/validate_canvas.py
+  catch (e) { document.body.classList.add('d3-canvas-error'); throw e; }
+  requestAnimationFrame(() => { fit(true); render(); });   // defer fit one frame so the iframe has real dimensions, then instant-fit + re-cull (no flash, no missed-transition)
 })();
