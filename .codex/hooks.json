@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "bash ./.claude/skills/context-keeper/tools/codex_archive.sh",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
