@@ -8,4 +8,8 @@ y: 491
 
 # REGISTRATION marks
 
-_(empty node — edit me)_
+
+
+extra step:
+* add "artboard cut-line" (object) = a horizontal line 5 mm above the highest production element (CNC path and/or print image).
+sss
