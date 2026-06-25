@@ -1,5 +1,6 @@
 ---
 name: task-retrospective
+disable-model-invocation: true
 description: "Use only when the user explicitly activates task audit mode, asks for task-retrospective, says this task will repeat and should be learned from, requests an after-the-fact task learning audit, or types /retro. Helps the current project learn from a repeatable task: reconstruct what happened, identify reusable project lessons, and route sparse durable updates to project memory, SOPs, checklists, or project-specific skills through write-gate. Does not audit Brainer skill obedience and does not edit canonical Brainer skills."
 effort: medium
 tools: [Bash, Read, Write, Grep]
@@ -166,52 +167,69 @@ For after-the-fact mode, reconstruct from the visible transcript, git diff, chan
 
 ## Durable write target ladder
 
-Use the narrowest durable target:
+Use the narrowest durable target. There are **four destinations**, each a distinct
+backend — prefer the lightest that fits: **drop > wiki page > skill > always-on rule.**
 
-1. no durable write;
-2. wiki fact or project memory;
-3. wiki pattern or lesson;
-4. SOP;
-5. checklist;
-6. existing project-specific skill;
-7. new project-specific skill;
-8. project-level `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`, only for broad repo-wide rules.
+1. **drop** — no durable write (most lessons end here).
+2. **wiki page** → [`wiki-memory`](../wiki-memory/SKILL.md) — a durable fact, lesson, SOP,
+   or checklist. One destination, several *shapes*: the wiki is internally tiered (L2 facts /
+   L3 SOPs), so pick the lightest shape that captures it — a one-off fact and a multi-step
+   SOP both land here, the wiki's tiers keep them apart.
+3. **skill** → [`learn-skill`](../learn-skill/SKILL.md) (`/learn`) — a reusable *procedure*.
+   Create-vs-update is `/learn`'s dedup decision (PATCH vs CREATE), not a separate target.
+4. **always-on rule** — project `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`, only for broad
+   repo-wide behavior that must always be in context.
 
-A project-specific skill is valid only when all are true:
+A fact or gotcha is a **wiki page**, not a skill; a repo-wide rule is an **always-on rule**,
+not a skill. Most retrospective lessons are facts/gotchas → destination 2 or drop.
+
+> **Under-reach counterweight (mandatory before filing to destination 2).** This ladder
+> biases *downward* ("prefer the lightest", "most lessons are facts") — which silently
+> files genuine *procedures* as facts, so `/learn` is never reached (the connector-consistency
+> miss). Before writing any lesson to a wiki page, run the mechanical probe:
+> ```bash
+> python3 skills/task-retrospective/tools/task_audit.py route-probe \
+>   --text "<lesson one-liner>" [--body-file <draft>]
+> ```
+> Exit 3 = **PROCEDURE-CANDIDATE** (it cites commands, has ≥2 ordered steps, or chains ≥2
+> imperative verbs — a runbook, not a fact). You may **not** silently file it as a wiki page:
+> run the destination-3 gate below, and if you still choose destination 2, record the
+> *why-not-skill* reason in the report. Exit 0 = fact-shaped, wiki/drop is fine. The probe
+> never auto-creates a skill — it only refuses the silent downgrade.
+
+A **skill** (destination 3) is valid only when all are true:
 
 - the workflow will recur;
 - the trigger is clear;
 - the procedure is concrete;
-- the lesson is not already covered by an SOP, checklist, memory page, or existing skill;
+- the lesson is not already covered by a wiki page (fact / SOP / checklist) or an existing skill;
 - a future agent would otherwise rediscover the procedure;
 - the user requested it or the evidence strongly supports it.
 
 Canonical Brainer skill updates are not on this ladder.
 
-### Skill targets (6–7) hand off to `/learn`
+### Destination 3 (skill) hands off to `/learn`
 
-When — and ONLY when — the chosen target is a project-specific skill (rung 6 or 7),
-do not hand-write the `SKILL.md`. Hand the lesson to [`learn-skill`](../learn-skill/SKILL.md):
+When — and ONLY when — the chosen destination is a skill, do not hand-write the
+`SKILL.md`. Hand the lesson to [`learn-skill`](../learn-skill/SKILL.md):
 
 ```bash
-# rung 7 (new skill): author from the task you just retrospected
+# new skill: author from the task you just retrospected
 /learn how we just did <task>        # described-workflow source
 
-# rung 6 (existing skill): dedup first — it will say PATCH if one already covers this
+# possibly-existing: dedup first — it says PATCH if one already covers this (don't duplicate)
 python3 skills/learn-skill/tools/learn.py dedup --desc "<one-line procedure>" --body-file <draft>
 ```
 
-Why route through `/learn` instead of writing the file directly: the skill then inherits
-the full governance — dedup-before-write (patch, don't duplicate), the same `write-gate`
-rationale check this ladder already runs, birth as `status: proposed` (slash-only, can't
-auto-fire), and the telemetry-gated `proposed → trusted` lifecycle. A hand-written skill
-skips all of that and ships untracked.
+Why route through `/learn` instead of writing the file: the skill inherits the full
+governance — dedup-before-write (patch, don't duplicate), the same `write-gate` rationale
+check this ladder already runs, birth as `status: proposed` (slash-only, can't auto-fire),
+and the telemetry-gated `proposed → trusted` lifecycle. A hand-written skill skips all that.
 
-This handoff is **conditional, not automatic** — rungs 1–5 and 8 (memory, wiki, SOP,
-checklist, broad agent instructions) are NOT skills and stay on their own targets.
-Most retrospective lessons are facts or gotchas, not reusable procedures, so most do not
-reach `/learn`. task-retrospective remains the router that decides *whether* a lesson is
-durable and *which* of the eight rungs it belongs to; `/learn` only owns the skill rung.
+This handoff is **conditional, not automatic** — destinations 1, 2, and 4 (drop, wiki,
+always-on rule) are NOT skills and stay on their own backends. task-retrospective remains
+the router that decides *whether* a lesson is durable and *which* of the four destinations
+it belongs to; `/learn` only owns the skill destination.
 
 ## Write pipeline
 
@@ -220,9 +238,10 @@ candidate lesson
 → task-retrospective relevance check
 → search existing memory/SOP/project-specific skills
 → choose narrowest project-owned target
+→ route-probe: if procedure-shaped, test the skill (dest-3) gate before allowing a wiki page
 → run write-gate as content-quality filter
 → dedup/overlap check
-→ write/update target if accepted
+→ write/update target if accepted (for a wiki page, write the Trigger/symptom cue as a BODY line per wiki-memory step 8b, so the lesson is later findable by its symptom phrase via search — not in a frontmatter-only key, which search ignores)
 → read back
 → append project log entry if the project wiki exists
 → include final persistence summary in the report
@@ -270,6 +289,7 @@ A user override is valid, but record it using [`write-gate`](../write-gate/SKILL
 ## Reusable learnings
 1. Lesson:
    Applies when:
+   Trigger/symptom:   # the OBSERVABLE signal a future task pattern-matches on (the symptom, not the topic), e.g. "off-by-hours in date tests" -> timezone/UTC fix
    Evidence:
    Target:
    Write-gate:
