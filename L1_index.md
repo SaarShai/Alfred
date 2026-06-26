@@ -12,6 +12,8 @@ Compact pointers. Fetch details on demand.
 - raw sources -> `raw/` (search only; fetch after relevance)
 - L2_facts/approved-information-sources (fact tags=approved-sources,access-control,executive-assistant,daily-briefing,weekly-planning) -> `L2_facts/approved-information-sources.md`
 - L2_facts/source-intake-queue (fact tags=source-intake,approved-sources,executive-assistant,google-workspace) -> `L2_facts/source-intake-queue.md`
+- L2_facts/user-identity (fact tags=user-profile,identity,biography,mirror-intake) -> `L2_facts/user-identity.md`
+- L2_facts/user-lists (fact tags=user-lists,personal-context,entertainment,reading,executive-assistant) -> `L2_facts/user-lists.md`
 - L2_facts/user-operating-profile (fact tags=user-profile,executive-assistant,preferences,daily-briefing,weekly-planning) -> `L2_facts/user-operating-profile.md`
 - L3_sops/approved-source-intake (sop tags=approved-sources,source-intake,access-control,executive-assistant) -> `L3_sops/approved-source-intake.md`
 - L3_sops/chief-of-staff-evaluation (sop tags=evaluation,tests,chief-of-staff,executive-assistant) -> `L3_sops/chief-of-staff-evaluation.md`
@@ -20,6 +22,7 @@ Compact pointers. Fetch details on demand.
 - L3_sops/gogcli-workspace-access (sop tags=gogcli,google-workspace,source-intake,executive-assistant) -> `L3_sops/gogcli-workspace-access.md`
 - L3_sops/instruction-fidelity-and-drift-control (sop tags=instruction-fidelity,drift-control,trust,chief-of-staff,executive-assistant) -> `L3_sops/instruction-fidelity-and-drift-control.md`
 - L3_sops/subagent-dispatch-for-chief-of-staff (sop tags=subagents,chief-of-staff,delegation,executive-assistant) -> `L3_sops/subagent-dispatch-for-chief-of-staff.md`
+- Principles/README (project tags=user-principles,principles,index,personal-knowledge,alfred) -> `Principles/README.md`
 - concepts/memory-scoping-and-context-hierarchy (concept tags=memory,context,chief-of-staff,executive-assistant) -> `concepts/memory-scoping-and-context-hierarchy.md`
 - patterns/agent-tool-guardrails (pattern tags=guardrails,tools,source-access,executive-assistant) -> `patterns/agent-tool-guardrails.md`
 - patterns/agentic-system-best-practices (pattern tags=agents,best-practices,executive-assistant,research,adoption) -> `patterns/agentic-system-best-practices.md`
@@ -40,6 +43,3 @@ Compact pointers. Fetch details on demand.
 - .brainer/sessions/2026-06-20-093335-255000f3-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-093335-255000f3-manual.md`
 - .brainer/sessions/2026-06-20-124043-255000f3-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-124043-255000f3-manual.md`
 - .brainer/sessions/2026-06-22-080008-255000f3-auto (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-22-080008-255000f3-auto.md`
-- .brainer/sessions/2026-06-23-105259-522324f1-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-23-105259-522324f1-manual.md`
-- .brainer/sessions/2026-06-23-150125-522324f1-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-23-150125-522324f1-manual.md`
-- L2_facts/obligations (fact tags=obligations,reminders,deadlines,recurring,executive-assistant,daily-briefing,weekly-planning) -> `L2_facts/obligations.md`
