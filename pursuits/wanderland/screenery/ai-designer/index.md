@@ -11,11 +11,15 @@ tags: [pursuit-tree]
 
 # AI designer
 
-AI project for editing Screenery Illustrator (.ai) files.
+Claude/Codex projects Saar built to do much of his design + file-prep work — i.e. to relieve the file-prep bottleneck ([[pursuits/wanderland/operations]]). **Confirmed** 2026-06-26: this is the bottleneck-relief effort (earlier this link was only a hypothesis).
 
-**Access** (granted 2026-06-02, read **when relevant** only): `~/Documents/screenery-lean` (current) and `~/Documents/Master Screenery 3.5` (previous, reference). `~/Documents` is Drive-synced — read-only, no folder moves/renames.
+**Two projects:**
+- `~/Documents/screenery-lean` — editing Screenery Illustrator (.ai) files (current; prev reference `~/Documents/Master Screenery 3.5`).
+- `~/Documents/product-images-repo` — product images.
 
-**Status:** active
+**Status (stated 2026-06-26):** partly successful — good at some tasks, not others. There IS progress, but it's slow. Saar repeatedly feels "close to a breakthrough" that would let him delegate a lot to the agents. These projects are **part of why Wanderland has not hired another designer** (the other reason: designs are mid-revision, so Saar doesn't yet know what to brief a designer on).
+
+**Access** (granted 2026-06-02, read **when relevant** only): `~/Documents` is Drive-synced — read-only, no folder moves/renames.
 
 ## Children
 - [[pursuits/wanderland/screenery/ai-designer/finalize-file-checklist]]

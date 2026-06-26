@@ -35,6 +35,12 @@ Per-fact provenance: `stated` (he said it) > `observed` > `inferred`. Decay ages
 - At Wanderland owns **design + file preparation** (Alicia owns outreach/customer relations/operations). — stated · high · 2026-06-26 · see [[pursuits/wanderland/operations]]
 - Self-identified **bottleneck**: slow at producing production files vs. the rate the business needs (says it's not a skills issue); files often have errors caught at production. — stated · high · 2026-06-26
 
+## Traits / patterns
+
+- **Perfectionist**; tends to **procrastinate until he judges things "perfect."** Self-identified. — stated · high · 2026-06-26
+- Recurrent belief that he's "close to a breakthrough" with his AI projects that will let him delegate heavily — progress is real but slow. — stated · high · 2026-06-26
+- Coaching implication (for Alfred): these patterns + his file-prep bottleneck can jointly justify deferring decisions (e.g. hiring). Surface that tension; push toward "good enough to ship/delegate" over "perfect." See [[pursuits/wanderland/operations]].
+
 ## Open Questions
 
 - Age (skipped).

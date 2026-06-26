@@ -35,6 +35,12 @@ How the business actually runs. All `stated` by Saar 2026-06-26 unless noted.
 - Files **often have errors discovered at production**. — stated · high
 - Hypothesis (unconfirmed): this is the problem the [[pursuits/wanderland/screenery/ai-designer]] is meant to relieve. Confirm with Saar.
 
+## Hiring / capacity (decision: no designer hired yet)
+- No additional designer hired. Two stated reasons: — stated · high · 2026-06-26
+  1. The [[pursuits/wanderland/screenery/ai-designer]] projects might absorb the work (Saar keeps feeling "close to a breakthrough").
+  2. Designs are mid-revision — Saar doesn't yet know what to brief a designer on / look for.
+- Reopening condition (implied): designs settled + honest read on whether agents can actually carry the load.
+
 ## Related
 - [[pursuits/wanderland/index]]
 - [[pursuits/wanderland/screenery/product-facts]]
