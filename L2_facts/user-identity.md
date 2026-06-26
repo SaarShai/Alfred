@@ -32,6 +32,8 @@ Per-fact provenance: `stated` (he said it) > `observed` > `inferred`. Decay ages
 - Co-founder of **Wanderland**, which produces **Screenery** — a themed room divider for hotels. — stated · high · 2026-06-26 · see [[L2_facts/user-operating-profile]]
 - Co-founder is **Alicia, his wife**; ownership split **50/50**. — stated · high · 2026-06-26
 - Heavy AI user across both the company and personal side projects. — stated · high · 2026-06-26
+- At Wanderland owns **design + file preparation** (Alicia owns outreach/customer relations/operations). — stated · high · 2026-06-26 · see [[pursuits/wanderland/operations]]
+- Self-identified **bottleneck**: slow at producing production files vs. the rate the business needs (says it's not a skills issue); files often have errors caught at production. — stated · high · 2026-06-26
 
 ## Open Questions
 

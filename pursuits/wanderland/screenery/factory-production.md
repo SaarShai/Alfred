@@ -10,7 +10,9 @@ tags: [pursuit-tree, note]
 
 # Factory (production)
 
-_(empty note — edit me)_
+Screenery is produced at **KwickScreen** — a factory in **Lewisham, London**. (stated by Saar 2026-06-26)
+
+Note: errors in Saar's prep files are often discovered here, at production. See [[pursuits/wanderland/operations]].
 
 
 <!-- pursuit-rollup:start -->

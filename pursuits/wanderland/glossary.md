@@ -28,6 +28,8 @@ Controlled vocabulary for Wanderland / Screenery — the shared language across 
 - **Bespoke** — custom Screenery: client-chosen theme/size/colours + hotel branding/mascot, or an adapted existing design; price on request. — confirmed (catalogue) 2026-06-26
 - **Collection** — the catalogued lineup of themed models for a year (e.g. 2026 Collection). — confirmed (catalogue) 2026-06-26
 - **Model / theme** — a named design: Castle, Princess Palace, Spaceship, Birthday, Marine Life, Arabian Nights, Gingerbread House, Kids Cafe, Reading Corner, City Skylines. — confirmed (catalogue) 2026-06-26
+- **File preparation ("files")** — the production-ready design files Saar prepares for the factory; his core responsibility and the current bottleneck. — confirmed 2026-06-26
+- **KwickScreen** — the factory in Lewisham, London where Screenery is produced. — confirmed 2026-06-26
 
 ## To-confirm (terms seen in repo / maps-data; definitions NOT yet stated by Saar)
 
