@@ -333,6 +333,7 @@ class WikiStore:
             "L2_facts/user-identity",
             "L2_facts/user-lists",
             "Principles/README",
+            "pursuits/wanderland/glossary",
             "L3_sops/approved-source-intake",
             "L3_sops/chief-of-staff-evaluation",
             "L3_sops/chief-of-staff-onboarding",

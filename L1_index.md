@@ -34,6 +34,7 @@ Compact pointers. Fetch details on demand.
 - patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
 - projects/executive-assistant/README (project tags=alfred,personal-ceo,chief-of-staff,gstack,prompter) -> `projects/executive-assistant/README.md`
 - projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
+- pursuits/wanderland/glossary (fact tags=wanderland,glossary,context,vocabulary,screenery) -> `pursuits/wanderland/glossary.md`
 - .brainer/ledger/second-brain (page) -> `.brainer/ledger/second-brain.md`
 - .brainer/ledger/session (page) -> `.brainer/ledger/session.md`
 - .brainer/sessions/2026-06-19-145103-9d98b116-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-19-145103-9d98b116-manual.md`
@@ -42,4 +43,3 @@ Compact pointers. Fetch details on demand.
 - .brainer/sessions/2026-06-20-075200-255000f3-auto (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-075200-255000f3-auto.md`
 - .brainer/sessions/2026-06-20-093335-255000f3-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-093335-255000f3-manual.md`
 - .brainer/sessions/2026-06-20-124043-255000f3-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-124043-255000f3-manual.md`
-- .brainer/sessions/2026-06-22-080008-255000f3-auto (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-22-080008-255000f3-auto.md`

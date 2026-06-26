@@ -69,6 +69,7 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 - Prefer updating this page over scattering profile facts across session notes.
 - Cite the source prompt, command, or wiki page that proves the preference.
 - Proactive capture: when the user states a durable fact about himself, his work, or how he wants Alfred to operate, notice it and propose persisting it to the right profile page ([[L2_facts/user-identity]] for biography, this page for work prefs, [[L2_facts/user-lists]] for tastes, [[Principles/README]] for principles) — gated through write-gate, never silently. This is the standing Mirror Intake behavior between explicit intake sessions.
+- Mirror Intake stages: (1) raw dump, (2) contradiction matrix, (2.5) **term check** — surface each new domain term, define it, flag glossary collisions before recording (per `/grill-with-docs`; Wanderland vocab lives in [[pursuits/wanderland/glossary]]), (3) Socratic loop, (4) gated write.
 - The repo wiki is the canonical second-brain store; the resident `~/.claude` auto-memory only carries pointers back to it.
 
 ## Related
