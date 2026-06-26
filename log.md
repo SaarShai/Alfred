@@ -79,3 +79,7 @@ Created `concepts/wanderland-later.md` from `page` template.
 ## 2026-06-03
 - Built dedicated executive-coach mode (user decision: "build it, borrow from relevant repos, pick top-rated"). Researched + verified top exec-coaching frameworks: GROW, OSKAR, The Coaching Habit's 7 questions (verbatim), Marshall Goldsmith feedforward, Trillion Dollar Coach (Bill Campbell), Immunity to Change. Scanned vendored gstack + obra/superpowers — confirmed neither ships a coaching skill (gstack: office-hours/plan-ceo-review/retro are one-shot reviews; superpowers is eng-only). Created `patterns/coaching-frameworks-and-questions.md`, `L3_sops/executive-coaching-method.md`, `skills/executive-coach/SKILL.md`. Core design: coaching is a **mode switch** (tell→ask, "tame the advice monster") layered on Alfred's default incisive-advice spine; uniquely ties coaching to the user's own `Principles/` archive. Wired into `start.md` on-demand loader + `skills/executive-assistant/SKILL.md` routing. Verified: `wiki lint --strict` ok, index+rollup refreshed, retrieval ranks the 3 pages top-3 on a "coach me" query. Coaching ledger (`L2_facts/coaching-ledger.md`) deferred — created on first real commitment, not pre-emptively.
 
+## [2026-06-26] update | User identity
+
+Created `concepts/user-identity.md` from `page` template.
+

@@ -31,15 +31,15 @@ Compact pointers. Fetch details on demand.
 - patterns/structured-check-ins (pattern tags=check-ins,preferences,listening,executive-assistant) -> `patterns/structured-check-ins.md`
 - projects/executive-assistant/README (project tags=alfred,personal-ceo,chief-of-staff,gstack,prompter) -> `projects/executive-assistant/README.md`
 - projects/prompter/README (project tags=prompter,prompt-engineering,knowledge-base,wiki-driven,alfred) -> `projects/prompter/README.md`
+- .brainer/ledger/second-brain (page) -> `.brainer/ledger/second-brain.md`
+- .brainer/ledger/session (page) -> `.brainer/ledger/session.md`
+- .brainer/sessions/2026-06-19-145103-9d98b116-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-19-145103-9d98b116-manual.md`
+- .brainer/sessions/2026-06-20-033237-9d98b116-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-033237-9d98b116-manual.md`
+- .brainer/sessions/2026-06-20-060517-9d98b116-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-060517-9d98b116-manual.md`
+- .brainer/sessions/2026-06-20-075200-255000f3-auto (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-075200-255000f3-auto.md`
+- .brainer/sessions/2026-06-20-093335-255000f3-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-093335-255000f3-manual.md`
+- .brainer/sessions/2026-06-20-124043-255000f3-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-20-124043-255000f3-manual.md`
+- .brainer/sessions/2026-06-22-080008-255000f3-auto (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-22-080008-255000f3-auto.md`
+- .brainer/sessions/2026-06-23-105259-522324f1-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-23-105259-522324f1-manual.md`
+- .brainer/sessions/2026-06-23-150125-522324f1-manual (session-memory tags=session,pre-compact) -> `.brainer/sessions/2026-06-23-150125-522324f1-manual.md`
 - L2_facts/obligations (fact tags=obligations,reminders,deadlines,recurring,executive-assistant,daily-briefing,weekly-planning) -> `L2_facts/obligations.md`
-- L2_facts/subscriptions-tracker (fact tags=subscriptions,cost-tracking,operations,executive-assistant) -> `L2_facts/subscriptions-tracker.md`
-- L2_facts/user-lists (fact tags=user-lists,personal-context,entertainment,reading,executive-assistant) -> `L2_facts/user-lists.md`
-- L2_facts/user-principles-collection (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-collection.md`
-- L2_facts/user-principles-index (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-index.md`
-- L2_facts/user-principles-working (fact tags=user-principles,superseded,redirect) -> `L2_facts/user-principles-working.md`
-- L3_sops/capture-and-route (sop tags=capture,routing,memory,reminders,obligations,executive-assistant) -> `L3_sops/capture-and-route.md`
-- L3_sops/executive-coaching-method (sop tags=coaching,executive-coach,sop,method,alfred) -> `L3_sops/executive-coaching-method.md`
-- L3_sops/external-source-adoption (sop tags=source-adoption,research,wiki-write) -> `L3_sops/external-source-adoption.md`
-- L3_sops/generate-prompt-from-instruction (sop tags=prompter,sop,prompt-generation,retrieval) -> `L3_sops/generate-prompt-from-instruction.md`
-- L3_sops/gstack-alfred-precedence (sop tags=gstack,precedence,governance,reconciliation,alfred,decision-gates,memory-authority) -> `L3_sops/gstack-alfred-precedence.md`
-- Principles/README (project tags=user-principles,principles,index,personal-knowledge,alfred) -> `Principles/README.md`
