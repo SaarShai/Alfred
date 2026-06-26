@@ -39,6 +39,7 @@ Per-fact provenance: `stated` (he said it) > `observed` > `inferred`. Decay ages
 
 - **Perfectionist**; tends to **procrastinate until he judges things "perfect."** Self-identified. — stated · high · 2026-06-26
 - Recurrent belief that he's "close to a breakthrough" with his AI projects that will let him delegate heavily — progress is real but slow. — stated · high · 2026-06-26
+- Tends to **overcomplicate and overdeliver**, which hurts timelines and creates errors/delays. Self-identified. — stated · high · 2026-06-26 · likely a root cause of the file-prep bottleneck + production errors ([[pursuits/wanderland/operations]])
 - Coaching implication (for Alfred): these patterns + his file-prep bottleneck can jointly justify deferring decisions (e.g. hiring). Surface that tension; push toward "good enough to ship/delegate" over "perfect." See [[pursuits/wanderland/operations]].
 
 ## Open Questions
