@@ -2,8 +2,8 @@
 nid: nyzxrq
 title: "NAMING"
 type: step
-x: 285
-y: 502
+x: 621
+y: 419
 ---
 
 # NAMING

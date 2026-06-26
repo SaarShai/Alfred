@@ -27,7 +27,19 @@ Width = total stabilizer thickness + 0.6 mm clearance.
 - “Accommodation areas": a non-cutting area that continues ‘into’ the panel (length-wise) from the stabilizer slot edge. This area accommodates a corresponding slot-on-stabilizer of the same length in the stabilizer. Width and length of accommodation area are the same as the corresponding slot-on-stabilizer.
 
 
-* 3.1.4 Flaps and sockets connection mechanism (panel-to-panel)
-Current panel-to-panel mechanism. Flaps section - hinged; 3 FLAPS (typical) extended from a strip in BACK layer of one panel into matching SOCKETS in BACK layer of neighbor. Sockets section - 3 matching sockets + strip; cutout from BACK layer.
+* Flaps and sockets: [[n69mdp|FLAPS & SOCKETS]]
 
-Key facts: always BACK layer; hinge faces backwards; flaps OUTWARD; flaps on LEFT (typical; when viewed from the back), sockets on RIGHT (typical; when viewed from the back); flap 10-12 mm longer than sockets; each flap has a FINGER HOLE.
+
+
+A door is a HINGED FLAP feature of a DOOR PANEL. Connected to and separated from the rest of the panel by a hinge line. 
+
+Typically - door hinge and front door flap included in the front layer of the panel or subpanel.
+Typically - a “door back piece” is flipped and adhered to the back of the flap, making a door flap 2-layers (front and back).
+
+Variants:
+ - default door — single flap, hinged on the right (front view).
+ - arched door — rounded-top silhouette.
+ - gate-style door (also ‘saloon door’) — two flaps opening from the middle outward, one flap included in the bottom left subpanel and a second flap included in the right subpanel.
+
+
+Floor clearance: door flap bottom sits ~6 mm above contour bottom.

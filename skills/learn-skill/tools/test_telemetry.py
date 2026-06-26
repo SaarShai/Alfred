@@ -201,6 +201,25 @@ def test_abort_regex_precision():
     print("ok test_abort_regex_precision")
 
 
+def test_correction_approval_lead_and_benign_dont():
+    """P2-2: an approval-led 'Great, don't change anything else' is a HIT; a benign
+    'don't forget to push' is a HIT; but 'don't do that' / 'great but that's wrong'
+    stay ABORTs. Tests _is_correction directly (the single decision point)."""
+    hit = ["Great, don't change anything else",
+           "don't forget to push the branch",
+           "thanks — don't worry about the rest",
+           "perfect, looks good"]
+    abort = ["don't do that",
+             "don't use that API",
+             "great, but that's wrong",
+             "that didn't work, still broken"]
+    for s in hit:
+        assert telemetry._is_correction(s) is False, f"should be HIT: {s!r}"
+    for s in abort:
+        assert telemetry._is_correction(s) is True, f"should be ABORT: {s!r}"
+    print("ok test_correction_approval_lead_and_benign_dont")
+
+
 def test_checkpoint_clean_slate():
     """A checkpoint (written on refine) resets the counted slate: pre-checkpoint
     hits/aborts are ignored, only post-checkpoint usage counts."""
@@ -218,6 +237,32 @@ def test_checkpoint_clean_slate():
         assert s2["hits"] == 1 and s2["aborts"] == 0, s2  # only post-checkpoint counts
     os.environ.pop("CLAUDE_PROJECT_DIR", None)
     print("ok test_checkpoint_clean_slate")
+
+
+def test_defer_trailing():
+    """--defer-trailing skips an invocation with no following user turn (Codex per-turn
+    Stop), then records it once the reply exists on the next scan."""
+    with tempfile.TemporaryDirectory() as t:
+        os.environ["CLAUDE_PROJECT_DIR"] = t
+        inv_a = {"type": "assistant", "timestamp": "2026-06-01T00:00:01", "message": {"content": [
+            {"type": "tool_use", "name": "Skill", "input": {"skill": "aa"}}]}}
+        usr = {"type": "user", "message": {"content": [{"type": "text", "text": "ok"}]}}
+        inv_b = {"type": "assistant", "timestamp": "2026-06-01T00:00:02", "message": {"content": [
+            {"type": "tool_use", "name": "Skill", "input": {"skill": "bb"}}]}}
+        tp = Path(t) / "tx.jsonl"
+        # b is the trailing invocation with NO reply yet
+        tp.write_text("\n".join(json.dumps(e) for e in [inv_a, usr, inv_b]), encoding="utf-8")
+        code, out = _run(["scan", "--transcript", str(tp), "--defer-trailing"])
+        r = json.loads(out)
+        assert r["added"] == 1 and r["deferred"] == 1, out          # a recorded, b deferred
+        assert "aa" in telemetry.compute_stats() and "bb" not in telemetry.compute_stats()
+        # reply to b arrives → next scan records it
+        tp.write_text("\n".join(json.dumps(e) for e in [inv_a, usr, inv_b, usr]), encoding="utf-8")
+        code2, out2 = _run(["scan", "--transcript", str(tp), "--defer-trailing"])
+        assert json.loads(out2)["added"] == 1
+        assert telemetry.compute_stats()["bb"]["hits"] == 1
+    os.environ.pop("CLAUDE_PROJECT_DIR", None)
+    print("ok test_defer_trailing")
 
 
 def test_flag():

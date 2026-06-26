@@ -126,8 +126,8 @@ the canary auto-discovers it. Silence per-deployment via `COMPLIANCE_CANARY_PROB
 
 ## Verification
 ```bash
-python3 skills/learn-skill/tools/test_learn.py        # 16: dedup, lint, scaffold, promote, demote, staleness, CRLF, stale-gate
-python3 skills/learn-skill/tools/test_telemetry.py    # 8:  record, scan, stats, flag, collision, chronological-streak, regex
+python3 skills/learn-skill/tools/test_learn.py        # 22: dedup, lint (+YAML gate), scaffold (+YAML-safe), promote, demote, staleness (+disable-on-stale), CRLF, stale-gate
+python3 skills/learn-skill/tools/test_telemetry.py    # 13: record, scan, stats, flag, collision, chronological-streak, regex (+approval-lead/benign-don't)
 python3 skills/learn-skill/tools/test_nomination.py   # 7:  the canary nomination detector + boilerplate filters
 python3 skills/loop-engineering/tools/loop_lint.py skills/learn-skill/LOOPS.md   # 0 fail · 0 warn
 python3 skills/learn-skill/tools/learn.py lint --file skills/<name>/SKILL.md     # exit 0
@@ -186,3 +186,12 @@ mutating steps (`promote` / `demote` / `staleness --apply`) stay agent-run behin
 reading the nudge). Spec #4 in [`LOOPS.md`](LOOPS.md) declares the `output_actions` allowlist
 (scan-append, nudge-print only) and lints clean. Tune: `LEARN_SKILL_PROMOTE_MIN` /
 `LEARN_SKILL_DEMOTE_MIN`.
+
+**Codex** has no SessionStart/SessionEnd, so the installer wires **Stop** → per-turn
+`telemetry scan --defer-trailing` (defers the just-fired invocation until its reply exists,
+so hit/abort isn't judged early) and **UserPromptSubmit** → the same nudge. Codex transcripts
+are a different schema, normalized to Claude shape via [`../_shared/transcript_norm.py`](../_shared/transcript_norm.py).
+Codex has no discrete `Skill` tool_use, but it expands **every** skill invocation (slash OR
+model-invoked) into an injected `<skill><name>…</name>` user block — the normalizer reads that
+as the canonical invocation signal, so both kinds are auto-captured (verified live: a `/think`
+followed by a correction recorded a `think` abort from the real Codex transcript).

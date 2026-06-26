@@ -25,41 +25,26 @@ END_CMD="bash ./.claude/skills/learn-skill/tools/hook_session_end.sh"
 START_CMD="bash ./.claude/skills/learn-skill/tools/hook_session_start.sh"
 
 merge_settings() {
-  python3 - "$SETTINGS" "$END_CMD" "$START_CMD" <<'PY'
-import json, sys
-from pathlib import Path
-settings_path = Path(sys.argv[1]); end_cmd, start_cmd = sys.argv[2], sys.argv[3]
-settings_path.parent.mkdir(parents=True, exist_ok=True)
-if settings_path.exists():
-    try:
-        data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as e:
-        # NEVER overwrite a corrupt settings.json — that would silently erase the
-        # user's other hooks/permissions. Abort; the human fixes it.
-        sys.stderr.write(f"ABORT: {settings_path} is not valid JSON ({e}).\n"
-                         f"Fix or remove it, then re-run this installer.\n")
-        sys.exit(1)
-else:
-    data = {}
-hooks = data.setdefault("hooks", {})
-for event, cmd in (("SessionEnd", end_cmd), ("SessionStart", start_cmd)):
-    rules = hooks.setdefault(event, [])
-    for rule in rules:
-        if rule.get("matcher") not in (None, "*"):
-            continue
-        if any(h.get("type") == "command" and h.get("command") == cmd
-               for h in rule.get("hooks", [])):
-            break
-    else:
-        rules.append({"matcher": "*", "hooks": [{"type": "command", "command": cmd}]})
-settings_path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-PY
+  python3 "$TOOLS_DIR/hook_merge.py" settings "$SETTINGS" "$END_CMD" "$START_CMD"
+}
+
+# Codex parity: Codex has no SessionStart/SessionEnd, but Stop (end of turn) and
+# UserPromptSubmit map cleanly. Stop -> scan (idempotent), UserPromptSubmit -> nudge.
+CODEX_HOOKS="$REPO/.codex/hooks.json"
+# Codex Stop is per-turn → defer-trailing scan (hook_codex_stop.sh), not the finalize
+# scan Claude SessionEnd uses, so hit/abort isn't judged before the reply lands.
+CODEX_END_CMD="bash ./.codex/skills/learn-skill/tools/hook_codex_stop.sh"
+CODEX_START_CMD="bash ./.codex/skills/learn-skill/tools/hook_session_start.sh"
+
+merge_codex() {
+  python3 "$TOOLS_DIR/hook_merge.py" codex "$CODEX_HOOKS" "$CODEX_END_CMD" "$CODEX_START_CMD"
 }
 
 if [ "$DRY_RUN" = "1" ]; then
   echo "dry-run: would symlink $SKILL_SRC → $SKILL_DIR/learn-skill"
   echo "dry-run: would add SessionEnd   * -> $END_CMD"
   echo "dry-run: would add SessionStart * -> $START_CMD"
+  [ -e "$REPO/.codex/skills/learn-skill" ] && { echo "dry-run: would add Codex Stop -> $CODEX_END_CMD"; echo "dry-run: would add Codex UserPromptSubmit -> $CODEX_START_CMD"; }
   exit 0
 fi
 
@@ -72,6 +57,15 @@ merge_settings
 echo "Installed learn-skill unattended hooks into repo-local .claude."
 echo "  SessionEnd   -> telemetry scan (append-only)"
 echo "  SessionStart -> promote/demote/stale nudge (read-only)"
+
+# Wire Codex too, if this repo has a .codex/skills/learn-skill symlink (from ./install.sh).
+if [ -e "$REPO/.codex/skills/learn-skill" ]; then
+  chmod +x "$TOOLS_DIR"/hook_session_end.sh "$TOOLS_DIR"/hook_session_start.sh "$TOOLS_DIR"/hook_codex_stop.sh 2>/dev/null || true
+  merge_codex
+  echo "Wired Codex hooks (.codex/hooks.json):"
+  echo "  Stop             -> telemetry scan (Codex has no SessionEnd)"
+  echo "  UserPromptSubmit -> promote/demote/stale nudge (Codex has no SessionStart)"
+fi
 echo
 echo "Tune via env: LEARN_SKILL_PROMOTE_MIN=3  LEARN_SKILL_DEMOTE_MIN=3"
 echo "Skill-mutating steps stay manual: learn.py promote|demote|staleness --apply"

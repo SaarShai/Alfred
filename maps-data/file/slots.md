@@ -2,8 +2,8 @@
 nid: n6g2wa
 title: "SLOTS"
 type: step
-x: 977
-y: 880
+x: 252
+y: 761
 ---
 
 # SLOTS

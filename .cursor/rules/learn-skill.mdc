@@ -1,0 +1,7 @@
+---
+description: Turn a pointed-at source (local dir, doc URL, a workflow you just did, or pasted notes) into a reusable Brainer skill. Use on "/learn <source>", "turn this into a skill", "capture this workflow as a skill", "make a skill from these docs/this repo". Prompt-only over existing tools; the learned skill is born untrusted (slash-only) and gated by write-gate. Port of Hermes' /learn.
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/learn-skill/SKILL.md

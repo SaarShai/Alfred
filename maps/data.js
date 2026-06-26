@@ -338,8 +338,8 @@ window.MAPS = {
           "status": null,
           "refs": [],
           "refsCollapsed": false,
-          "x": 977,
-          "y": 880,
+          "x": 252,
+          "y": 761,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -359,8 +359,8 @@ window.MAPS = {
           "status": null,
           "refs": [],
           "refsCollapsed": false,
-          "x": 970,
-          "y": 960,
+          "x": 270,
+          "y": 682,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -371,8 +371,8 @@ window.MAPS = {
         },
         {
           "id": "nwb4nc",
-          "slug": "stabilizers",
-          "name": "STABILIZERS",
+          "slug": "stabilizers-3-panels-model",
+          "name": "STABILIZERS 3-panels model",
           "type": "step",
           "summary": null,
           "icon": null,
@@ -380,15 +380,15 @@ window.MAPS = {
           "status": null,
           "refs": [],
           "refsCollapsed": false,
-          "x": 387,
-          "y": 1010,
+          "x": 665,
+          "y": 931,
           "lane": null,
           "link_map": null,
           "gate": null,
           "scale": 1,
           "hl": false,
           "color": null,
-          "url": "../maps-data/file/stabilizers.md"
+          "url": "../maps-data/file/stabilizers-3-panels-model.md"
         },
         {
           "id": "nyzxrq",
@@ -401,8 +401,8 @@ window.MAPS = {
           "status": null,
           "refs": [],
           "refsCollapsed": false,
-          "x": 285,
-          "y": 502,
+          "x": 621,
+          "y": 419,
           "lane": null,
           "link_map": null,
           "gate": null,
@@ -420,7 +420,12 @@ window.MAPS = {
           "icon": null,
           "tags": [],
           "status": null,
-          "refs": [],
+          "refs": [
+            {
+              "target": "n69mdp",
+              "label": "FLAPS & SOCKETS"
+            }
+          ],
           "refsCollapsed": false,
           "x": 392,
           "y": 929,
@@ -459,10 +464,10 @@ window.MAPS = {
         {
           "id": "fr5kmf5",
           "label": "STANDARD 3-panels model",
-          "x": 232,
-          "y": 847,
-          "w": 363,
-          "h": 248,
+          "x": 227,
+          "y": 840,
+          "w": 588,
+          "h": 399,
           "color": 0
         }
       ]
