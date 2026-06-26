@@ -88,7 +88,7 @@ Load only when triggered:
 | CEO / chief of staff / onboarding / office hours / strategic review / daily briefing / weekly planning / what needs my attention / remember this preference / add this folder or source / launch subagents / proactive ideas / pushback / trust / drift / follow instructions | `skills/executive-assistant/SKILL.md`; `L3_sops/instruction-fidelity-and-drift-control.md`; `patterns/chief-of-staff-state-loop.md`; `patterns/proactive-idea-generation.md`; `patterns/incisive-expert-communication.md` |
 | Coach me / executive coach / I'm stuck / talk it out / help me think through this / behavior or habit change / motivation / leadership or founder dilemma / a decision I must own | `skills/executive-coach/SKILL.md`; `L3_sops/executive-coaching-method.md`; `patterns/coaching-frameworks-and-questions.md` |
 | Any gstack skill / gstack ethos in a preamble / framework conflict | `L3_sops/gstack-alfred-precedence.md` |
-| Before completion claim | `skills/verification-before-completion/SKILL.md` |
+| Before completion claim | `skills/verify-before-completion/SKILL.md` |
 | Delegation policy | `prompts/delegation-matrix.md` |
 | New wiki page | `templates/page.template.md` |
 

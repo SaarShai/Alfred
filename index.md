@@ -57,7 +57,7 @@ Catalog for a target project that uses Alfred locally. Load only matched pages.
 - [[patterns/strategic-plan-review]] - premise challenge, alternatives, scope modes, risk review, decision-complete plan
 - [[patterns/incisive-expert-communication]] - truth-first style, strongest counterargument, no flattery, confidence, and verification
 - [[patterns/proactive-idea-generation]] - when Alfred should proactively surface useful ideas
-- [[patterns/assistant-task-routing]] - route requests to `/pa`, PROMPTER, office hours, plan review, wiki-write, or external coordination
+- [[patterns/assistant-task-routing]] - route requests to `/pa`, PROMPTER, office hours, plan review, wiki-memory, or external coordination
 - [[patterns/agent-tool-guardrails]] - source, command, dry-run, approval, verification, and audit guardrails for tools
 - [[patterns/agentic-system-best-practices]] - how to evaluate popular agent repos and adopt only reversible, provenance-backed practices
 - [[patterns/chief-of-staff-state-loop]] - explicit intake, retrieve, plan, decide, execute, verify, log, and learn loop

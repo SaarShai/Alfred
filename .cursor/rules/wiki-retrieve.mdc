@@ -1,7 +1,0 @@
----
-description: DEPRECATED — merged into wiki-memory. Do not use.
-globs: ["**/*"]
-alwaysApply: false
----
-
-@skills/wiki-retrieve/SKILL.md

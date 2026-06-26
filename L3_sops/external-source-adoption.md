@@ -11,7 +11,7 @@ verified: 2026-05-11
 sources: [schema.md, raw/2026-05-11-gstack-source-summary.md, raw/2026-05-11-executive-assistant-landscape.md]
 supersedes: []
 superseded-by:
-tags: [source-adoption, research, wiki-write]
+tags: [source-adoption, research, wiki-memory]
 ---
 
 # External source adoption
@@ -55,4 +55,4 @@ Use when the user asks to review an external repo, tool, paper, article, or prom
 
 - [[raw/2026-05-11-gstack-source-summary]]
 - [[raw/2026-05-11-executive-assistant-landscape]]
-- [[skills/wiki-write/SKILL]]
+- [[skills/wiki-memory/SKILL]]

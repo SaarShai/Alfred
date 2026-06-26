@@ -8,7 +8,7 @@ confidence: 0.7
 created: 2026-06-02
 updated: 2026-06-02
 verified: 2026-06-02
-sources: [patterns/assistant-task-routing.md, skills/wiki-write/SKILL.md, skills/executive-assistant/SKILL.md, L2_facts/user-operating-profile.md, L2_facts/obligations.md]
+sources: [patterns/assistant-task-routing.md, skills/wiki-memory/SKILL.md, skills/executive-assistant/SKILL.md, L2_facts/user-operating-profile.md, L2_facts/obligations.md]
 supersedes: []
 superseded-by:
 tags: [capture, routing, memory, reminders, obligations, executive-assistant]
@@ -53,7 +53,7 @@ or obligation.
 | This-conversation-only | nothing | ephemeral; do not persist |
 
 When two homes fit, prefer updating the richest existing page over creating a
-thin new one (cf. [[skills/wiki-write/SKILL]]).
+thin new one (cf. [[skills/wiki-memory/SKILL]]).
 
 ## Time lane (reminders / deadlines / recurring)
 
@@ -100,7 +100,7 @@ only when a specific reminder warrants it.
 
 - [[patterns/assistant-task-routing]]
 - [[L2_facts/obligations]]
-- [[skills/wiki-write/SKILL]]
+- [[skills/wiki-memory/SKILL]]
 - [[skills/executive-assistant/SKILL]]
 - [[patterns/daily-weekly-briefing]]
 - [[L3_sops/gstack-alfred-precedence]]

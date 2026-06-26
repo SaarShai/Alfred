@@ -1,7 +1,0 @@
----
-description: DEPRECATED — use the handoff skill (+ context-keeper for compaction). Do not use.
-globs: ["**/*"]
-alwaysApply: false
----
-
-@skills/context-refresh/SKILL.md

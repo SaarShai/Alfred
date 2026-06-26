@@ -54,11 +54,10 @@ Use `prompts/subagents/lifecycle.prompt.md` when supervising workers. Close a su
      '/prompts/*.md' '/prompts/subagents/*' \
      '/projects/agents-triage/*' '/projects/compound-compression-pipeline/*' \
      '/projects/context-keeper/*' '/projects/semdiff/*' \
-     '/skills/caveman-ultra/*' '/skills/context-refresh/*' \
+     '/skills/caveman-ultra/*' \
      '/skills/lean-execution/*' '/skills/personal-assistant/*' \
      '/skills/plan-first-execute/*' '/skills/relay-sessions/*' \
-     '/skills/subagent-orchestrator/*' '/skills/verification-before-completion/*' \
-     '/skills/wiki-retrieve/*' '/skills/wiki-write/*' \
+     '/skills/subagent-orchestrator/*' \
      '/stable/INSTALL.sh' '/stable/*'
    rm -rf .git
    git init

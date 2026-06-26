@@ -38,8 +38,8 @@ Route each request to the smallest workflow that can complete it safely.
 | Connect Google Workspace through gog | [[L3_sops/gogcli-workspace-access]] |
 | Launch subagents for briefing/research/review | [[L3_sops/subagent-dispatch-for-chief-of-staff]] |
 | Cross-project work | Confirm exact folder is listed in [[L2_facts/approved-information-sources]], then read that folder's instructions and git state |
-| Durable documentation | [[skills/wiki-write/SKILL]] |
-| Context refresh or resume | [[skills/context-refresh/SKILL]] |
+| Durable documentation | [[skills/wiki-memory/SKILL]] |
+| Context refresh or resume | [[skills/context-keeper/SKILL]] |
 | Complex implementation | Use local project instructions, inspect reality, implement, verify |
 
 ## Rules
