@@ -11,7 +11,9 @@ tags: [pursuit-tree]
 
 # Screenery
 
-The Screenery product. (Inference, unconfirmed: a physical product built from glued foam padding + sheet stock.)
+The Screenery product: a **themed room divider for hotels** — modular, flat-pack panels that assemble (toolless, 10–20 min) into a child's play zone / "mini-kingdom" inside a hotel room. Made from **100% recycled PET** (double-layer felt-like panel, grooved/beveled; >80% recycled-bottle content). Turns a room into a family-friendly suite; doubles as sound-dampening + a "wow on arrival". Full product facts: [[pursuits/wanderland/screenery/product-facts]].
+
+> Corrects the earlier unconfirmed inference ("glued foam padding + sheet stock") — it is recycled PET panels, not foam. Source: catalogue 2026 Q1 + screenery.design.
 
 **Status:** active
 

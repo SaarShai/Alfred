@@ -22,14 +22,18 @@ Controlled vocabulary for Wanderland / Screenery — the shared language across 
 ## Confirmed
 
 - **Wanderland** — the company; co-founded by Saar Shai + Alicia (wife), 50/50. Makes Screenery. — confirmed 2026-06-26
-- **Screenery** — a themed room divider for hotels (Wanderland's product). Physical/functional detail pending. — confirmed 2026-06-26 (definition incomplete)
+- **Screenery** — themed room divider for hotels: modular flat-pack **recycled-PET panels** that assemble (toolless, 10–20 min) into a kids' play zone in a hotel room. NOT foam. — confirmed (catalogue) 2026-06-26
+- **Panel** — the PET sheet unit; several panels assemble into one Screenery. Widths vary by model (e.g. 600/1000/600 mm). — confirmed (catalogue) 2026-06-26
+- **Edition** — size variant of a model: Standard vs XL (Higher/Wider/Bigger). — confirmed (catalogue) 2026-06-26
+- **Bespoke** — custom Screenery: client-chosen theme/size/colours + hotel branding/mascot, or an adapted existing design; price on request. — confirmed (catalogue) 2026-06-26
+- **Collection** — the catalogued lineup of themed models for a year (e.g. 2026 Collection). — confirmed (catalogue) 2026-06-26
+- **Model / theme** — a named design: Castle, Princess Palace, Spaceship, Birthday, Marine Life, Arabian Nights, Gingerbread House, Kids Cafe, Reading Corner, City Skylines. — confirmed (catalogue) 2026-06-26
 
-## To-confirm (terms seen in repo / maps-data; definitions NOT yet stated)
+## To-confirm (terms seen in repo / maps-data; definitions NOT yet stated by Saar)
 
-- **Panel** (cf. `maps-data/file/panels-3-panel-modular`) — ?
-- **Flap / Socket** (cf. `flaps-sockets`) — ?
-- **Slot** (cf. `slots`) — ?
-- **Stabilizer** (cf. `stabilizers-3-panels-model`) — ?
+- **Flap / Socket** (cf. `flaps-sockets`) — likely the panel-to-panel connector mechanism. Confirm.
+- **Slot** (cf. `slots`) — likely a connector/joint. Confirm.
+- **Stabilizer** (cf. `stabilizers-3-panels-model`) — likely the feet/legs that keep panels upright (visible in catalogue). Confirm.
 - **AI designer** — Screenery design tool/workflow; what it produces + where it lives — ?
 - **Mini-Screenery** (cf. `pursuits/wanderland/later/mini-screenery`) — ?
 - **Renderer** (cf. `pursuits/wanderland/renderer`) — ?
