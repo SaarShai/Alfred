@@ -68,9 +68,12 @@ Confirmed work preferences for the repo-local chief-of-staff system. Store work 
 - Add new preferences only after explicit user confirmation or a verified repeated pattern.
 - Prefer updating this page over scattering profile facts across session notes.
 - Cite the source prompt, command, or wiki page that proves the preference.
+- Proactive capture: when the user states a durable fact about himself, his work, or how he wants Alfred to operate, notice it and propose persisting it to the right profile page ([[L2_facts/user-identity]] for biography, this page for work prefs, [[L2_facts/user-lists]] for tastes, [[Principles/README]] for principles) — gated through write-gate, never silently. This is the standing Mirror Intake behavior between explicit intake sessions.
+- The repo wiki is the canonical second-brain store; the resident `~/.claude` auto-memory only carries pointers back to it.
 
 ## Related
 
+- [[L2_facts/user-identity]]
 - [[L2_facts/user-lists]]
 - [[Principles/README]]
 - [[patterns/structured-check-ins]]
