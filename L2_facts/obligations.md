@@ -39,7 +39,8 @@ sessions. Feeds [[patterns/daily-weekly-briefing]]. Written via
 
 | id | what | kind | due / cadence | status | fire | source |
 |---|---|---|---|---|---|---|
-| _none yet_ | | | | | | |
+| order-backlog | Work through the Screenery order backlog (file prep) | recurring | ongoing | open | passive | 2026-06-26 mirror-intake; some delegated to AI agents |
+| email-backlog | Answer backlog of emails (being procrastinated) | recurring | ongoing | open | passive | 2026-06-26 mirror-intake |
 
 ## Rules
 

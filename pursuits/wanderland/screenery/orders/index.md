@@ -13,6 +13,8 @@ tags: [pursuit-tree]
 
 Existing and incoming client orders.
 
+**Status (stated 2026-06-26):** a **backlog of orders** to get through; Saar is progressing. Some of the file work **is delegated successfully to AI agents** (concrete proof the [[pursuits/wanderland/screenery/ai-designer]] partly works); could be faster. See [[pursuits/wanderland/operations]].
+
 **Status:** active
 
 ## Children
