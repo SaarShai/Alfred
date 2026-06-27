@@ -38,6 +38,7 @@ notice when context matches one (e.g. `wiki-memory` for "have we done X").
 - `eval-gate` — Score AI output against a written rubric before it ships — an LLM-as-judge quality gate for content output (drafts, posts, answers) and product output (an agent's reply, an extraction, a generated payload)
 - `executive-assistant` — Use when acting as chief-of-staff — office hours, strategic review, briefings
 - `executive-coach` — Use when the user asks for coaching (not advice) on decisions, patterns, motivation, leadership
+- `impact-of-change` — Use before committing or claiming work done to map a code edit to its blast radius — which symbols depend on the changed ones, plus a LOW/MEDIUM/HIGH risk score
 - `index-first` — Prefer pre-built indexes over chains of grep/read/scan
 - `lean-execution` — Prune plans, process, context, and delegation to the smallest safe path
 - `learn-skill` — Turn a pointed-at source (local dir, doc URL, a workflow you just did, or pasted notes) into a reusable Brainer skill
