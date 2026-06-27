@@ -80,6 +80,7 @@ Fetch only the pages that change the answer. Default anchors:
 - Use decision gates for scope changes, external access, privacy, destructive actions, or model disagreement with the user's stated direction.
 - Use subagents only for independent bounded extraction, inventory, research, review, or wiki documentation; final synthesis stays local.
 - Verify before completion when feasible.
+- Gate every briefing through [`L3_sops/briefing-verify-loop.md`](../../L3_sops/briefing-verify-loop.md) before delivery: score the draft with the eval-gate per-criterion rubric (`skills/eval-gate/briefing-rubric.json`, ≥32B judge) — on FAIL, surface the `blocking_criteria` as the rework list and revise (max 2) before delivering. The verifier is blind (sees only the request + the briefing), so it catches invented facts and missing decisions a self-review misses.
 - Leave an action trail for meaningful work: changed files, reason, undo path, verification, residual risk.
 - Document durable learning only after verified work or explicit user-confirmed decisions.
 
