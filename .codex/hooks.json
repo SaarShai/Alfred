@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "bash ./.claude/skills/context-keeper/tools/codex_archive.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$PWD}/.claude/skills/context-keeper/tools/codex_archive.sh\"",
             "type": "command"
           }
         ]
@@ -14,7 +14,7 @@
       {
         "hooks": [
           {
-            "command": "bash ./.codex/skills/compliance-canary/tools/hook.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-$PWD}/.codex/skills/compliance-canary/tools/hook.sh\"",
             "type": "command"
           }
         ],
