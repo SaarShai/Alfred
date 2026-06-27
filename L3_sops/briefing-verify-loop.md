@@ -83,7 +83,12 @@ the first run.
 
    The exact command (note the **≥32B** judge — the grounded criterion is
    grounding-sensitive, and an 8B judge false-fails good drafts and false-passes
-   weak ones; pin a ≥32B model, never the small default):
+   weak ones; pin a ≥32B model, never the small default). **Measured (2026-06-27
+   optimization run, n=3):** with a small GLM judge the verifier's PASS matched a
+   blind cold grader's quality verdict only **1/3** of the time, and one rework
+   pass *degraded* an already-good draft — direct evidence that an under-powered
+   judge makes the loop both unreliable and wasteful. Do not run this loop on a
+   small judge:
 
    ```bash
    python3 skills/eval-gate/tools/eval_gate.py score --criteria-file skills/eval-gate/briefing-rubric.json --backend ollama --model qwen3.6:35b-a3b-q4km --task "<briefing request>" --file <draft.md>
