@@ -1,0 +1,7 @@
+---
+description: "Use before committing or claiming work done to triage a code edit for INTRODUCED security risk — leaked secrets, dangerous sinks, untrusted dependencies, and security-sensitive logic that scanners can't judge. Trigger on \"is this safe to ship?\", \"did I leak a secret?\", \"any security issues with this change?\", \"did the agent introduce a vulnerability?\", or as the security gate in a generate→verify loop. Parses `git diff` added lines, classifies into 4 OWASP-anchored classes (secret/injection/supply_chain/authz), scores HIGH/MEDIUM/REVIEW, routes HIGH/MEDIUM to verify-before-completion and surfaces REVIEW for a human; detects reputable scanners (gitleaks/semgrep/osv-scanner) and recommends them for depth. Does NOT modify code, auto-fix, or block. Absence of a finding is NOT proof of safety. Also: /security-oversight."
+globs: ["**/*"]
+alwaysApply: false
+---
+
+@skills/security-oversight/SKILL.md

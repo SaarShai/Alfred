@@ -48,6 +48,7 @@ notice when context matches one (e.g. `wiki-memory` for "have we done X").
 - `prompt-triage` — Use on every UserPromptSubmit (pre-model hook) to classify the prompt and emit a directive telling the main model which subagent/model should handle it
 - `relay-sessions` — Use when the user asks to relay, hand off, summarize, continue in a fresh Codex session, or let a new session ask an old/older session targeted follow-up questions.
 - `requirements-ledger` — Use whenever the user states anything carrying intent — an ask, a question, a constraint, a preference, a compound "do X, Y, and Z" (one row per conjunct), or an implicit ask embedded in prose
+- `security-oversight` — Use before committing or claiming work done to triage a code edit for INTRODUCED security risk — leaked secrets, dangerous sinks, untrusted dependencies, and security-sensitive logic that scanners can't judge
 - `semantic-diff` — AST-node-level diff for file re-reads
 - `subagent-orchestrator` — Use when dispatching work to subagents — route to cheaper or specialist subagents while keeping final synthesis local.
 - `verify-before-completion` — Use before claiming work is done, fixed, passing, committed, or ready
